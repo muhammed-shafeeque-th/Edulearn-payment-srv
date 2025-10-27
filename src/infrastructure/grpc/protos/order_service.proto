@@ -1,0 +1,126 @@
+syntax = "proto3";
+
+package order_service;
+
+// Structured error message
+message Error {
+  string code = 1;                    // e.g., "RESOURCE_NOT_FOUND", "INVALID_ARGUMENT", "UNAUTHENTICATED"
+  string message = 2;                 // Human-readable error message
+  repeated ErrorDetail details = 3;   // Optional detailed error information
+}
+
+// Detailed error information
+message ErrorDetail {
+  string field = 1;                   // Field name that caused the error
+  string message = 2;                 // Field-specific error message
+}
+
+message OrderItemsData {
+  string course_id = 1;
+  float price = 2; 
+}
+message PaymentDetailsData {
+  string paymentId = 1;
+  string provider = 2;
+  optional string provider_order_id = 3;
+  string payment_status = 4;
+  string updated_at = 5;
+}
+
+message MoneyData {
+  float price = 1;
+  string currency = 2;
+  float discount = 3;
+  float sub_total = 4;
+}
+
+
+message OrderData {
+  string id = 1;
+  string user_id = 2;
+  repeated OrderItemsData items = 10;
+  optional PaymentDetailsData payment_details = 11;
+  MoneyData amount = 4;
+  string status = 6;
+  string created_at = 7;
+  string updated_at = 8;
+ 
+
+}
+
+
+// Success message for PlaceOrder
+message PlaceOrderSuccess {
+  string id = 1;
+  string user_id = 2;
+  repeated string course_ids = 3;
+  float total_amount = 4;
+  string currency = 5;
+  string status = 6;
+  string created_at = 7;
+  string updated_at = 8;
+}
+
+// Success message for BookSession
+message BookSessionSuccess {
+  string id = 1;
+  string user_id = 2;
+  string session_id = 3;
+  float amount = 4;
+  string currency = 5;
+  string status = 6;
+  string created_at = 7;
+  string updated_at = 8;
+}
+
+service OrderService {
+  rpc PlaceOrder (PlaceOrderRequest) returns (OrderResponse);
+  rpc BookSession (BookSessionRequest) returns (BookSessionResponse);
+  rpc GetOrderById (GetOrderByIdRequest) returns (OrderResponse);
+  rpc GetOrdersByUserId (GetOrderByUserIdRequest) returns (OrdersResponse);
+}
+
+message PlaceOrderRequest {
+  string user_id = 1;
+  optional string coupon_code = 3;
+  repeated string course_ids = 2;
+}
+message OrdersSuccess {
+  repeated OrderData orders = 1;
+}
+message OrderSuccess {
+  OrderData order = 1;
+}
+
+message OrderResponse {
+  oneof result {
+    OrderSuccess success = 1;
+    Error error = 2;
+  }
+}
+message OrdersResponse {
+  oneof result {
+    OrdersSuccess success = 1;
+    Error error = 2;
+  }
+}
+
+message BookSessionRequest {
+  string user_id = 1;
+  string session_id = 2;
+}
+message GetOrderByIdRequest {
+  string order_id = 1;
+  string user_id = 2;
+}
+
+message GetOrderByUserIdRequest {
+  string user_id = 2;
+}
+
+message BookSessionResponse {
+  oneof result {
+    BookSessionSuccess success = 1;
+    Error error = 2;
+  }
+}
