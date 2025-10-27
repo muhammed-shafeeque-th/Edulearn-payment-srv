@@ -1,0 +1,556 @@
+syntax = "proto3";
+
+package user_service;
+
+
+// import "google/protobuf/timestamp.proto";
+// import "ts_proto/options.proto"; // Import ts-proto options
+
+// option ts_nocheck = true;
+
+message UserProfileData {
+  optional string bio = 1;
+  optional string phone = 2;
+  optional string country = 3;
+  optional string city = 4;
+  optional string gender = 5;
+  optional string preference = 6;
+  optional string language = 7;
+  optional string website = 8;
+}
+message UserSocialsData {
+   string provider = 1;
+   string profile_url = 2;
+  optional string  provider_user_url= 3;
+}
+message InstructorProfileData {
+  optional string bio = 1;
+  optional string headline = 2;
+  optional string experience = 3;
+  optional string certificate = 4;
+  repeated string tags = 7;
+  repeated string expertise = 5;
+  int32 rating = 6;
+  int32 totalRatings = 8;
+  int32 totalCourses = 9;
+  int32 totalStudents = 10;
+}
+
+// Common User Information
+message UserData {
+  string id = 1;
+  string email = 2;
+  string role = 3;
+  string firstName = 4;
+  string status = 5;
+  optional string lastName = 9;
+  optional string avatar = 6;
+  optional string lastLogin = 7;
+  optional UserProfileData profile = 8;
+  optional InstructorProfileData instructor_profile = 10;
+  repeated UserSocialsData socials = 11;
+  optional string updatedAt = 12;
+  optional string createdAt = 13;
+}
+
+// Common Pagination Request
+message PaginationRequest {
+  int32 page = 1;
+  int32 pageSize = 2;
+}
+
+// Common Pagination Response
+message PaginationResponse {
+  int32 totalItems = 1;
+  int32 totalPages = 2;
+}
+
+// Generic Error Message
+message Error {
+  string code = 1; // e.g., "RESOURCE_NOT_FOUND", "INVALID_ARGUMENT", "UNAUTHENTICATED"
+  string message = 2;
+  repeated ErrorDetail details = 3; // Optional detailed error information
+}
+
+message ErrorDetail {
+  optional string field = 1;
+  string message = 2;
+}
+
+message WalletTransaction {
+  string transactionId = 1;
+  string userId = 2;
+  double amount = 3;
+  string type = 4; // e.g., "deposit", "withdrawal", "purchase"
+  string transactionDate = 5;
+}
+
+// Cart Transaction Message
+message CartData {
+  string id = 1;
+  string userId = 2;
+  int32 total = 3;
+  repeated CartItemData items = 4;
+  string updated_at = 5;
+  string created_at = 6;
+
+}
+
+message CartItemData {
+  string id = 1;
+  string courseId = 3;
+  string createdAt = 6;
+}
+
+
+// Wishlist Transaction Message
+// message WishlistTransaction {
+//   string id = 1;
+//   string userId = 2;
+//   string courseId = 3;
+//   string createdAt = 5;
+// }
+
+message WishlistItemData {
+  string id = 1;
+  string courseId = 3;
+  string createdAt = 6;
+}
+
+message WishlistData {
+  string id = 1;
+  string userId = 2;
+  int32 total = 3;
+  repeated CartItemData items = 4;
+  string updated_at = 5;
+  string created_at = 6;
+
+}
+
+// Cart Operations
+message AddToCartRequest {
+  
+  string userId = 1;
+  string cartId = 3;
+  string courseId = 2;
+
+}
+message ToggleWishlistItemRequest {
+  
+  string userId = 1;
+  string wishlistId = 3;
+  string courseId = 2;
+
+}
+message ToggleCartItemRequest {
+  
+  string userId = 1;
+  string cartId = 3;
+  string courseId = 2;
+
+}
+
+message AddToCartResponse {
+  oneof result {
+    CartItemData item = 1;
+    Error error = 2;
+  }
+}
+
+message ToggleWishlistItemResponse {
+  oneof result {
+    WishlistItemData item = 1;
+    Error error = 2;
+  }
+}
+message ToggleCartItemResponse {
+  oneof result {
+    CartItemData item = 1;
+    Error error = 2;
+  }
+}
+
+message RemoveFromCartRequest {
+  string cartId = 1;
+  string courseId = 2;
+}
+
+message RemoveFromCartResponse {
+  oneof result {
+    RemoveSuccess success = 1;
+    Error error = 2;
+  }
+}
+
+message RemoveSuccess {
+  bool removed = 1;
+}
+
+message ListCartRequest {
+  string userId = 1;
+  PaginationRequest pagination = 2;
+}
+
+message ListCartResponse {
+  oneof result {
+    CartListSuccess success = 1;
+    Error error = 2;
+  }
+}
+
+message CartListSuccess {
+  CartData cart = 1;
+  PaginationResponse pagination = 2;
+}
+message WishlistListSuccess {
+  WishlistData wishlist = 1;
+  PaginationResponse pagination = 2;
+}
+
+// Wishlist Operations
+message AddToWishlistRequest {
+  string userId = 1;
+  string wishlistId = 3;
+  string courseId = 2;
+}
+
+message AddToWishlistResponse {
+  oneof result {
+    WishlistItemData item = 1;
+    Error error = 2;
+  }
+}
+
+message RemoveFromWishlistRequest {
+  string wishlistId = 1;
+  string courseId = 2;
+}
+
+message RemoveFromWishlistResponse {
+  oneof result {
+    RemoveSuccess success = 1;
+    Error error = 2;
+  }
+}
+
+message ListWishlistRequest {
+  string userId = 1;
+  PaginationRequest pagination = 2;
+}
+
+message ListWishlistResponse {
+  oneof result {
+    WishlistSuccess success = 1;
+    Error error = 2;
+  }
+}
+
+message WishlistSuccess {
+   WishlistData wishlist = 1;
+  PaginationResponse pagination = 2;
+}
+
+service UserService {
+    // Get New Refresh Token
+  rpc RegisterInstructor(RegisterInstructorRequest) returns (RegisterInstructorResponse);
+
+  // Update User Details
+  rpc UpdateUserDetails(UpdateUserDetailsRequest) returns (UpdateUserDetailsResponse);
+
+  // Get Wallet Transactions for a User (with pagination)
+  rpc GetWalletTransactions(GetWalletTransactionsRequest) returns (GetWalletTransactionsResponse);
+
+  // Get All Users (with pagination)
+  rpc GetAllUsers(GetAllUsersRequest) returns (GetAllUsersResponse);
+
+  // Get All Users emails
+  rpc GetAllUserEmails(GetAllUserEmailsRequest) returns (GetAllUserEmailsResponse);
+  
+  // Get All Users emails
+  rpc CheckUserEmailExist(CheckUserByEmailRequest) returns (CheckUserByEmailResponse);
+
+  // Get Details About a Particular User by ID
+  rpc GetUser(GetUserRequest) returns (GetUserResponse);
+
+  // Get Details About a Particular User by ID
+  rpc GetUsersByIds(GetUsersByIdsRequest) returns (GetUsersByIdsResponse);
+
+//   // Get Details About the currently logged in User
+  rpc GetCurrentUser(GetCurrentUserRequest) returns (GetCurrentUserResponse);
+
+  // Block/Unblock a User
+  rpc BlockUser(BlockUserRequest) returns (BlockUserResponse);
+
+  // Block/Unblock a User
+  rpc UnBlockUser(UnBlockUserRequest) returns (UnBlockUserResponse);
+
+
+  // Get All Instructors (with pagination)
+  rpc GetAllInstructors(GetAllInstructorsRequest) returns (GetAllInstructorsResponse);
+
+  // Cart
+  rpc AddToCart(AddToCartRequest) returns (AddToCartResponse);
+  
+  rpc ToggleCartItem(ToggleCartItemRequest) returns (ToggleCartItemResponse);
+
+  rpc RemoveFromCart(RemoveFromCartRequest) returns (RemoveFromCartResponse);
+
+  rpc ListUserCart(ListCartRequest) returns (ListCartResponse);
+  
+  // Wishlist
+  rpc AddToWishlist(AddToWishlistRequest) returns (AddToWishlistResponse);
+
+  rpc ToggleWishlistItem(ToggleWishlistItemRequest) returns (ToggleWishlistItemResponse);
+
+  rpc RemoveFromWishlist(RemoveFromWishlistRequest) returns (RemoveFromWishlistResponse);
+
+  rpc ListUserWishlist(ListWishlistRequest) returns (ListWishlistResponse);
+}
+
+// --- Request and Response Messages ---
+
+message InstructorSuccessResponse {
+  UserData user = 1;
+}
+
+message RegisterInstructorResponse {
+ oneof  result {
+  Error error = 1;
+  InstructorSuccessResponse success = 2;
+  
+ } 
+}
+
+
+message RegisterInstructorRequest {
+  string userId = 1;
+  optional string extraEmail = 2;
+  optional string city = 3;
+  string firstName = 4;
+  string lastName = 5;
+  optional string expertise = 6;
+  optional string phone = 7;
+  optional string linkedin = 8;
+  optional string instagram = 9;
+  optional string facebook = 10;
+  optional string language = 11;
+  optional string website = 12;
+  optional string biography = 13;
+  optional string headline = 14;
+  optional string education = 18;
+  optional int32 experience = 19;
+  optional string country = 20;
+
+}
+
+
+
+message DetailedUserInfo {
+  string userId = 1;
+  optional string firstName = 2;
+  optional string lastName = 3;
+  optional string phone = 4;
+  optional string headline = 5;
+  optional string biography = 6;
+  optional string avatar = 7;
+  optional string website = 8;
+  optional string language = 9;
+  optional string facebook = 10;
+  optional string instagram = 11;
+  optional string linkedin = 12;
+  string status = 13;
+  string role = 14;
+  string email = 15;
+  string updatedAt = 16;
+  string createdAt = 17;
+
+}
+
+// Update User Details
+message UpdateUserDetailsRequest {
+  string userId = 1;
+  string firstName = 2;
+  optional string lastName = 3;
+  optional string phone = 4;
+  repeated UserSocialsData socials = 5;
+  optional string biography = 6;
+  optional string avatar = 7;
+  optional string website = 8;
+  optional string language = 9;
+  optional string city = 10;
+  optional string country = 11;
+  optional string gender = 12;
+
+  
+}
+
+message UpdateUserDetailsResponse {
+  oneof result {
+    UserData user = 1;
+    Error error = 2;
+  }
+}
+
+// Change Password
+message ChangePasswordRequest {
+  string userId = 1;
+  string oldPassword = 2;
+  string newPassword = 3;
+}
+
+message ChangePasswordResponse {
+  oneof result {
+    ChangePasswordSuccess success = 1;
+    Error error = 2;
+  }
+}
+
+message ChangePasswordSuccess {
+  bool updated = 1;
+}
+
+// Get Wallet Transactions
+message GetWalletTransactionsRequest {
+  string userId = 1;
+  PaginationRequest pagination = 2;
+}
+
+message GetWalletTransactionsResponse {
+  oneof result {
+    WalletTransactionsSuccess success = 1;
+    Error error = 2;
+  }
+}
+
+message WalletTransactionsSuccess {
+  repeated WalletTransaction transactions = 1;
+  PaginationResponse pagination = 2;
+}
+
+// Get All Users
+message GetAllUsersRequest {
+  PaginationRequest pagination = 1;
+}
+
+message GetAllUserEmailsRequest {
+}
+
+message GetAllUsersResponse {
+  oneof result {
+    AllUsersSuccess success = 1;
+    Error error = 2;
+  }
+}
+message GetAllUserEmailsResponse {
+  oneof result {
+    AllUserEmailsSuccess success = 1;
+    Error error = 2;
+  }
+}
+
+message AllUserEmailsSuccess {
+    repeated string email = 1;
+    
+}
+
+message GetUsersByIdsResponse {
+  oneof result {
+     UsersResponse success = 1;
+     Error error = 2;
+  }
+}
+message UsersResponse {
+  repeated UserData users = 1;
+}
+
+message AllUsersSuccess {
+  repeated UserData users = 1;
+  PaginationResponse pagination = 2;
+}
+
+// Get User By ID
+message GetUserRequest {
+  string userId = 1;
+}
+// Get Users By IDs
+message GetUsersByIdsRequest {
+  repeated string userIds = 1;
+}
+message GetCurrentUserRequest {
+  string userId = 1;
+}
+
+message CheckUserByEmailRequest {
+  string email = 1;
+}
+
+message EmailExist {
+    string success = 1;
+    string error = 2; 
+}
+
+
+message CheckUserByEmailResponse {
+  oneof result {
+    EmailExist response = 1;
+    Error error = 2;
+  }
+}
+message GetCurrentUserResponse {
+  oneof result {
+    UserData user = 1;
+    Error error = 2;
+  }
+}
+message GetUserResponse {
+  oneof result {
+    UserData user = 1;
+    Error error = 2;
+  }
+}
+
+// Block User
+message BlockUserRequest {
+  string userId = 1;
+}
+message UnBlockUserRequest {
+  string userId = 1;
+}
+
+message BlockUserResponse {
+  oneof result {
+    BlockUserSuccess success = 1;
+    Error error = 2;
+  }
+}
+message UnBlockUserResponse {
+  oneof result {
+    UnBlockUserSuccess success = 1;
+    Error error = 2;
+  }
+}
+
+message BlockUserSuccess {
+  bool updated = 1;
+}
+
+message UnBlockUserSuccess {
+  bool updated = 1;
+}
+
+// Get All Instructors
+message GetAllInstructorsRequest {
+  PaginationRequest pagination = 1;
+}
+
+message GetAllInstructorsResponse {
+  oneof result {
+    AllInstructorsSuccess success = 1;
+    Error error = 2;
+  }
+}
+
+message AllInstructorsSuccess {
+  repeated UserData instructors = 1;
+  PaginationResponse pagination = 2;
+}
