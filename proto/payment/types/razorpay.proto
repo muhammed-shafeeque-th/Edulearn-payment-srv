@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package payment.razorpay;
+
+message RazorpayPaymentSession {
+  string order_id = 1;
+  string key_id = 2;
+  int64 amount = 3;
+  string currency = 4;
+}
+
+message RazorpayVerifyRequest {
+  string razorpay_order_id = 1;
+  string razorpay_payment_id = 2;
+  string razorpay_signature = 3;
+}
+
+message RazorpayVerifyResponse {
+  bool verified = 1;
+  string message = 2;
+}

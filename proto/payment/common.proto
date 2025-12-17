@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package payment.common;
+
+enum Provider {
+  PROVIDER_UNSPECIFIED = 0;
+  STRIPE = 1;
+  RAZORPAY = 2;
+  PAYPAL = 3;
+}
+
+enum PaymentStatus {
+  UNKNOWN = 0;
+  PENDING = 1;
+  PAID = 2;
+  FAILED = 3;
+  CANCELLED = 4;
+}

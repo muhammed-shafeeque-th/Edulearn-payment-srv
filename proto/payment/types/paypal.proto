@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package payment.paypal;
+
+message PayPalPaymentSession {
+  string order_id = 1;
+  string approval_link = 2; // PayPal redirect URL
+  int64 amount = 21; // Amount in the smallest unit (e.g., cents)
+  string currency = 22; // ISO 4217 currency code (e.g., "USD")
+}
+
+message PayPalVerifyRequest {
+  string order_id = 1;
+}
+
+message PayPalVerifyResponse {
+  bool verified = 1;
+}

@@ -1,0 +1,150 @@
+syntax = "proto3";
+
+package payment_service;
+
+
+import "payment/common.proto";
+import "payment/types/stripe.proto";
+import "payment/types/razorpay.proto";
+import "payment/types/paypal.proto";
+
+
+service PaymentService {
+  rpc CreatePayment (CreatePaymentRequest) returns (CreatePaymentResponse);
+  rpc VerifyPayment (VerifyPaymentRequest) returns (VerifyPaymentResponse);
+  rpc CancelPayment (CancelPaymentRequest) returns (CancelPaymentResponse);
+  rpc GetPayment (GetPaymentRequest) returns (GetPaymentResponse);
+  // Health check endpoint
+  rpc HealthCheck(HealthCheckRequest) returns (HealthCheckResponse) {}
+}
+
+
+// Structured error message
+message Error {
+  string code = 1;                    // e.g., "RESOURCE_NOT_FOUND", "INVALID_ARGUMENT", "UNAUTHENTICATED"
+  string message = 2;                 // Human-readable error message
+  repeated ErrorDetail details = 3;   // Optional detailed error information
+}
+
+// Detailed error information
+message ErrorDetail {
+  string field = 1;                   // Field name that caused the error
+  string message = 2;                 // Field-specific error message
+}
+
+
+
+message CreatePaymentRequest {
+  payment.common.Provider provider = 1;
+  string user_id = 2;
+  string order_id = 3;
+  string idempotency_key = 5; // For ensuring idempotency
+  optional string success_url = 7;
+  optional string cancel_url = 8;
+}
+
+message CreatePaymentResponse {
+  oneof result {
+    CreatePaymentSuccess success = 1;
+    Error error = 2;
+  }
+}
+
+message CreatePaymentSuccess {
+  payment.common.Provider provider = 1;
+  string payment_id = 10;
+  string status = 11;
+  string order_id = 12; 
+
+  oneof session {
+    payment.stripe.StripePaymentSession stripe = 2;
+    payment.razorpay.RazorpayPaymentSession razorpay = 3;
+    payment.paypal.PayPalPaymentSession paypal = 4;
+  }
+}
+
+
+message VerifyPaymentRequest {
+  payment.common.Provider provider = 1;
+  oneof verifyPayload {
+    payment.stripe.StripeVerifyRequest stripe = 2;
+    payment.razorpay.RazorpayVerifyRequest razorpay = 3;
+    payment.paypal.PayPalVerifyRequest paypal = 4;
+  }
+}
+message CancelPaymentRequest {
+  payment.common.Provider provider = 1;
+  string provider_order_id = 2;
+
+ 
+}
+
+message VerifyPaymentResponse {
+  oneof result {
+    VerifyPaymentSuccess success = 1;
+    Error error = 2;
+  }
+}
+message CancelPaymentResponse {
+  oneof result {
+    CancelPaymentSuccess success = 1;
+    Error error = 2;
+  }
+}
+message GetPaymentResponse {
+  oneof result {
+    PaymentData success = 1;
+    Error error = 2;
+  }
+}
+
+message VerifyPaymentSuccess {
+  string status = 1;
+  string payment_id = 2;
+  bool verified = 3;
+}
+message CancelPaymentSuccess {
+  string status = 1;
+  string payment_id = 2;
+  string provider_order_id = 3;
+}
+
+message GetPaymentRequest {
+  string payment_id = 1;
+}
+
+message GetPaymentSuccess {
+  string payment_id = 1;
+  payment.common.Provider provider = 2;
+  string status = 3;
+  int64 amount = 4;
+  string currency = 5;
+  string created_at = 6;
+  string updated_at = 7;
+
+  oneof provider_details {
+    payment.stripe.StripePaymentSession stripe = 8;
+    payment.razorpay.RazorpayPaymentSession razorpay = 9;
+    payment.paypal.PayPalPaymentSession paypal = 10;
+  }
+}
+message PaymentData {
+  string payment_id = 1;
+  payment.common.Provider provider = 2;
+  string status = 3;
+  int64 amount = 4;
+  string currency = 5;
+  string order_id = 12;
+  string provider_order_id = 11;
+  string created_at = 6;
+  string updated_at = 7;
+
+}
+
+// Health check request (for monitoring)
+message HealthCheckRequest {}
+
+// Health check response
+message HealthCheckResponse {
+  string status = 1; // e.g., "HEALTHY", "UNHEALTHY"
+}
