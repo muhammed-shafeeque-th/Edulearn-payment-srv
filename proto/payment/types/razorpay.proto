@@ -9,13 +9,13 @@ message RazorpayPaymentSession {
   string currency = 4;
 }
 
-message RazorpayVerifyRequest {
+message RazorpayResolveRequest {
   string razorpay_order_id = 1;
   string razorpay_payment_id = 2;
   string razorpay_signature = 3;
 }
 
-message RazorpayVerifyResponse {
+message RazorpayResolveResponse {
   bool verified = 1;
   string message = 2;
 }

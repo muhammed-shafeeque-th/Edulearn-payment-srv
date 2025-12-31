@@ -11,7 +11,7 @@ import "payment/types/paypal.proto";
 
 service PaymentService {
   rpc CreatePayment (CreatePaymentRequest) returns (CreatePaymentResponse);
-  rpc VerifyPayment (VerifyPaymentRequest) returns (VerifyPaymentResponse);
+  rpc ResolvePayment (ResolvePaymentRequest) returns (ResolvePaymentResponse);
   rpc CancelPayment (CancelPaymentRequest) returns (CancelPaymentResponse);
   rpc GetPayment (GetPaymentRequest) returns (GetPaymentResponse);
   // Health check endpoint
@@ -64,12 +64,12 @@ message CreatePaymentSuccess {
 }
 
 
-message VerifyPaymentRequest {
+message ResolvePaymentRequest {
   payment.common.Provider provider = 1;
-  oneof verifyPayload {
-    payment.stripe.StripeVerifyRequest stripe = 2;
-    payment.razorpay.RazorpayVerifyRequest razorpay = 3;
-    payment.paypal.PayPalVerifyRequest paypal = 4;
+  oneof ResolvePayload {
+    payment.stripe.StripeResolveRequest stripe = 2;
+    payment.razorpay.RazorpayResolveRequest razorpay = 3;
+    payment.paypal.PayPalResolveRequest paypal = 4;
   }
 }
 message CancelPaymentRequest {
@@ -79,9 +79,9 @@ message CancelPaymentRequest {
  
 }
 
-message VerifyPaymentResponse {
+message ResolvePaymentResponse {
   oneof result {
-    VerifyPaymentSuccess success = 1;
+    ResolvePaymentSuccess success = 1;
     Error error = 2;
   }
 }
@@ -98,10 +98,10 @@ message GetPaymentResponse {
   }
 }
 
-message VerifyPaymentSuccess {
+message ResolvePaymentSuccess {
   string status = 1;
   string payment_id = 2;
-  bool verified = 3;
+  bool is_resolved = 3;
 }
 message CancelPaymentSuccess {
   string status = 1;

@@ -9,10 +9,10 @@ message PayPalPaymentSession {
   string currency = 22; // ISO 4217 currency code (e.g., "USD")
 }
 
-message PayPalVerifyRequest {
+message PayPalResolveRequest {
   string order_id = 1;
 }
 
-message PayPalVerifyResponse {
+message PayPalResolveResponse {
   bool verified = 1;
 }
