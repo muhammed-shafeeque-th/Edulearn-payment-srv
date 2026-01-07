@@ -1,0 +1,27 @@
+{
+  "namespace": "payment_service",
+  "type": "record",
+  "name": "RefundEvent",
+  "fields": [
+    { "name": "refund_id", "type": "string" },
+    { "name": "payment_id", "type": "string" },
+    { "name": "user_id", "type": "string" },
+    {
+      "name": "amount",
+      "type": {
+        "type": "record",
+        "name": "Money",
+        "fields": [
+          { "name": "amount", "type": "long" },
+          { "name": "currency", "type": "string" }
+        ]
+      }
+    },
+    { "name": "status", "type": "string" },
+    { "name": "transaction_id", "type": ["null", "string"], "default": null },
+    { "name": "reason", "type": "string" },
+    { "name": "event_type", "type": "string" },
+    { "name": "timestamp", "type": "long" },
+    { "name": "error", "type": ["null", "string"], "default": null }
+  ]
+}

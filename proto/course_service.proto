@@ -1,0 +1,707 @@
+syntax = "proto3";
+
+package course_service;
+
+// import "google/protobuf/timestamp.proto";
+
+// Generic Error Message
+message Error {
+  string code = 1; // e.g., "RESOURCE_NOT_FOUND", "INVALID_ARGUMENT", "UNAUTHENTICATED"
+  string message = 2;
+  repeated ErrorDetail details = 3; // Optional detailed error information
+}
+
+message ErrorDetail {
+  optional string field = 1;
+  string message = 2;
+}
+
+service CourseService {
+  // Course CRUD
+  rpc CreateCourse(CreateCourseRequest) returns (CourseResponse);
+  rpc GetCourse(GetCourseRequest) returns (CourseResponse);
+  rpc GetCourseBySlug(GetCourseBySlugRequest) returns (CourseResponse);
+  rpc GetCourses(GetCoursesRequest) returns (CoursesResponse);
+  rpc UpdateCourse(UpdateCourseRequest) returns (CourseResponse);
+  rpc DeleteCourse(DeleteCourseRequest) returns (DeleteCourseResponse);
+  rpc GetCoursesByInstructor(GetCoursesByInstructorRequest) returns (CoursesResponse);
+  rpc GetEnrolledCourses(GetEnrolledCoursesRequest) returns (CoursesResponse);
+    // Get Courses by batch
+  rpc GetCoursesByIds(GetCoursesByIdsRequest) returns (GetCoursesByIdsResponse);
+
+
+  // Section CRUD
+  rpc CreateSection(CreateSectionRequest) returns (SectionResponse);
+  rpc GetSection(GetSectionRequest) returns (SectionResponse);
+  rpc UpdateSection(UpdateSectionRequest) returns (SectionResponse);
+  rpc DeleteSection(DeleteSectionRequest) returns (DeleteSectionResponse);
+  rpc GetSectionsByCourse(GetSectionsByCourseRequest) returns (SectionsResponse);
+
+  // Lesson CRUD
+  rpc CreateLesson(CreateLessonRequest) returns (LessonResponse);
+  rpc GetLesson(GetLessonRequest) returns (LessonResponse);
+  rpc UpdateLesson(UpdateLessonRequest) returns (LessonResponse);
+  rpc DeleteLesson(DeleteLessonRequest) returns (DeleteLessonResponse);
+  rpc GetLessonsBySection(GetLessonsBySectionRequest) returns (LessonsResponse);
+
+  // Quiz CRUD
+  rpc CreateQuiz(CreateQuizRequest) returns (QuizResponse);
+  rpc GetQuiz(GetQuizRequest) returns (QuizResponse);
+  rpc UpdateQuiz(UpdateQuizRequest) returns (QuizResponse);
+  rpc DeleteQuiz(DeleteQuizRequest) returns (DeleteQuizResponse);
+  rpc GetQuizzesByCourse(GetQuizzesByCourseRequest) returns (QuizzesResponse);
+
+  // Enrollment CRUD
+  rpc CreateEnrollment(CreateEnrollmentRequest) returns (EnrollmentResponse);
+  rpc GetEnrollment(GetEnrollmentRequest) returns (EnrollmentResponse);
+  rpc UpdateEnrollment(UpdateEnrollmentRequest) returns (EnrollmentResponse);
+  rpc DeleteEnrollment(DeleteEnrollmentRequest) returns (DeleteEnrollmentResponse);
+  rpc GetEnrollmentsByUser(GetEnrollmentsByUserRequest) returns (EnrollmentsResponse);
+  rpc GetEnrollmentsByCourse(GetEnrollmentsByCourseRequest) returns (EnrollmentsResponse);
+
+  // Progress CRUD
+  rpc CreateProgress(CreateProgressRequest) returns (ProgressResponse);
+  rpc GetProgress(GetProgressRequest) returns (ProgressResponse);
+  rpc UpdateProgress(UpdateProgressRequest) returns (ProgressResponse);
+  rpc DeleteProgress(DeleteProgressRequest) returns (DeleteProgressResponse);
+  rpc GetProgressByEnrollment(GetProgressByEnrollmentRequest) returns (ProgressesResponse);
+
+  // Review CRUD
+  rpc CreateReview(CreateReviewRequest) returns (ReviewResponse);
+  rpc GetReview(GetReviewRequest) returns (ReviewResponse);
+  rpc UpdateReview(UpdateReviewRequest) returns (ReviewResponse);
+  rpc DeleteReview(DeleteReviewRequest) returns (DeleteReviewResponse);
+  rpc GetReviewsByCourse(GetReviewsByCourseRequest) returns (ReviewsResponse);
+}
+
+// Pagination and Sorting Message
+message Pagination {
+  int32 page = 1; // 1-based page number
+  int32 page_size = 2; // Number of items per page
+  optional string sort_by = 3; // Field to sort by (e.g., "created_at")
+  optional string sort_order = 4; // "ASC" or "DESC"
+}
+
+message CourseFilters {
+   optional string search = 1;
+   repeated string category = 2;
+   repeated string level = 3;
+   optional int32 minPrice = 4;
+   optional int32 maxPrice = 5;
+   optional int32 rating = 6;
+}
+
+message GetCoursesParams {
+  Pagination pagination = 1; 
+  CourseFilters filters = 2;
+}
+
+// Example usage in a higher-level message:
+message GetCoursesRequest {
+  GetCoursesParams params = 1; 
+}
+
+message Instructor {
+  string id = 1;
+  string name = 2;
+  optional string avatar = 3;
+  optional string email = 4;
+}
+
+
+// Course Messages
+message CreateCourseRequest {
+  string title = 1;
+  repeated string  topics = 2;
+  string instructor_id = 3;
+  Instructor instructor = 12;
+  string sub_title = 4;
+  string category = 5;
+  string sub_category = 6;
+  string language = 7;
+  string level = 8;
+  string subtitle_language = 9;
+  string duration_value = 10;
+  string duration_unit = 11;
+}
+
+message GetCourseRequest {
+  string course_id = 1;
+}
+
+message GetCoursesByIdsRequest {
+  repeated string course_ids = 1;
+}
+
+message GetCoursesByIdsResponse {
+  oneof result {
+     CoursesResponse success = 1;
+     Error error = 2;
+  }
+}
+
+message GetCourseBySlugRequest {
+  string slug = 1;
+}
+
+
+message UpdateCourseRequest {
+  optional string title = 1;
+  repeated string topics = 2;
+  optional string sub_title = 4;
+  optional string category = 5;
+  optional string sub_category = 6;
+  optional string language = 7;
+  optional string level = 8;
+  optional string subtitle_language = 9;
+  optional string duration_value = 10;
+  optional string duration_unit = 11;
+  string course_id = 12;
+  string user_id = 22;
+  optional string description = 13;
+  repeated string learning_outcomes = 14;
+  repeated string target_audience = 15;
+  repeated string requirements = 16;
+  optional string thumbnail = 17;
+  optional string trailer = 18;
+  optional string status = 23;
+  optional int32 price = 19;
+  optional int32 discount_price = 20;
+  optional string currency = 3;
+}
+
+message DeleteCourseRequest {
+  string course_id = 1;
+  string user_id = 2;
+
+}
+
+message GetCoursesByInstructorRequest {
+  string instructor_id = 1;
+  Pagination pagination = 2;
+}
+
+message GetEnrolledCoursesRequest {
+  string user_id = 1;
+  Pagination pagination = 2;
+}
+
+message CourseData {
+  string id = 12;
+  optional string title = 1;
+  repeated string  topics = 2;
+  optional string instructor_id = 3;
+  optional string sub_title = 4;
+  optional string category = 5;
+  optional string sub_category = 6;
+  optional string language = 7;
+  optional string subtitle_language = 8;
+  optional string level = 9;
+  optional string duration_value = 10;
+  optional string duration_unit = 11;
+  optional string description = 13;
+  repeated string learning_outcomes = 14;
+  repeated string target_audience = 15;
+  repeated string requirements = 16;
+  optional string thumbnail = 17;
+  optional string trailer = 18;
+  optional string status = 27;
+  optional string slug = 28;
+  optional int32 rating = 29;
+  optional int32 numberOfRating = 30;
+  optional int32 enrollments = 31;
+  repeated SectionData sections = 19;
+  string created_at = 21;
+  string updated_at = 22;
+  optional string deleted_at = 20;
+  optional int32 price = 23;
+  optional int32 discount_price = 24;
+  optional string currency = 25;
+  optional Instructor instructor = 26;
+}
+
+message CourseResponse {
+  oneof result {
+    CourseData course = 1;
+    Error error = 2;
+  }
+}
+
+message CoursesData {
+  repeated CourseData courses = 1;
+  int32 total = 2;
+}
+
+message CoursesResponse {
+  oneof result {
+    CoursesData courses = 1;
+    Error error = 2;
+  }
+}
+
+message DeleteCourseResponse {
+  oneof result {
+    DeleteSuccess success = 1;
+    Error error = 2;
+  }
+}
+
+message DeleteSuccess {
+  bool deleted = 1;
+}
+
+// Section Messages
+message CreateSectionRequest {
+  string course_id = 1;
+  string user_id = 11;
+  string title = 2;
+  optional string description = 3;
+  int32 order = 4;
+  bool is_published = 5;
+}
+
+message GetSectionRequest {
+  string section_id = 1;
+}
+
+message UpdateSectionRequest {
+  string section_id = 1;
+  string user_id = 11;
+  string course_id = 10;
+  string title = 2;
+  string description = 3;
+  bool is_published = 5;
+  int32 order = 4;
+}
+
+message DeleteSectionRequest {
+  string section_id = 1;
+  string course_id = 3;
+  string user_id = 2;
+}
+
+message GetSectionsByCourseRequest {
+  string course_id = 1;
+}
+
+message SectionData {
+  string id = 1;
+  string course_id = 2;
+  string title = 3;
+  repeated LessonData lessons = 4;
+  string created_at = 5;
+  string updated_at = 6;
+  optional string deleted_at = 7;
+  string description = 8;
+  bool is_published = 9;
+  int32 order = 10;
+  QuizData quiz = 11;
+}
+
+message SectionResponse {
+  oneof result {
+    SectionData section = 1;
+    Error error = 2;
+  }
+}
+
+message SectionsData {
+  repeated SectionData sections = 1;
+}
+
+message SectionsResponse {
+  oneof result {
+    SectionsData sections = 1;
+    Error error = 2;
+  }
+}
+
+message DeleteSectionResponse {
+  oneof result {
+    DeleteSuccess success = 1;
+    Error error = 2;
+  }
+}
+
+// Lesson Messages
+message CreateLessonRequest {
+  string section_id = 2;
+  string course_id = 1;
+  string user_id = 21;
+  optional bool is_preview = 3;
+  optional string description = 4;
+  optional int32 estimated_duration = 5; 
+  optional int32 order = 6;
+  optional string title = 7;
+  optional bool is_published = 8; 
+  optional string content_type = 9;
+  optional string content_url = 10;
+  ContentMetaData metadata = 11;
+}
+
+message GetLessonRequest {
+  string lesson_id = 1;
+  string courseId = 2;
+}
+
+message UpdateLessonRequest {
+  string lesson_id = 1;
+  string course_id = 21;
+  string user_id = 20;
+  string section_id = 2;
+  optional bool is_preview = 3;
+  optional string description = 4;
+  optional int32 estimated_duration = 5; 
+  optional int32 order = 6;
+  optional string title = 7;
+  optional bool is_published = 8; 
+  optional string content_type = 9;
+  optional string content_url = 10;
+  ContentMetaData metadata = 11;
+}
+
+message ContentMetaData {
+  optional string title = 1;
+  optional string file_name = 2;
+  optional string mime_type = 3;
+  optional string file_size = 4;
+  optional string url = 5;
+}
+message DeleteLessonRequest {
+  string lesson_id = 1;
+  string course_id = 12;
+  string user_id = 20;
+}
+
+message GetLessonsBySectionRequest {
+  string section_id = 1;
+}
+
+message LessonData {
+  string id = 1;
+  string section_id = 2;
+  bool is_preview = 3;
+  string description = 4;
+  int32 estimated_duration = 5; 
+  int32 order = 6;
+  string title = 7;
+  bool is_published = 8; 
+  string content_type = 9;
+  string content_url = 10;
+  ContentMetaData metadata = 11;
+  string created_at = 12;
+  string updated_at = 13;
+  optional string deleted_at = 14;
+}
+
+message LessonResponse {
+  oneof result {
+    LessonData lesson = 1;
+    Error error = 2;
+  }
+}
+
+message LessonsData {
+  repeated LessonData lessons = 1;
+}
+
+message LessonsResponse {
+  oneof result {
+    LessonsData lessons = 1;
+    Error error = 2;
+  }
+}
+
+message DeleteLessonResponse {
+  oneof result {
+    DeleteSuccess success = 1;
+    Error error = 2;
+  }
+}
+
+// Quiz Messages
+// MCQ Question structure
+message Question {
+  string id = 9;
+  string type = 1;
+  optional int32 points = 2;
+  optional int32 time_limit = 6;
+  string question = 3;
+  bool required = 4;
+  repeated string options = 7;
+  string correct_answer = 8; // Index of the correct option (0-based)
+  optional string explanation = 5; // Optional explanation for the correct answer
+}
+
+message CreateQuizRequest {
+  string course_id = 1;
+  string user_id = 20;
+  string section_id = 3;
+  optional string description = 9;
+  string title = 8;
+  bool isRequired = 7;
+  int32 time_limit = 4;
+  int32 passing_score = 5;
+  int32 max_attempts = 2;
+  repeated Question questions = 6;
+ 
+}
+
+message GetQuizRequest {
+  string quiz_id = 1;
+}
+
+message UpdateQuizRequest {
+  string quiz_id = 1;
+  string course_id = 12;
+  string user_id = 20;
+  string description = 3;
+  string title = 8;
+  bool isRequired = 7;
+  int32 time_limit = 4;
+  int32 passing_score = 5;
+  int32 max_attempts = 2;
+  repeated Question questions = 6;
+}
+
+message DeleteQuizRequest {
+  string quiz_id = 1;
+  string course_id = 2;
+  string user_id = 20;
+}
+
+message GetQuizzesByCourseRequest {
+  string course_id = 1;
+}
+
+message QuizData {
+  string id = 1;
+  string course_id = 2;
+  string section_id = 11;
+  string title = 3;
+  optional string description = 4;
+  int32 time_limit = 5;
+  int32 passing_score = 6;
+  repeated Question questions = 7;
+  string created_at = 8;
+  string updated_at = 9;
+  optional string deleted_at = 10;
+}
+
+message QuizResponse {
+  oneof result {
+    QuizData quiz = 1;
+    Error error = 2;
+  }
+}
+
+message QuizzesData {
+  repeated QuizData quizzes = 1;
+}
+
+message QuizzesResponse {
+  oneof result {
+    QuizzesData quizzes = 1;
+    Error error = 2;
+  }
+}
+
+message DeleteQuizResponse {
+  oneof result {
+    DeleteSuccess success = 1;
+    Error error = 2;
+  }
+}
+
+// Enrollment Messages
+message CreateEnrollmentRequest {
+  string user_id = 1;
+  string course_id = 2;
+}
+
+message GetEnrollmentRequest {
+  string enrollment_id = 1;
+}
+
+message UpdateEnrollmentRequest {
+  string enrollment_id = 1;
+  string status = 2;
+}
+
+message DeleteEnrollmentRequest {
+  string enrollment_id = 1;
+}
+
+message GetEnrollmentsByUserRequest {
+  string user_id = 1;
+  Pagination pagination = 2;
+}
+
+message GetEnrollmentsByCourseRequest {
+  string course_id = 1;
+  Pagination pagination = 2;
+}
+
+message EnrollmentData {
+  string id = 1;
+  string user_id = 2;
+  string course_id = 3;
+  string status = 4;
+  double progress = 5;
+  string enrolled_at = 6;
+  string completed_at = 7;
+  string created_at = 8;
+  string updated_at = 9;
+  optional string deleted_at = 10;
+}
+
+message EnrollmentResponse {
+  oneof result {
+    EnrollmentData enrollment = 1;
+    Error error = 2;
+  }
+}
+
+message EnrollmentsData {
+  repeated EnrollmentData enrollments = 1;
+}
+
+message EnrollmentsResponse {
+  oneof result {
+    EnrollmentsData enrollments = 1;
+    Error error = 2;
+  }
+}
+
+message DeleteEnrollmentResponse {
+  oneof result {
+    DeleteSuccess success = 1;
+    Error error = 2;
+  }
+}
+
+// Progress Messages
+message CreateProgressRequest {
+  string enrollment_id = 1;
+  string lesson_id = 2;
+  double progress = 3;
+}
+
+message GetProgressRequest {
+  string progress_id = 1;
+}
+
+message UpdateProgressRequest {
+  string progress_id = 1;
+  double progress = 2;
+  bool completed = 3;
+}
+
+message DeleteProgressRequest {
+  string progress_id = 1;
+}
+
+message GetProgressByEnrollmentRequest {
+  string enrollment_id = 1;
+}
+
+message ProgressData {
+  string id = 1;
+  string enrollment_id = 2;
+  string lesson_id = 3;
+  optional string deleted_at = 4;
+  bool completed = 5;
+  string completed_at = 6;
+  string created_at = 7;
+  string updated_at = 8;
+}
+
+message ProgressResponse {
+  oneof result {
+    ProgressData progress = 1;
+    Error error = 2;
+  }
+}
+
+message ProgressesData {
+  repeated ProgressData progresses = 1;
+}
+
+message ProgressesResponse {
+  oneof result {
+    ProgressesData progresses = 1;
+    Error error = 2;
+  }
+}
+
+message DeleteProgressResponse {
+  oneof result {
+    DeleteSuccess success = 1;
+    Error error = 2;
+  }
+}
+
+// Review Messages
+message CreateReviewRequest {
+  string user_id = 1;
+  string course_id = 2;
+  int32 rating = 3;
+  string comment = 4;
+}
+
+message GetReviewRequest {
+  string review_id = 1;
+}
+
+message UpdateReviewRequest {
+  string review_id = 1;
+  string user_id = 4;
+  int32 rating = 2;
+  string comment = 3;
+}
+
+message DeleteReviewRequest {
+  string review_id = 1;
+  string user_id = 2;
+}
+
+message GetReviewsByCourseRequest {
+  string course_id = 1;
+  Pagination pagination = 2;
+}
+
+message ReviewData {
+  string id = 1;
+  string user_id = 2;
+  string course_id = 3;
+  int32 rating = 4;
+  string comment = 5;
+  string created_at = 6;
+  string updated_at = 7;
+  // optional string deleted_at = 8;
+}
+
+message ReviewResponse {
+  oneof result {
+    ReviewData review = 1;
+    Error error = 2;
+  }
+}
+
+message ReviewsData {
+  repeated ReviewData reviews = 1;
+}
+
+message ReviewsResponse {
+  oneof result {
+    ReviewsData reviews = 1;
+    Error error = 2;
+  }
+}
+
+message DeleteReviewResponse {
+  oneof result {
+    DeleteSuccess success = 1;
+    Error error = 2;
+  }
+}
