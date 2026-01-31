@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package course.common;
+
+// Generic Error Message
+message Error {
+  string code = 1; // e.g., "RESOURCE_NOT_FOUND", "INVALID_ARGUMENT", "UNAUTHENTICATED"
+  string message = 2;
+  repeated ErrorDetail details = 3; // Optional detailed error information
+}
+
+message ErrorDetail {
+  optional string field = 1;
+  string message = 2;
+}
+
+message User {
+  string id = 1;
+  string name = 2;
+  optional string avatar = 3;
+  optional string email = 4;
+}
+
+
+// Pagination and Sorting Message
+message Pagination {
+  int32 page = 1; // 1-based page number
+  int32 page_size = 2; // Number of items per page
+  optional string sort_by = 3; // Field to sort by (e.g., "created_at")
+  optional string sort_order = 4; // "ASC" or "DESC"
+}
+
+message DeleteSuccess {
+  bool deleted = 1;
+}

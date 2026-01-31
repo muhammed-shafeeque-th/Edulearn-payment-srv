@@ -1,0 +1,225 @@
+syntax = "proto3";
+
+package course;
+
+import "course/common.proto";
+import "course/types/section.proto";
+
+message CourseFilters {
+   optional string search = 1;
+   repeated string category = 2;
+   repeated string level = 3;
+   optional int32 minPrice = 4;
+   optional int32 maxPrice = 5;
+   optional int32 rating = 6;
+   optional string status = 7;
+}
+
+message GetCoursesParams {
+  course.common.Pagination pagination = 1; 
+  CourseFilters filters = 2;
+}
+
+// Example usage in a higher-level e messag = 1
+message GetCoursesRequest {
+  GetCoursesParams params = 1; 
+}
+
+
+
+
+// Course Messages
+message CreateCourseRequest {
+  string title = 1;
+  repeated string  topics = 2;
+  string instructor_id = 3;
+  course.common.User instructor = 12;
+  string sub_title = 4;
+  string category = 5;
+  string sub_category = 6;
+  string language = 7;
+  string level = 8;
+  string subtitle_language = 9;
+  string duration_value = 10;
+  string duration_unit = 11;
+}
+
+message GetCourseRequest {
+  string course_id = 1;
+}
+
+message GetCoursesByIdsRequest {
+  repeated string course_ids = 1;
+}
+
+message GetCoursesByIdsResponse {
+  oneof result {
+     CoursesListResponse success = 1;
+     course.common.Error error = 2;
+  }
+}
+
+message GetCourseBySlugRequest {
+  string slug = 1;
+}
+
+
+message UpdateCourseRequest {
+  optional string title = 1;
+  repeated string topics = 2;
+  optional string sub_title = 4;
+  optional string category = 5;
+  optional string sub_category = 6;
+  optional string language = 7;
+  optional string level = 8;
+  optional string subtitle_language = 9;
+  optional string duration_value = 10;
+  optional string duration_unit = 11;
+  string course_id = 12;
+  string user_id = 22;
+  optional string description = 13;
+  repeated string learning_outcomes = 14;
+  repeated string target_audience = 15;
+  repeated string requirements = 16;
+  optional string thumbnail = 17;
+  optional string trailer = 18;
+  optional int32 price = 19;
+  optional int32 discount_price = 20;
+  optional string currency = 3;
+}
+
+message DeleteCourseRequest {
+  string course_id = 1;
+  string user_id = 2;
+  bool is_admin  = 3;
+
+}
+message UnPublishCourseRequest {
+  string course_id = 1;
+  optional string user_id = 2;
+  bool is_admin  = 3;
+
+}
+message PublishCourseRequest {
+  string course_id = 1;
+  optional string user_id = 2;
+  bool is_admin  = 3;
+
+}
+
+message GetCoursesByInstructorRequest {
+  string instructor_id = 1;
+  course.common.Pagination pagination = 2;
+}
+
+message GetEnrolledCoursesRequest {
+  string user_id = 1;
+  course.common.Pagination pagination = 2;
+}
+
+message CourseData {
+  string id = 12;
+  string title = 1;
+  repeated string  topics = 2;
+  string instructor_id = 3;
+  optional string sub_title = 4;
+  string category = 5;
+  optional string sub_category = 6;
+  optional string language = 7;
+  optional string subtitle_language = 8;
+  optional string level = 9;
+  optional string duration_value = 10;
+  optional string duration_unit = 11;
+  optional string description = 13;
+  repeated string learning_outcomes = 14;
+  repeated string target_audience = 15;
+  repeated string requirements = 16;
+  optional string thumbnail = 17;
+  optional string trailer = 18;
+  optional string status = 27;
+  optional string slug = 28;
+  optional int32 rating = 29;
+  optional int32 number_of_rating = 30;
+  optional int32 students = 31;
+  repeated course.section.SectionData sections = 19;
+  string created_at = 21;
+  string updated_at = 22;
+  optional string deleted_at = 20;
+  optional int32 price = 23;
+  optional int32 discount_price = 24;
+  optional string currency = 25;
+  optional course.common.User instructor = 26;
+}
+
+message CourseMetadata {
+  string id = 12;
+  string title = 1;
+  repeated string topics = 2;
+   string instructor_id = 3;
+   string sub_title = 4;
+   string category = 5;
+   string sub_category = 6;
+   string language = 7;
+   string subtitle_language = 8;
+   string level = 9;
+   string duration_value = 10;
+   string duration_unit = 11;
+  optional string description = 13;
+  repeated string learning_outcomes = 14;
+  repeated string target_audience = 15;
+  repeated string requirements = 16;
+  optional string thumbnail = 17;
+  optional string trailer = 18;
+  string status = 27;
+  string slug = 28;
+  int32 rating = 29;
+  int32 number_of_rating = 30;
+  int32 students = 31;
+  string created_at = 21;
+  string updated_at = 22;
+  optional string deleted_at = 20;
+  optional int32 price = 23;
+  int32 no_of_lessons = 19;
+  int32 no_of_sections = 40;
+  int32 no_of_quizzes = 41;
+  optional int32 discount_price = 24;
+  optional string currency = 25;
+  course.common.User instructor = 26;
+}
+
+message CourseResponse {
+  oneof result {
+    CourseData course = 1;
+    course.common.Error error = 2;
+  }
+}
+
+message CoursesData {
+  repeated CourseData courses = 1;
+  int32 total = 2;
+}
+message CoursesListData {
+  repeated CourseMetadata courses = 1;
+  int32 total = 2;
+}
+
+message CoursesResponse {
+  oneof result {
+    CoursesData courses = 1;
+    course.common.Error error = 2;
+  }
+}
+message CoursesListResponse {
+  oneof result {
+    CoursesListData courses = 1;
+    course.common.Error error = 2;
+  }
+}
+
+message DeleteCourseResponse {
+  oneof result {
+    course.common.DeleteSuccess success = 1;
+    course.common.Error error = 2;
+  }
+}
+

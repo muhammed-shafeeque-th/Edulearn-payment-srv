@@ -1,0 +1,179 @@
+syntax = "proto3";
+
+package course.enrollment;
+
+import "course/common.proto";
+import "course/types/course.proto";
+
+
+
+message EnrollmentData {
+  string id = 1;
+  string user_id = 2;
+  string course_id = 3;
+  string status = 4;
+  double progress = 5;
+  string enrolled_at = 6;
+  string completed_at = 7;
+  string created_at = 8;
+  string updated_at = 9;
+  optional string deleted_at = 10;
+  EnrollmentCourseData course = 11;
+}
+message EnrollmentCourseData {
+  string id = 1;
+  string title = 2;
+  int32 rating = 3;
+  string thumbnail = 4;
+  string category = 5;
+  string level = 6;
+  int32 lessonsCount = 7;
+  course.common.User instructor = 8;
+
+}
+
+// Enrollment Messages
+message EnrollmentDetail {
+   string enrollment_id = 1;
+   string user_id = 2;
+   string course_id = 3;
+   int32 progress_percent = 4;
+   string status = 5;
+   string enrolled_at = 6;
+   repeated EnrollmentSection sections = 7;
+}
+
+message EnrollmentSection {
+   string id = 1;
+   string title = 2;
+   optional string description = 3;
+   int32 order = 4;
+   bool is_published = 5;
+   repeated LessonProgress lessons = 7;
+   optional QuizProgress quiz = 9;
+}
+
+message LessonProgress {
+   string id = 1;
+   string title = 2;
+   int32 order = 3;
+  optional int32 duration= 4; // second ?s = 1
+   bool completed = 5;
+  optional string completed_at = 10;
+}
+
+message QuestionOption {
+  string value = 1;
+}
+
+message QuizQuestion {
+    string id = 1;
+    bool requirePassingScore = 2;
+    repeated QuestionOption options  = 7;
+    optional int32 timeLimit = 3;
+    string question = 4;
+    string type = 22;
+    optional string explanation = 5;
+    optional int32 score = 6;
+    optional string correct_answer  = 11;
+  
+}
+
+message QuizProgress {
+  string id = 1;
+  string title = 3;
+  optional string description = 4;
+  repeated QuizQuestion questions = 5;
+  optional int32 time_limit = 6;
+  bool require_passing_score = 7;
+  optional int32 passing_score = 8;
+  bool completed = 9;
+  optional bool  passed = 10;
+  optional int32 score = 11;
+  optional string  completed_at = 12;
+}
+
+message CreateEnrollmentRequest {
+  string user_id = 1;
+  string course_id = 2;
+}
+
+message GetEnrollmentRequest {
+  string enrollment_id = 1;
+  string user_id = 2;
+}
+
+message UpdateEnrollmentRequest {
+  string enrollment_id = 1;
+  string status = 2;
+}
+
+message DeleteEnrollmentRequest {
+  string enrollment_id = 1;
+}
+message CheckEnrollmentRequest {
+  string enrollment_id = 1;
+  string user_id = 2;
+}
+message CheckCourseEnrollmentRequest {
+  string course_id = 1;
+  string user_id = 2;
+}
+
+message GetEnrollmentsByUserRequest {
+  string user_id = 1;
+  course.common.Pagination pagination = 2;
+}
+
+message GetEnrollmentsByCourseRequest {
+  string course_id = 1;
+  course.common.Pagination pagination = 2;
+}
+
+
+message EnrollmentResponse {
+  oneof result {
+    EnrollmentData enrollment = 1;
+    course.common.Error error = 2;
+  }
+}
+
+message EnrollmentsData {
+  repeated EnrollmentData enrollments = 1;
+  int32 total = 2;
+}
+
+message EnrollmentsResponse {
+  oneof result {
+    EnrollmentsData enrollments = 1;
+    course.common.Error error = 2;
+  }
+}
+message GetEnrollmentResponse {
+  oneof result {
+    EnrollmentData enrollment = 1;
+    course.common.Error error = 2;
+  }
+}
+message GetEnrollmentDetailsResponse {
+  oneof result {
+    EnrollmentDetail enrollment = 1;
+    course.common.Error error = 2;
+  }
+}
+
+message DeleteEnrollmentResponse {
+  oneof result {
+    course.common.DeleteSuccess success = 1;
+    course.common.Error error = 2;
+  }
+}
+
+
+
+message CheckEnrollmentResponse {
+  oneof result {
+    bool enrolled = 1; // true if the user is enrolled in the course, false otherwise
+    course.common.Error error = 2;
+  }
+}

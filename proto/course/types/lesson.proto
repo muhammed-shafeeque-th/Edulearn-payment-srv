@@ -1,0 +1,100 @@
+syntax = "proto3";
+
+package course.lesson;
+
+import "course/common.proto";
+
+// Lesson Messages
+message CreateLessonRequest {
+  string section_id = 2;
+  string course_id = 1;
+  string user_id = 21;
+  optional bool is_preview = 3;
+  optional string description = 4;
+  optional int32 estimated_duration = 5; 
+  optional int32 order = 6;
+  optional string title = 7;
+  optional bool is_published = 8; 
+  optional string content_type = 9;
+  optional string content_url = 10;
+  ContentMetaData metadata = 11;
+}
+
+message GetLessonRequest {
+  string lesson_id = 1;
+}
+
+message UpdateLessonRequest {
+  string lesson_id = 1;
+  string course_id = 21;
+  string user_id = 20;
+  string section_id = 2;
+  optional bool is_preview = 3;
+  optional string description = 4;
+  optional int32 estimated_duration = 5; 
+  optional int32 order = 6;
+  optional string title = 7;
+  optional bool is_published = 8; 
+  optional string content_type = 9;
+  optional string content_url = 10;
+  ContentMetaData metadata = 11;
+}
+
+message ContentMetaData {
+  optional string title = 1;
+  optional string file_name = 2;
+  optional string mime_type = 3;
+  optional string file_size = 4;
+  optional string url = 5;
+}
+message DeleteLessonRequest {
+  string lesson_id = 1;
+  string course_id = 12;
+  string user_id = 20;
+}
+
+message GetLessonsBySectionRequest {
+  string section_id = 1;
+}
+
+message LessonData {
+  string id = 1;
+  string section_id = 2;
+  bool is_preview = 3;
+  string description = 4;
+  int32 estimated_duration = 5; 
+  int32 order = 6;
+  string title = 7;
+  bool is_published = 8; 
+  string content_type = 9;
+  string content_url = 10;
+  ContentMetaData metadata = 11;
+  string created_at = 12;
+  string updated_at = 13;
+  optional string deleted_at = 14;
+}
+
+message LessonResponse {
+  oneof result {
+    LessonData lesson = 1;
+    course.common.Error error = 2;
+  }
+}
+
+message LessonsData {
+  repeated LessonData lessons = 1;
+}
+
+message LessonsResponse {
+  oneof result {
+    LessonsData lessons = 1;
+    course.common.Error error = 2;
+  }
+}
+
+message DeleteLessonResponse {
+  oneof result {
+    course.common.DeleteSuccess success = 1;
+    course.common.Error error = 2;
+  }
+}

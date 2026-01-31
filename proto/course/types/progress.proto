@@ -1,0 +1,176 @@
+syntax = "proto3";
+
+package course.progress;
+
+import "course/common.proto";
+
+
+
+
+message EnrollmentProgressData {
+   string enrollmentId = 1;
+   string courseId = 2;
+   string userId = 3;
+   int32 overallProgress = 4;
+   int32 completedUnits = 5;
+   int32 totalUnits = 6;
+   repeated LessonProgress lessons = 7;
+   repeated QuizProgress quizzes = 9;
+}
+
+message LessonProgress {
+   string lessonId = 1;
+   bool completed = 2;
+   optional string completedAt = 3;
+   optional int32 watchTime = 4; // seconds
+   optional int32 duration = 5; // seconds
+   optional int32 progressPercent = 6;
+}
+
+message QuizProgress {
+   string quizId= 1;
+   bool completed= 2;
+  optional int32  score= 3;
+   int32 attempts= 4;
+   bool passed= 5;
+  optional string  completedAt = 6;
+}
+
+message Milestone {
+  string id  = 1;
+  string type = 2;
+  string achievedAt = 3;
+}
+
+/**
+ * Backend DTO: UpdateLessonProgressResponse
+ * Maps to CompleteLessonUseCase response
+ */
+message UpdateLessonProgressResponseData {
+   bool completed = 1;
+   int32 progressPercent = 2;
+  optional Milestone milestone = 3;
+}
+message UpdateLessonProgressResponse {
+  oneof result {
+    UpdateLessonProgressResponseData progress = 1;
+    course.common.Error error = 2;
+  }
+}
+message SubmitQuizAttemptResponse {
+  oneof result {
+    QuizAttemptResponseData progress = 1;
+    course.common.Error error = 2;
+  }
+}
+
+/**
+ * Backend DTO: SubmitQuizAttemptResponse
+ * Maps to SubmitQuizAttemptUseCase response
+ */
+message QuizAttemptResponseData {
+  int32 score = 1;
+  bool passed = 2 ;
+  bool completed = 3 ;
+  int32 attempts = 4 ;
+  optional Milestone milestone = 5;
+}
+
+/**
+ * Request payloads
+ */
+message UpdateLessonProgressRequest {
+  string enrollment_id = 4;
+  string user_id = 5;
+  string lesson_id = 6;
+   int32 currentTime = 1; // seconds
+   int32 duration = 2; // seconds
+  string event = 3;
+}
+
+message SubmitQuizAttemptRequest {
+  string enrollment_id = 4;
+  string user_id = 5;
+  string quiz_id = 6;
+  repeated QuizAnswers answers = 1; // quiz-specific answer format
+  int32 timeSpent = 2 ; // seconds
+}
+
+
+message QuizAnswers {
+  string question_id = 1;
+  repeated string answers = 2;
+}
+
+// Progress Messages
+message CreateProgressRequest {
+  string enrollment_id = 1;
+  string lesson_id = 2;
+  double progress = 3;
+}
+message GetEnrollmentDetailsRequest {
+  string enrollment_id = 1;
+  string user_id = 2;
+}
+
+message GetProgressRequest {
+  string progress_id = 1;
+}
+
+message UpdateProgressRequest {
+  string progress_id = 1;
+  double progress = 2;
+  bool completed = 3;
+}
+
+message DeleteProgressRequest {
+  string progress_id = 1;
+}
+
+message GetProgressByEnrollmentRequest {
+  string enrollment_id = 1;
+  string user_id = 2;
+
+}
+
+message ProgressData {
+  string id = 1;
+  string enrollment_id = 2;
+  string lesson_id = 3;
+  optional string deleted_at = 4;
+  bool completed = 5;
+  string completed_at = 6;
+  string created_at = 7;
+  string updated_at = 8;
+}
+
+message ProgressResponse {
+  oneof result {
+    ProgressData progress = 1;
+    course.common.Error error = 2;
+  }
+}
+message EnrollmentProgressResponse {
+  oneof result {
+    EnrollmentProgressData progress = 1;
+    course.common.Error error = 2;
+  }
+}
+
+message ProgressesData {
+  repeated ProgressData progresses = 1;
+}
+
+message ProgressesResponse {
+  oneof result {
+    ProgressesData progresses = 1;
+    course.common.Error error = 2;
+  }
+}
+
+message DeleteProgressResponse {
+  oneof result {
+    course.common.DeleteSuccess success = 1;
+    course.common.Error error = 2;
+  }
+}

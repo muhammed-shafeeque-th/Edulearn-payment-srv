@@ -1,0 +1,80 @@
+syntax = "proto3";
+
+package course.section;
+
+import "course/common.proto";
+import "course/types/quiz.proto";
+import "course/types/lesson.proto";
+
+// Section Messages
+message CreateSectionRequest {
+  string course_id = 1;
+  string user_id = 11;
+  string title = 2;
+  optional string description = 3;
+  int32 order = 4;
+  bool is_published = 5;
+}
+
+message GetSectionRequest {
+  string section_id = 1;
+}
+
+message UpdateSectionRequest {
+  string section_id = 1;
+  string user_id = 11;
+  string course_id = 10;
+  string title = 2;
+  string description = 3;
+  bool is_published = 5;
+  int32 order = 4;
+}
+
+message DeleteSectionRequest {
+  string section_id = 1;
+  string course_id = 3;
+  string user_id = 2;
+}
+
+message GetSectionsByCourseRequest {
+  string course_id = 1;
+}
+
+message SectionData {
+  string id = 1;
+  string course_id = 2;
+  string title = 3;
+  repeated course.lesson.LessonData lessons = 4;
+  string created_at = 5;
+  string updated_at = 6;
+  optional string deleted_at = 7;
+  string description = 8;
+  bool is_published = 9;
+  int32 order = 10;
+  course.quiz.QuizData quiz = 11;
+}
+
+message SectionResponse {
+  oneof result {
+    SectionData section = 1;
+    course.common.Error error = 2;
+  }
+}
+
+message SectionsData {
+  repeated SectionData sections = 1;
+}
+
+message SectionsResponse {
+  oneof result {
+    SectionsData sections = 1;
+    course.common.Error error = 2;
+  }
+}
+
+message DeleteSectionResponse {
+  oneof result {
+    course.common.DeleteSuccess success = 1;
+    course.common.Error error = 2;
+  }
+}
