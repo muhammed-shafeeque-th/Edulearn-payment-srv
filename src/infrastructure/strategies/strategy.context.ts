@@ -1,13 +1,17 @@
 import { Injectable } from '@nestjs/common';
-import { PaymentStrategy } from '@domain/strategies/payment-strategy.interface';
+import { PaymentStrategy } from '@application/adaptors/payment-strategy.interface';
 
 type CreatePaymentType = PaymentStrategy['createPayment'];
 type PaymentArgs = Parameters<CreatePaymentType>;
-type PaymentReturn<T> = Promise<T>;
+type PaymentReturn = ReturnType<CreatePaymentType>;
 
-type CreateRefundType = PaymentStrategy['createRefund'];
+type CreateRefundType = PaymentStrategy['refundPayment'];
 type RefundArgs = Parameters<CreateRefundType>;
 type RefundReturn = ReturnType<CreateRefundType>;
+
+type ResolvePaymentType = PaymentStrategy['resolvePayment'];
+type ResolveArgs = Parameters<ResolvePaymentType>;
+type ResolveReturn = ReturnType<ResolvePaymentType>;
 
 @Injectable()
 export class StrategyContext {
@@ -18,7 +22,7 @@ export class StrategyContext {
     this.strategy = strategy;
   }
 
-  async executePayment<T>(...args: PaymentArgs): Promise<PaymentReturn<T>> {
+  async createPayment(...args: PaymentArgs): Promise<PaymentReturn> {
     if (!this.strategy) {
       throw new Error('No payment strategy set');
     }
@@ -26,15 +30,34 @@ export class StrategyContext {
     // Forward arguments with correct types
     return this.strategy.createPayment(
       ...(args as PaymentArgs),
-    ) as PaymentReturn<T>;
+    ) as PaymentReturn;
   }
 
-  async executeRefund(...args: RefundArgs): Promise<RefundReturn> {
+  async refundPayment(...args: RefundArgs): Promise<RefundReturn> {
     if (!this.strategy) {
       throw new Error('No payment strategy set');
     }
 
     // Forward arguments with correct types
-    return this.strategy.createRefund(...(args as RefundArgs)) as RefundReturn;
+    return this.strategy.refundPayment(...(args as RefundArgs)) as RefundReturn;
+  }
+
+  async resolvePayment(...args: ResolveArgs): Promise<ResolveReturn> {
+    if (!this.strategy) {
+      throw new Error('No payment strategy set');
+    }
+
+    // Forward arguments with correct types
+    return this.strategy.resolvePayment(
+      ...(args as ResolveArgs),
+    ) as ResolveReturn;
+  }
+  isCurrencySupported(currencyCode: string): boolean {
+    if (!this.strategy) {
+      throw new Error('No payment strategy set');
+    }
+
+    // Forward arguments with correct types
+    return this.strategy.isCurrencySupported(currencyCode);
   }
 }

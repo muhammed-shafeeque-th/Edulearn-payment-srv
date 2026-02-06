@@ -2,9 +2,9 @@ import { Injectable } from '@nestjs/common';
 import { StripePaymentStrategy } from './stripe-payment.strategy';
 import { PayPalPaymentStrategy } from './paypal-payment.strategy';
 import { LoggingService } from '@infrastructure/observability/logging/logging.service';
-import { PaymentStrategy } from '@domain/strategies/payment-strategy.interface';
-import { PaymentGateway } from '@domain/entities/payments';
+import { PaymentStrategy } from '@application/adaptors/payment-strategy.interface';
 import { RazorpayPaymentStrategy } from './razorpay-strategy';
+import { PaymentProvider } from '@domain/entities/payments';
 
 @Injectable()
 export class StrategyFactory {
@@ -15,21 +15,21 @@ export class StrategyFactory {
     private readonly logger: LoggingService,
   ) {}
 
-  getStrategy(gateway: PaymentGateway): PaymentStrategy {
+  getStrategy(gateway: PaymentProvider): PaymentStrategy {
     try {
       switch (gateway) {
-        case PaymentGateway.STRIPE:
-          this.logger.log(`Resolving Stripe strategy`, {
+        case PaymentProvider.STRIPE:
+          this.logger.debug(`Resolving Stripe strategy`, {
             ctx: StrategyFactory.name,
           });
           return this.stripeStrategy as PaymentStrategy;
-        case PaymentGateway.PAYPAL:
-          this.logger.log(`Resolving PayPal strategy`, {
+        case PaymentProvider.PAYPAL:
+          this.logger.debug(`Resolving PayPal strategy`, {
             ctx: StrategyFactory.name,
           });
           return this.paypalStrategy as PaymentStrategy;
-        case PaymentGateway.RAZORPAY:
-          this.logger.log(`Resolving PayPal strategy`, {
+        case PaymentProvider.RAZORPAY:
+          this.logger.debug(`Resolving Razorpay strategy`, {
             ctx: StrategyFactory.name,
           });
           return this.razorpayStrategy as PaymentStrategy;
