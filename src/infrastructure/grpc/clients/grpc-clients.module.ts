@@ -8,9 +8,11 @@ import { GRPC_ORDER_CLIENT_TOKEN } from './order/constants';
 import { OrderClient } from './order/order.client';
 import { GRPC_COURSE_CLIENT_TOKEN } from './course/constants';
 import { CourseClient } from './course/course.client';
+import { RedisModule } from '@infrastructure/redis/redis.module';
 
 @Module({
   imports: [
+    RedisModule,
     ClientsModule.registerAsync({
       clients: [
         {
@@ -19,16 +21,9 @@ import { CourseClient } from './course/course.client';
             transport: Transport.GRPC,
             options: {
               package: 'user_service',
-              protoPath: join(
-                process.cwd(),
-                'src',
-                'infrastructure',
-                'grpc',
-                'protos',
-                'user_service.proto',
-              ),
+              protoPath: join(process.cwd(), 'proto', 'user_service.proto'),
               // protoPath: join(__dirname, '..', 'proto', 'user_service.proto'),
-              url: `0.0.0.0:${config.userGrpcPort}`,
+              url: `${config.userGrpcUrl}`,
             },
           }),
           inject: [AppConfigService],
@@ -39,16 +34,9 @@ import { CourseClient } from './course/course.client';
             transport: Transport.GRPC,
             options: {
               package: 'order_service',
-              protoPath: join(
-                process.cwd(),
-                'src',
-                'infrastructure',
-                'grpc',
-                'protos',
-                'order_service.proto',
-              ),
+              protoPath: join(process.cwd(), 'proto', 'order_service.proto'),
               // protoPath: join(__dirname, '..', 'proto', 'order_service.proto'),
-              url: `0.0.0.0:${config.orderGrpcPort}`,
+              url: `${config.orderGrpcUrl}`,
             },
           }),
           inject: [AppConfigService],
@@ -59,15 +47,11 @@ import { CourseClient } from './course/course.client';
             transport: Transport.GRPC,
             options: {
               package: 'course_service',
-              protoPath: join(
-                process.cwd(),
-                'src',
-                'infrastructure',
-                'grpc',
-                'protos',
-                'course_service.proto',
-              ),
-              url: `0.0.0.0:${config.courseGrpcPort}`,
+              protoPath: join(process.cwd(), 'proto', 'course_service.proto'),
+              url: `${config.courseGrpcUrl}`,
+              loader: {
+                includeDirs: [join(process.cwd(), 'proto')],
+              },
             },
           }),
           inject: [AppConfigService],
