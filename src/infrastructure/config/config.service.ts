@@ -22,13 +22,56 @@ export class AppConfigService {
       `localhost:${this.apiPort}`,
     );
   }
+  get paypalPaymentSuccessUrl(): string {
+    return this.configService.get<string>(
+      'PAYPAL_PAYMENT_SUCCESS_URL',
+      'http://locahost:9000/payment/success',
+    );
+  }
+  get paypalPaymentCancelUrl(): string {
+    return this.configService.get<string>(
+      'PAYPAL_PAYMENT_CANCEL_URL',
+      'http://locahost:9000/payment/cancel',
+    );
+  }
 
   get grpcPort(): number {
     return this.configService.get<number>('GRPC_PORT', 50055);
   }
 
+  get userGrpcUrl(): string {
+    return this.configService.get<string>(
+      'USER_SERVICE_GRPC',
+      'user_srv:50052',
+    );
+  }
+  get courseGrpcUrl(): string {
+    return this.configService.get<string>(
+      'COURSE_SERVICE_GRPC',
+      'course_srv:50053',
+    );
+  }
+  get orderGrpcUrl(): string {
+    return this.configService.get<string>(
+      'ORDER_SERVICE_GRPC',
+      'order_srv:50054',
+    );
+  }
+  get openExchangeAppId(): string {
+    return this.configService.get<string>('OPENEXCHANGE_APP_ID', '');
+  }
+  get openExchangeAllowBase(): boolean {
+    return this.configService.get<boolean>('OPENEXCHANGE_ALLOW_BASE', false);
+  }
+  get exchangeRateHostApiKey(): string {
+    return this.configService.get<string>('EXCHANGERATEHOST_API_KEY', '');
+  }
+
   // Payment gateways config
-  get stripeApiKey(): string {
+  get stripePublishableKey(): string {
+    return this.configService.get<string>('STRIPE_PUBLISHABLE_KEY')!;
+  }
+  get stripeSecretKey(): string {
     return this.configService.get<string>('STRIPE_SECRET_KEY')!;
   }
 
@@ -36,7 +79,7 @@ export class AppConfigService {
     return this.configService.get<string>('PAYPAL_CLIENT_ID')!;
   }
 
-  get razorpayKeySecret(): string {
+  get paypalKeySecret(): string {
     return this.configService.get<string>('PAYPAL_SECRET')!;
   }
 
@@ -106,6 +149,12 @@ export class AppConfigService {
     return this.configService.get<string>(
       'REDIS_URL',
       'redis://localhost:6379/0',
+    );
+  }
+  get redisKeyPrefix(): string {
+    return this.configService.get<string>(
+      'REDIS_KEY_PREFIX',
+      'edulearn:payment:',
     );
   }
 
