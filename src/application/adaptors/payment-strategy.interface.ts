@@ -1,9 +1,6 @@
 import { PaymentProvider } from '@domain/entities/payments';
 import { Money } from '@domain/value-objects/money';
 
-/**
- * Represents the standard result for payment-related operations.
- */
 export interface PaymentResult {
   transactionId: string;
   status: PaymentStatus;
@@ -21,18 +18,12 @@ export interface RefundResult {
   metadata?: any;
 }
 
-/**
- * Represents the result for payment-fail  operations.
- */
 export interface PaymentFailureResult {
   transactionId: string;
   status: PaymentStatus;
   success: boolean;
 }
 
-/**
- * Enum for standardized payment statuses.
- */
 export enum PaymentStatus {
   PENDING = 'PENDING',
   SUCCESS = 'SUCCESS',
@@ -42,9 +33,6 @@ export enum PaymentStatus {
   PARTIALLY_REFUNDED = 'PARTIALLY_REFUNDED',
 }
 
-/**
- * The base structure for a new payment initiation request.
- */
 export interface PaymentRequest {
   userId: string;
   amount: Money;
@@ -63,9 +51,6 @@ export interface PaymentRequest {
   customerEmail?: string;
 }
 
-/**
- * Request structure for processing a refund.
- */
 export interface RefundRequest {
   providerPaymentId: string;
   amount: number;
@@ -74,41 +59,26 @@ export interface RefundRequest {
   reason?: string;
 }
 
-/**
- * Stripe-specific verification request details.
- */
 export interface StripeResolveRequest {
   sessionId: string;
 }
 
-/**
- * Razorpay-specific verification request details.
- */
 export interface RazorpayResolveRequest {
   orderId: string;
   paymentId: string;
   signature: string;
 }
 
-/**
- * Paypal-specific verification request details.
- */
 export interface PaypalResolveRequest {
   providerOrderId: string;
   idempotencyKey: string;
 }
 
-/**
- * Generic structure for Resolveing payment response.
- */
 export interface ResolvePaymentResponse {
   providerStatus: string;
   isVerified: boolean;
 }
 
-/**
- * Session information returned when initiating a Stripe payment.
- */
 export interface StripeSession {
   providerOrderId: string;
   provider: PaymentProvider;
@@ -122,9 +92,6 @@ export interface StripeSession {
   url: string;
 }
 
-/**
- * Session information returned when initiating a Razorpay payment.
- */
 export interface RazorpaySession {
   providerOrderId: string;
   providerAmount: number;
@@ -138,9 +105,6 @@ export interface RazorpaySession {
   currency: string;
 }
 
-/**
- * Session information returned when initiating a Paypal payment.
- */
 export interface PaypalSession {
   providerOrderId: string;
   providerAmount: number;
@@ -152,25 +116,16 @@ export interface PaypalSession {
   approvalLink: string;
 }
 
-/**
- * Generic structure for payment verification request, supporting multiple providers.
- */
 export type ResolvePaymentRequest =
   | StripeResolveRequest
   | RazorpayResolveRequest
   | PaypalResolveRequest;
 
-/**
- * The result of initiating a payment session for any provider.
- */
 export type PaymentSessionResult =
   | StripeSession
   | RazorpaySession
   | PaypalSession;
 
-/**
- * Interface for all payment gateway strategies, enforcing consistency and robustness.
- */
 export interface PaymentStrategy {
   readonly gateway: string;
 
