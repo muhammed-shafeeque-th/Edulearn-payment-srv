@@ -1,57 +1,57 @@
-import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
-import { Kafka, Producer } from 'kafkajs';
+import {
+  Inject,
+  Injectable,
+  OnModuleDestroy,
+  OnModuleInit,
+} from '@nestjs/common';
 import { LoggingService } from 'src/infrastructure/observability/logging/logging.service';
-import { AppConfigService } from '../config/config.service';
 import { TracingService } from '../observability/tracing/trace.service';
-import { IKafkaProducer } from '@application/adaptors/kafka-producer.interface';
+import { ClientKafka } from '@nestjs/microservices';
+import { lastValueFrom } from 'rxjs';
+import { KAFKA_CLIENT } from './constants';
+import {
+  IKafkaProducer,
+  KafkaMessageObject,
+} from '@application/adaptors/kafka-producer.interface';
 
 @Injectable()
-export class IKafkaProducerImpl
+export class KafkaProducerImpl
   implements IKafkaProducer, OnModuleInit, OnModuleDestroy
 {
-  private producer: Producer;
   constructor(
-    private readonly configService: AppConfigService,
+    @Inject(KAFKA_CLIENT) private readonly kafkaClient: ClientKafka,
     private readonly logger: LoggingService,
     private readonly tracer: TracingService,
-  ) {
-    const kafka = new Kafka({
-      clientId: this.configService.kafkaClientId,
-      brokers: this.configService.kafkaBrokers,
-    });
-    this.producer = kafka.producer();
-  }
+  ) {}
 
   async onModuleInit() {
-    await this.producer.connect();
-    this.logger.info(`Kafka Producer connected ${IKafkaProducerImpl.name}`);
+    await this.kafkaClient.connect();
+    this.logger.info(`Kafka client connected ${KafkaProducerImpl.name}`);
   }
 
   async onModuleDestroy() {
-    await this.producer.disconnect();
-    this.logger.info(`Kafka Producer disconnected ${IKafkaProducerImpl.name}`);
+    await this.kafkaClient.close();
+    this.logger.info(`Kafka client disconnected ${KafkaProducerImpl.name}`);
   }
 
-  async produce(topic: string, message: any) {
+  async produce<T = any>(topic: string, message: KafkaMessageObject<T>) {
     return await this.tracer.startActiveSpan(
-      'IKafkaProducerImpl.produce',
+      'KafkaProducerImpl.produce',
       async (span) => {
         try {
           span.setAttribute('kafka.topic', topic);
           span.setAttribute('kafka.message', JSON.stringify(message));
 
-          await this.producer.send({
-            topic,
-            messages: [{ value: JSON.stringify(message) }],
-          });
-          this.logger.info(
-            `Message send to topic ${topic}: ${JSON.stringify(message)}`,
-            { ctx: IKafkaProducerImpl.name },
-          );
+          // emit() returns an Observable, so we convert to Promise
+          await lastValueFrom(this.kafkaClient.emit(topic, message));
+          // this.logger.info(
+          //   `Message send to topic ${topic}: ${JSON.stringify(message)}`,
+          //   { ctx: KafkaProducerImpl.name },
+          // );
         } catch (error: any) {
           this.logger.error(
             `Failed to send message to topic ${topic}: ${error.message}`,
-            { ctx: IKafkaProducerImpl.name, error },
+            { ctx: KafkaProducerImpl.name, error },
           );
           throw error;
         }
