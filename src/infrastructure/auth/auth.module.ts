@@ -3,7 +3,9 @@ import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { AppConfigService } from '@infrastructure/config/config.service';
 import { JwtStrategy } from './jwt.strategy';
+import { GrpcJwtStrategy } from './grpc-jwt.strategy';
 import { JwtAuthGuard } from './jwt-auth.guard';
+import { GrpcJwtAuthGuard } from './grpc-jwt-auth.guard';
 import { RoleGuard } from './role.auth';
 
 @Module({
@@ -17,7 +19,13 @@ import { RoleGuard } from './role.auth';
       }),
     }),
   ],
-  providers: [JwtStrategy, JwtAuthGuard, RoleGuard],
-  exports: [JwtAuthGuard, RoleGuard],
+  providers: [
+    JwtStrategy,
+    GrpcJwtStrategy,
+    JwtAuthGuard,
+    GrpcJwtAuthGuard,
+    RoleGuard,
+  ],
+  exports: [JwtAuthGuard, GrpcJwtAuthGuard, RoleGuard],
 })
 export class AuthModule {}
