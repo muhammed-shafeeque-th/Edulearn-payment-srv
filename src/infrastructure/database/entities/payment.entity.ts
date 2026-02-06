@@ -5,7 +5,9 @@ import {
   Index,
   CreateDateColumn,
   UpdateDateColumn,
+  OneToMany,
 } from 'typeorm';
+import { PaymentProviderSessionEntity } from './payment-provider-session.entity';
 
 @Entity('payments')
 @Index('idx_payments_idempotency_key', ['idempotencyKey'])
@@ -26,13 +28,16 @@ export class PaymentEntity {
   currency!: string;
 
   @Column()
+  expiresAt!: Date; // expiresAt is stored as a Date
+
+  @Column()
   status!: string;
 
   @Column({ unique: true })
   idempotencyKey!: string;
 
-  @Column()
-  paymentGateway!: string;
+  // @Column()
+  // paymentGateway!: string;
 
   @Column({ nullable: true })
   providerOrderId?: string;
@@ -42,4 +47,9 @@ export class PaymentEntity {
 
   @UpdateDateColumn()
   updatedAt!: Date;
+
+  @OneToMany(() => PaymentProviderSessionEntity, (session) => session.payment, {
+    cascade: true,
+  })
+  providerSessions!: PaymentProviderSessionEntity[];
 }

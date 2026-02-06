@@ -1,17 +1,36 @@
 import { Module } from '@nestjs/common';
-import { IKafkaProducerImpl } from './kafka-producer.service';
-import { KafkaConsumer } from './kafka-consumer';
-import { HandlePaymentEventUseCase } from '@application/use-cases/handle-payment-events/handle-payment-event.use-case';
+import { KafkaProducerImpl } from './kafka-producer.service';
 import { IKafkaProducer } from '@application/adaptors/kafka-producer.interface';
-import { DatabaseRepositoryModule } from '@infrastructure/database/database-repository.module';
+import { ClientsModule, Transport } from '@nestjs/microservices';
+import { AppConfigService } from '@infrastructure/config/config.service';
+import { KAFKA_CLIENT } from './constants';
 
 @Module({
-  imports: [DatabaseRepositoryModule],
-  providers: [
-    { provide: IKafkaProducer, useClass: IKafkaProducerImpl },
-    KafkaConsumer,
-    HandlePaymentEventUseCase,
+  imports: [
+    ClientsModule.registerAsync([
+      {
+        name: KAFKA_CLIENT,
+        useFactory: (config: AppConfigService) => ({
+          transport: Transport.KAFKA,
+          options: {
+            client: {
+              clientId: config.kafkaClientId || 'payment-service',
+              brokers: config.kafkaBrokers,
+            },
+            producer: {
+              maxInFlightRequests: 1,
+              idempotent: true,
+              retry: {
+                retries: 5,
+              },
+            },
+          },
+        }),
+        inject: [AppConfigService],
+      },
+    ]),
   ],
-  exports: [IKafkaProducer],
+  providers: [{ provide: IKafkaProducer, useClass: KafkaProducerImpl }],
+  exports: [IKafkaProducer, ClientsModule],
 })
 export class KafkaModule {}

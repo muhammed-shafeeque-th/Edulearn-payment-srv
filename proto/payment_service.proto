@@ -101,6 +101,7 @@ message GetPaymentResponse {
 message ResolvePaymentSuccess {
   string status = 1;
   string payment_id = 2;
+  string order_id = 4;
   bool is_resolved = 3;
 }
 message CancelPaymentSuccess {

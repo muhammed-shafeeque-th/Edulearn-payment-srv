@@ -1,22 +1,24 @@
-import { PaymentGateway } from '@domain/entities/payments';
-import { CreatePaymentRequest } from '@infrastructure/grpc/generated/payment-service';
-import { Type } from 'class-transformer';
-import {
-  IsString,
-  IsNotEmpty,
-  IsEnum,
-  Min,
-  ValidateNested,
-  IsOptional,
-} from 'class-validator';
+import { CreatePaymentRequest } from '@infrastructure/grpc/generated/payment_service';
+import { IsString, IsNotEmpty, IsEnum, IsOptional } from 'class-validator';
 
-class AmountDto {
-  @Min(0)
-  amount!: number;
+/**
+ * Enums copied from proto-generated sources. Should use the same as in generated/payment/common.ts
+ */
+export enum Provider {
+  PROVIDER_UNSPECIFIED = 0,
+  STRIPE = 1,
+  RAZORPAY = 2,
+  PAYPAL = 3,
+  UNRECOGNIZED = -1,
+}
 
-  @IsString()
-  @IsNotEmpty()
-  currency!: string;
+export enum PaymentStatus {
+  UNKNOWN = 0,
+  PENDING = 1,
+  PAID = 2,
+  FAILED = 3,
+  CANCELLED = 4,
+  UNRECOGNIZED = -1,
 }
 
 export class PaymentCreateDto implements CreatePaymentRequest {
@@ -28,14 +30,9 @@ export class PaymentCreateDto implements CreatePaymentRequest {
   @IsNotEmpty()
   orderId!: string;
 
+  @IsEnum(Provider)
   @IsNotEmpty()
-  @ValidateNested()
-  @Type(() => AmountDto)
-  amount!: AmountDto;
-
-  @IsEnum(PaymentGateway)
-  @IsNotEmpty()
-  paymentGateway!: PaymentGateway;
+  provider!: Provider;
 
   @IsString()
   @IsNotEmpty()

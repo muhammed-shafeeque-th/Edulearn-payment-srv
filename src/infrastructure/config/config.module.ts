@@ -1,16 +1,18 @@
 import { Global, Module } from '@nestjs/common';
 import { ConfigModule as NestConfigModule } from '@nestjs/config';
 import { AppConfigService } from './config.service';
-import { validate } from './validate.config';
+// import { validate } from './validate.config';
 
 @Global()
 @Module({
   imports: [
     NestConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: '.env',
+      ...(process.env.DOCKER_ENV != 'true'
+        ? { envFilePath: '.env' }
+        : { ignoreEnvFile: true }),
       cache: true, // Enable caching for better performance
-      validate: validate,
+      // validate: validate,
     }),
   ],
   providers: [AppConfigService],

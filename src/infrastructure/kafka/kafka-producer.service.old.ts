@@ -40,7 +40,7 @@
 //   private async connect() {
 //     try {
 //       await this.producer.connect();
-//       this.logger.log('Kafka producer connected', { ctx: 'IKafkaProducer' });
+//       this.logger.debug('Kafka producer connected', { ctx: 'IKafkaProducer' });
 //     } catch (error: any) {
 //       this.logger.error(`Failed to connect Kafka producer: ${error.message}`, {
 //         error,
@@ -61,7 +61,7 @@
 //             topic: 'payment-service.payment.events',
 //             messages: [{ value: buffer }],
 //           });
-//           this.logger.log(`Published payment event: ${JSON.stringify(event)}`, {
+//           this.logger.debug(`Published payment event: ${JSON.stringify(event)}`, {
 //             ctx: 'IKafkaProducer',
 //           });
 //         } catch (error: any) {
@@ -86,7 +86,7 @@
 //             topic: 'payment-service.refund.events',
 //             messages: [{ value: buffer }],
 //           });
-//           this.logger.log(`Published refund event: ${JSON.stringify(event)}`, {
+//           this.logger.debug(`Published refund event: ${JSON.stringify(event)}`, {
 //             ctx: 'IKafkaProducer',
 //           });
 //         } catch (error: any) {
@@ -102,6 +102,6 @@
 
 //   async onModuleDestroy() {
 //     await this.producer.disconnect();
-//     this.logger.log('Kafka producer disconnected', { ctx: 'IKafkaProducer' });
+//     this.logger.debug('Kafka producer disconnected', { ctx: 'IKafkaProducer' });
 //   }
 // }

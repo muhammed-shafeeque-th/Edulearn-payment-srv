@@ -1,0 +1,83 @@
+syntax = "proto3";
+
+package course.review;
+
+
+import "course/common.proto";
+
+message SubmitCourseReviewRequest {
+  int32 rating = 1;
+  string comment = 2;
+  string enrollment_id = 3;
+  string user_id = 4;
+  course.common.User user = 5;
+}
+
+
+
+message GetReviewRequest {
+  string review_id = 1;
+}
+
+message GetReviewByEnrollmentRequest {
+  string enrollment_id = 1;
+  string user_id = 2;
+}
+
+message UpdateReviewRequest {
+  string review_id = 1;
+  string user_id = 4;
+  string enrollment_id = 5;
+  int32 rating = 2;
+  string comment = 3;
+}
+
+message DeleteReviewRequest {
+  string review_id = 1;
+  string user_id = 2;
+  string enrollment_id = 3;
+}
+
+message GetReviewsByCourseRequest {
+  string course_id = 1;
+  course.common.Pagination pagination = 2;
+}
+
+message ReviewData {
+  string id = 1;
+  string user_id = 2;
+  string course_id = 3;
+  string enrollment_id = 8;
+  int32 rating = 4;
+  string comment = 5;
+  string created_at = 6;
+  string updated_at = 7;
+  course.common.User user = 12;
+  // optional string deleted_at = 8;
+}
+
+message ReviewResponse {
+  oneof result {
+    ReviewData review = 1;
+    course.common.Error error = 2;
+  }
+}
+
+message ReviewsData {
+  repeated ReviewData reviews = 1;
+   int32 total = 2;
+}
+
+message ReviewsResponse {
+  oneof result {
+    ReviewsData reviews = 1;
+    course.common.Error error = 2;
+  }
+}
+
+message DeleteReviewResponse {
+  oneof result {
+    course.common.DeleteSuccess success = 1;
+    course.common.Error error = 2;
+  }
+}

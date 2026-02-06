@@ -7,8 +7,27 @@ import {
 import { ClientGrpc } from '@nestjs/microservices';
 import { LoggingService } from 'src/infrastructure/observability/logging/logging.service';
 import { GRPC_ORDER_CLIENT_TOKEN } from './constants';
-import { OrderServiceClient } from '@infrastructure/grpc/generated/order_service';
-import { Metadata } from '@grpc/grpc-js';
+import {
+  OrderData,
+  OrderResponse,
+  OrderServiceClient,
+} from '@infrastructure/grpc/generated/order_service';
+
+import { ICacheService } from '@application/adaptors/redis.interface';
+import {
+  ClientServiceException,
+  OrderNotFoundException,
+} from '@domain/exceptions/domain.exceptions';
+
+export type OrderStatus =
+  | 'created'
+  | 'pending_payment'
+  | 'processing'
+  | 'succeeded'
+  | 'failed'
+  | 'cancelled'
+  | 'refunded'
+  | 'expired';
 
 @Injectable()
 export class OrderClient implements OnModuleDestroy, OnModuleInit {
@@ -17,6 +36,7 @@ export class OrderClient implements OnModuleDestroy, OnModuleInit {
   constructor(
     @Inject(GRPC_ORDER_CLIENT_TOKEN) private client: ClientGrpc,
     private readonly logger: LoggingService,
+    private readonly redisClient: ICacheService,
   ) {}
 
   onModuleInit() {
@@ -26,49 +46,80 @@ export class OrderClient implements OnModuleDestroy, OnModuleInit {
   }
 
   onModuleDestroy() {
-    this.orderService.close();
     this.logger.info('Order gRPC client destroyed');
   }
 
   async getOrder(
     orderId: string,
     userId: string,
-    metadata: Metadata = new Metadata(),
   ): Promise<{
     id: string;
+    amount: number;
+    currency: string;
+    status: OrderStatus;
+    discount: number;
+    salesTax?: number;
     items: { courseId: string; price: number; currency: string }[];
   }> {
-    return new Promise((resolve, reject) => {
-      this.orderService.getOrderById(
-        { orderId: orderId, userId },
-        metadata,
-        (error, response) => {
-          this.logger.info(`Executing fetch order by userId ${userId}`);
-          if (error) {
+    const CACHE_TTL = 10 * 60;
+    const cacheKey = `order_details:${orderId}`;
+
+    const cacheResult = await this.redisClient.get(cacheKey);
+    if (cacheResult) {
+      return JSON.parse(cacheResult);
+    }
+
+    try {
+      const orderRes = await new Promise<OrderData>((resolve, reject) => {
+        this.orderService.getOrderById({ orderId, userId }).subscribe({
+          next: (response: OrderResponse) => {
+            if (response.error) {
+              throw new ClientServiceException(response.error.message);
+            }
+
+            if (!response.success?.order) {
+              throw new OrderNotFoundException(
+                `Order not found for Id ${orderId}`,
+              );
+            }
+
+            this.logger.debug(`Fetched order ${orderId} via gRPC`);
+            resolve(response.success.order);
+          },
+          error: (error: any) => {
             this.logger.error(
-              `Failed to fetch order ${orderId}: ${error.message}`,
-              {
-                error,
-              },
+              `Failed to fetch order by id ${orderId}: ${error.message}`,
+              { error },
             );
             reject(error);
-          }
-          if (response.error) {
-            throw new Error(response.error.message);
-          }
-          const { order } = response.success ?? {};
+          },
+        });
+      });
 
-          this.logger.debug(`Fetched order ${orderId} via gRPC`);
-          resolve({
-            id: order!.id,
-            items: order!.items.map((item) => ({
-              courseId: item.courseId,
-              price: item.price,
-              currency: order!.amount!.currency,
-            })),
-          });
-        },
+      const orderData = {
+        id: orderRes.id,
+        status: orderRes.status as OrderStatus,
+        amount: orderRes.amount!.total,
+        currency: orderRes.amount!.currency,
+        salesTax: orderRes.amount!.salesTax,
+        discount: orderRes.amount!.discount,
+        items: orderRes.items.map((item) => ({
+          courseId: item.courseId,
+          price: item.price,
+          currency: orderRes.amount!.currency,
+        })),
+      };
+
+      await this.redisClient.set(
+        cacheKey,
+        JSON.stringify(orderData),
+        CACHE_TTL,
       );
-    });
+
+      return orderData;
+    } catch (err) {
+      this.logger.error('Error fetching order GRPC', { err });
+      throw err;
+    }
   }
 }

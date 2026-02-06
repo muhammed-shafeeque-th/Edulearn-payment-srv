@@ -16,14 +16,14 @@ export class LoggingInterceptor implements NestInterceptor {
     const call$ = next.handle();
     const methodName = context.getHandler().name;
 
-    this.logger.log(`gRPC method ${methodName} called`, {
+    this.logger.debug(`gRPC method ${methodName} called`, {
       ctx: 'LoggingInterceptor',
     });
 
     return call$.pipe(
       tap({
         next: () =>
-          this.logger.log(`gRPC method ${methodName} completed`, {
+          this.logger.debug(`gRPC method ${methodName} completed`, {
             ctx: 'LoggingInterceptor',
           }),
         error: (error) =>

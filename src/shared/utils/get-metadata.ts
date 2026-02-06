@@ -1,4 +1,4 @@
-import { Metadata } from "@grpc/grpc-js";
+import { Metadata } from '@grpc/grpc-js';
 /**
  * Extracts selected values from gRPC Metadata using a mapping object.
  *
@@ -15,44 +15,37 @@ import { Metadata } from "@grpc/grpc-js";
  */
 export const getMetadataValues = <T extends Record<string, string>>(
   meta: Metadata,
-  def: T
+  def: T,
 ): { [K in keyof T]?: string } => {
-  if (!meta || typeof def !== "object") return {};
+  if (!meta || typeof def !== 'object') return {};
 
   const result: { [K in keyof T]?: string } = {};
 
   for (const key in def) {
-    // This line checks if the key is a direct property of the 'def' object (not inherited from the prototype chain).
-    // If not, it skips the property. This prevents iterating over properties from the object's prototype.
     if (!Object.prototype.hasOwnProperty.call(def, key)) continue;
     const metaKey = def[key];
 
     let value: string | undefined;
 
-    // gRPC Metadata style (get)
-    if (typeof (meta as any).get === "function") {
+    if (typeof (meta as any).get === 'function') {
       const res = (meta as any).get(metaKey);
       if (Array.isArray(res) && res.length > 0) {
         value = String(res[0]);
       }
     }
 
-    // Fallback: plain object style (in unit tests/mock)
-    if (!value && typeof meta === "object" && metaKey in meta) {
+    if (!value && typeof meta === 'object' && metaKey in meta) {
       value = String((meta as any)[metaKey]);
     }
 
-    // Case-insensitive fallback
     if (
       !value &&
-      typeof meta === "object" &&
+      typeof meta === 'object' &&
       meta !== null &&
       Object.keys(meta).length
     ) {
       const keys = Object.keys(meta);
-      const found = keys.find(
-        (k) => k.toLowerCase() === metaKey.toLowerCase()
-      );
+      const found = keys.find((k) => k.toLowerCase() === metaKey.toLowerCase());
       if (found) value = String((meta as any)[found]);
     }
 
