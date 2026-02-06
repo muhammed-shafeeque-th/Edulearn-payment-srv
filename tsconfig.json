@@ -10,6 +10,8 @@
     "sourceMap": true,
     "outDir": "./dist",
     "baseUrl": "./",
+    "esModuleInterop": true,
+    // "noEmit": true,
     "incremental": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": false,
@@ -31,5 +33,15 @@
       "@infrastructure/*": ["src/infrastructure/*"],
       "@interface/*": ["src/interface/*"]
     }
-  }
+  },
+  "exclude": [
+    "node_modules",
+    "test",
+    "dist",
+    "**/*spec.ts",
+    "**/*.old.*",
+    "**/old/**",
+    "**/__*/**",
+    "**/_*"
+  ]
 }
