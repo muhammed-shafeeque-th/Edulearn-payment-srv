@@ -2,7 +2,8 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppConfigService } from '@infrastructure/config/config.service';
 import { PaymentEntity } from './entities/payment.entity';
-import { RefundEntity } from './entities/refund.entity';
+import { PaymentProviderSessionEntity } from './entities/payment-provider-session.entity';
+import { PaymentProviderRefundEntity } from './entities/payment_provider_refund.entity';
 
 @Module({
   imports: [
@@ -11,10 +12,14 @@ import { RefundEntity } from './entities/refund.entity';
       useFactory: (configService: AppConfigService) => ({
         type: 'postgres',
         url: configService.databaseUrl,
-        entities: [PaymentEntity, RefundEntity],
         synchronize: configService.nodeEnv !== 'production', // Disabled in production
         logging: ['error'],
         poolSize: configService.databaseMaxConnections,
+        entities: [
+          PaymentEntity,
+          PaymentProviderSessionEntity,
+          PaymentProviderRefundEntity,
+        ],
         extra: {
           min: configService.databaseMinConnections,
           max: configService.databaseMaxConnections,
@@ -25,9 +30,22 @@ import { RefundEntity } from './entities/refund.entity';
         retryDelay: 1000,
       }),
     }),
-    TypeOrmModule.forFeature([PaymentEntity, RefundEntity]),
+    TypeOrmModule.forFeature([
+      PaymentEntity,
+      PaymentProviderSessionEntity,
+      PaymentProviderRefundEntity,
+    ]),
   ],
-  providers: [PaymentEntity, RefundEntity],
-  exports: [TypeOrmModule, PaymentEntity, RefundEntity],
+  providers: [
+    PaymentEntity,
+    PaymentProviderSessionEntity,
+    PaymentProviderRefundEntity,
+  ],
+  exports: [
+    TypeOrmModule,
+    PaymentEntity,
+    PaymentProviderSessionEntity,
+    PaymentProviderRefundEntity,
+  ],
 })
 export class DatabaseEntityModule {}
