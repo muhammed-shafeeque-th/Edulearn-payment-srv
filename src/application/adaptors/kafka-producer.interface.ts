@@ -1,8 +1,12 @@
-import { BaseEventType } from '@domain/events/base-event';
+export type KafkaMessageObject<T> = {
+  key?: string;
+  value: T;
+  headers?: any;
+};
 
 export abstract class IKafkaProducer {
   abstract produce<T = Record<string, any>>(
     topic: string,
-    message: T & BaseEventType,
+    message: KafkaMessageObject<T>,
   ): Promise<void>;
 }
