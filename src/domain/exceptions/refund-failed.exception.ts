@@ -1,6 +1,6 @@
 export class RefundFailedException extends Error {
   constructor(message: string) {
     super(message);
-    this.name = 'RefundFailedException';
+    this.name = 'REFUND_FAILURE_EXCEPTION';
   }
 }
