@@ -21,7 +21,7 @@ import { ProviderSessionStatus } from '@domain/entities/payment-provider-sesssio
 export class ResolvePaymentUseCase {
   constructor(
     private readonly paymentRepository: IPaymentRepository,
-    // private readonly kafkaProducer: IKafkaProducer,
+    //
     private readonly idempotencyService: IdempotencyService,
     private readonly strategyFactory: StrategyFactory,
     private readonly logger: LoggingService,
@@ -47,17 +47,11 @@ export class ResolvePaymentUseCase {
           });
 
           this.logger.debug(
-            ` ResolvePaymentUseCase Dto ${JSON.stringify(dto, null, 2)}]`,
-          );
-          this.logger.debug(
             `Executing ResolvePaymentUseCase  provider=${provider}]`,
           );
 
           const idempotency_Key = new IdempotencyKey(idempotencyKey);
           return this.idempotencyService.check(idempotency_Key, async () => {
-            // Create payment
-
-            // Set and execute strategy
             const paypalStrategy = this.strategyFactory.getStrategy(provider);
 
             const payment = await this.paymentRepository.findByProviderOrderId(
@@ -89,7 +83,6 @@ export class ResolvePaymentUseCase {
               ResolvePayload = { ...dto.stripe! };
             }
 
-            // Process payment with retry logic
             const ResolveResult = await retry(
               () => {
                 return paypalStrategy.resolvePayment(ResolvePayload!);
@@ -112,7 +105,6 @@ export class ResolvePaymentUseCase {
               { ctx: 'ResolvePaymentUseCase' },
             );
 
-            // Publish event to Kafka
             // await this.kafkaProducer.produce<OrderPaymentSuccessEvent>(
             //   KafkaTopics.PaymentOrderSucceeded,
             //   {
