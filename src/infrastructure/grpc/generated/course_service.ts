@@ -5,9 +5,13 @@
 // source: course_service.proto
 
 /* eslint-disable */
-import type { handleServerStreamingCall, handleUnaryCall, UntypedServiceImplementation } from "@grpc/grpc-js";
-import { GrpcMethod, GrpcStreamMethod } from "@nestjs/microservices";
-import { Observable } from "rxjs";
+import type {
+  handleServerStreamingCall,
+  handleUnaryCall,
+  UntypedServiceImplementation,
+} from '@grpc/grpc-js';
+import { GrpcMethod, GrpcStreamMethod } from '@nestjs/microservices';
+import { Observable } from 'rxjs';
 import {
   CertificatePDFChunk,
   CertificateResponse,
@@ -17,7 +21,7 @@ import {
   GetCertificateByEnrollmentRequest,
   GetCertificateRequest,
   GetCertificatesByUserRequest,
-} from "./course/types/certificate";
+} from './course/types/certificate';
 import {
   CourseResponse,
   CoursesListResponse,
@@ -34,7 +38,7 @@ import {
   PublishCourseRequest,
   UnPublishCourseRequest,
   UpdateCourseRequest,
-} from "./course/types/course";
+} from './course/types/course';
 import {
   CheckCourseEnrollmentRequest,
   CheckEnrollmentRequest,
@@ -49,7 +53,7 @@ import {
   GetEnrollmentsByCourseRequest,
   GetEnrollmentsByUserRequest,
   UpdateEnrollmentRequest,
-} from "./course/types/enrollment";
+} from './course/types/enrollment';
 import {
   CreateLessonRequest,
   DeleteLessonRequest,
@@ -59,7 +63,7 @@ import {
   LessonResponse,
   LessonsResponse,
   UpdateLessonRequest,
-} from "./course/types/lesson";
+} from './course/types/lesson';
 import {
   CreateProgressRequest,
   DeleteProgressRequest,
@@ -72,7 +76,7 @@ import {
   SubmitQuizAttemptResponse,
   UpdateLessonProgressRequest,
   UpdateLessonProgressResponse,
-} from "./course/types/progress";
+} from './course/types/progress';
 import {
   CreateQuizRequest,
   DeleteQuizRequest,
@@ -82,7 +86,7 @@ import {
   QuizResponse,
   QuizzesResponse,
   UpdateQuizRequest,
-} from "./course/types/quiz";
+} from './course/types/quiz';
 import {
   DeleteReviewRequest,
   DeleteReviewResponse,
@@ -93,7 +97,7 @@ import {
   ReviewsResponse,
   SubmitCourseReviewRequest,
   UpdateReviewRequest,
-} from "./course/types/review";
+} from './course/types/review';
 import {
   CreateSectionRequest,
   DeleteSectionRequest,
@@ -103,11 +107,11 @@ import {
   SectionResponse,
   SectionsResponse,
   UpdateSectionRequest,
-} from "./course/types/section";
+} from './course/types/section';
 
-export const protobufPackage = "course_service";
+export const protobufPackage = 'course_service';
 
-export const COURSE_SERVICE_PACKAGE_NAME = "course_service";
+export const COURSE_SERVICE_PACKAGE_NAME = 'course_service';
 
 export interface CourseServiceClient {
   /** Course CRUD */
@@ -128,11 +132,17 @@ export interface CourseServiceClient {
 
   deleteCourse(request: DeleteCourseRequest): Observable<DeleteCourseResponse>;
 
-  getCoursesByInstructor(request: GetCoursesByInstructorRequest): Observable<CoursesListResponse>;
+  getCoursesByInstructor(
+    request: GetCoursesByInstructorRequest,
+  ): Observable<CoursesListResponse>;
 
-  getEnrolledCourses(request: GetEnrolledCoursesRequest): Observable<CoursesListResponse>;
+  getEnrolledCourses(
+    request: GetEnrolledCoursesRequest,
+  ): Observable<CoursesListResponse>;
 
-  getCoursesByIds(request: GetCoursesByIdsRequest): Observable<GetCoursesByIdsResponse>;
+  getCoursesByIds(
+    request: GetCoursesByIdsRequest,
+  ): Observable<GetCoursesByIdsResponse>;
 
   /** Section CRUD */
 
@@ -142,9 +152,13 @@ export interface CourseServiceClient {
 
   updateSection(request: UpdateSectionRequest): Observable<SectionResponse>;
 
-  deleteSection(request: DeleteSectionRequest): Observable<DeleteSectionResponse>;
+  deleteSection(
+    request: DeleteSectionRequest,
+  ): Observable<DeleteSectionResponse>;
 
-  getSectionsByCourse(request: GetSectionsByCourseRequest): Observable<SectionsResponse>;
+  getSectionsByCourse(
+    request: GetSectionsByCourseRequest,
+  ): Observable<SectionsResponse>;
 
   /** Lesson CRUD */
 
@@ -156,7 +170,9 @@ export interface CourseServiceClient {
 
   deleteLesson(request: DeleteLessonRequest): Observable<DeleteLessonResponse>;
 
-  getLessonsBySection(request: GetLessonsBySectionRequest): Observable<LessonsResponse>;
+  getLessonsBySection(
+    request: GetLessonsBySectionRequest,
+  ): Observable<LessonsResponse>;
 
   /** Quiz CRUD */
 
@@ -168,15 +184,21 @@ export interface CourseServiceClient {
 
   deleteQuiz(request: DeleteQuizRequest): Observable<DeleteQuizResponse>;
 
-  getQuizzesByCourse(request: GetQuizzesByCourseRequest): Observable<QuizzesResponse>;
+  getQuizzesByCourse(
+    request: GetQuizzesByCourseRequest,
+  ): Observable<QuizzesResponse>;
 }
 
 export interface CourseServiceController {
   /** Course CRUD */
 
-  createCourse(request: CreateCourseRequest): Promise<CourseResponse> | Observable<CourseResponse> | CourseResponse;
+  createCourse(
+    request: CreateCourseRequest,
+  ): Promise<CourseResponse> | Observable<CourseResponse> | CourseResponse;
 
-  getCourse(request: GetCourseRequest): Promise<CourseResponse> | Observable<CourseResponse> | CourseResponse;
+  getCourse(
+    request: GetCourseRequest,
+  ): Promise<CourseResponse> | Observable<CourseResponse> | CourseResponse;
 
   getCourseBySlug(
     request: GetCourseBySlugRequest,
@@ -184,11 +206,18 @@ export interface CourseServiceController {
 
   getCourses(
     request: GetCoursesRequest,
-  ): Promise<CoursesListResponse> | Observable<CoursesListResponse> | CoursesListResponse;
+  ):
+    | Promise<CoursesListResponse>
+    | Observable<CoursesListResponse>
+    | CoursesListResponse;
 
-  updateCourse(request: UpdateCourseRequest): Promise<CourseResponse> | Observable<CourseResponse> | CourseResponse;
+  updateCourse(
+    request: UpdateCourseRequest,
+  ): Promise<CourseResponse> | Observable<CourseResponse> | CourseResponse;
 
-  publishCourse(request: PublishCourseRequest): Promise<CourseResponse> | Observable<CourseResponse> | CourseResponse;
+  publishCourse(
+    request: PublishCourseRequest,
+  ): Promise<CourseResponse> | Observable<CourseResponse> | CourseResponse;
 
   unPublishCourse(
     request: UnPublishCourseRequest,
@@ -196,19 +225,31 @@ export interface CourseServiceController {
 
   deleteCourse(
     request: DeleteCourseRequest,
-  ): Promise<DeleteCourseResponse> | Observable<DeleteCourseResponse> | DeleteCourseResponse;
+  ):
+    | Promise<DeleteCourseResponse>
+    | Observable<DeleteCourseResponse>
+    | DeleteCourseResponse;
 
   getCoursesByInstructor(
     request: GetCoursesByInstructorRequest,
-  ): Promise<CoursesListResponse> | Observable<CoursesListResponse> | CoursesListResponse;
+  ):
+    | Promise<CoursesListResponse>
+    | Observable<CoursesListResponse>
+    | CoursesListResponse;
 
   getEnrolledCourses(
     request: GetEnrolledCoursesRequest,
-  ): Promise<CoursesListResponse> | Observable<CoursesListResponse> | CoursesListResponse;
+  ):
+    | Promise<CoursesListResponse>
+    | Observable<CoursesListResponse>
+    | CoursesListResponse;
 
   getCoursesByIds(
     request: GetCoursesByIdsRequest,
-  ): Promise<GetCoursesByIdsResponse> | Observable<GetCoursesByIdsResponse> | GetCoursesByIdsResponse;
+  ):
+    | Promise<GetCoursesByIdsResponse>
+    | Observable<GetCoursesByIdsResponse>
+    | GetCoursesByIdsResponse;
 
   /** Section CRUD */
 
@@ -216,7 +257,9 @@ export interface CourseServiceController {
     request: CreateSectionRequest,
   ): Promise<SectionResponse> | Observable<SectionResponse> | SectionResponse;
 
-  getSection(request: GetSectionRequest): Promise<SectionResponse> | Observable<SectionResponse> | SectionResponse;
+  getSection(
+    request: GetSectionRequest,
+  ): Promise<SectionResponse> | Observable<SectionResponse> | SectionResponse;
 
   updateSection(
     request: UpdateSectionRequest,
@@ -224,23 +267,38 @@ export interface CourseServiceController {
 
   deleteSection(
     request: DeleteSectionRequest,
-  ): Promise<DeleteSectionResponse> | Observable<DeleteSectionResponse> | DeleteSectionResponse;
+  ):
+    | Promise<DeleteSectionResponse>
+    | Observable<DeleteSectionResponse>
+    | DeleteSectionResponse;
 
   getSectionsByCourse(
     request: GetSectionsByCourseRequest,
-  ): Promise<SectionsResponse> | Observable<SectionsResponse> | SectionsResponse;
+  ):
+    | Promise<SectionsResponse>
+    | Observable<SectionsResponse>
+    | SectionsResponse;
 
   /** Lesson CRUD */
 
-  createLesson(request: CreateLessonRequest): Promise<LessonResponse> | Observable<LessonResponse> | LessonResponse;
+  createLesson(
+    request: CreateLessonRequest,
+  ): Promise<LessonResponse> | Observable<LessonResponse> | LessonResponse;
 
-  getLesson(request: GetLessonRequest): Promise<LessonResponse> | Observable<LessonResponse> | LessonResponse;
+  getLesson(
+    request: GetLessonRequest,
+  ): Promise<LessonResponse> | Observable<LessonResponse> | LessonResponse;
 
-  updateLesson(request: UpdateLessonRequest): Promise<LessonResponse> | Observable<LessonResponse> | LessonResponse;
+  updateLesson(
+    request: UpdateLessonRequest,
+  ): Promise<LessonResponse> | Observable<LessonResponse> | LessonResponse;
 
   deleteLesson(
     request: DeleteLessonRequest,
-  ): Promise<DeleteLessonResponse> | Observable<DeleteLessonResponse> | DeleteLessonResponse;
+  ):
+    | Promise<DeleteLessonResponse>
+    | Observable<DeleteLessonResponse>
+    | DeleteLessonResponse;
 
   getLessonsBySection(
     request: GetLessonsBySectionRequest,
@@ -248,15 +306,24 @@ export interface CourseServiceController {
 
   /** Quiz CRUD */
 
-  createQuiz(request: CreateQuizRequest): Promise<QuizResponse> | Observable<QuizResponse> | QuizResponse;
+  createQuiz(
+    request: CreateQuizRequest,
+  ): Promise<QuizResponse> | Observable<QuizResponse> | QuizResponse;
 
-  getQuiz(request: GetQuizRequest): Promise<QuizResponse> | Observable<QuizResponse> | QuizResponse;
+  getQuiz(
+    request: GetQuizRequest,
+  ): Promise<QuizResponse> | Observable<QuizResponse> | QuizResponse;
 
-  updateQuiz(request: UpdateQuizRequest): Promise<QuizResponse> | Observable<QuizResponse> | QuizResponse;
+  updateQuiz(
+    request: UpdateQuizRequest,
+  ): Promise<QuizResponse> | Observable<QuizResponse> | QuizResponse;
 
   deleteQuiz(
     request: DeleteQuizRequest,
-  ): Promise<DeleteQuizResponse> | Observable<DeleteQuizResponse> | DeleteQuizResponse;
+  ):
+    | Promise<DeleteQuizResponse>
+    | Observable<DeleteQuizResponse>
+    | DeleteQuizResponse;
 
   getQuizzesByCourse(
     request: GetQuizzesByCourseRequest,
@@ -266,298 +333,404 @@ export interface CourseServiceController {
 export function CourseServiceControllerMethods() {
   return function (constructor: Function) {
     const grpcMethods: string[] = [
-      "createCourse",
-      "getCourse",
-      "getCourseBySlug",
-      "getCourses",
-      "updateCourse",
-      "publishCourse",
-      "unPublishCourse",
-      "deleteCourse",
-      "getCoursesByInstructor",
-      "getEnrolledCourses",
-      "getCoursesByIds",
-      "createSection",
-      "getSection",
-      "updateSection",
-      "deleteSection",
-      "getSectionsByCourse",
-      "createLesson",
-      "getLesson",
-      "updateLesson",
-      "deleteLesson",
-      "getLessonsBySection",
-      "createQuiz",
-      "getQuiz",
-      "updateQuiz",
-      "deleteQuiz",
-      "getQuizzesByCourse",
+      'createCourse',
+      'getCourse',
+      'getCourseBySlug',
+      'getCourses',
+      'updateCourse',
+      'publishCourse',
+      'unPublishCourse',
+      'deleteCourse',
+      'getCoursesByInstructor',
+      'getEnrolledCourses',
+      'getCoursesByIds',
+      'createSection',
+      'getSection',
+      'updateSection',
+      'deleteSection',
+      'getSectionsByCourse',
+      'createLesson',
+      'getLesson',
+      'updateLesson',
+      'deleteLesson',
+      'getLessonsBySection',
+      'createQuiz',
+      'getQuiz',
+      'updateQuiz',
+      'deleteQuiz',
+      'getQuizzesByCourse',
     ];
     for (const method of grpcMethods) {
-      const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
-      GrpcMethod("CourseService", method)(constructor.prototype[method], method, descriptor);
+      const descriptor: any = Reflect.getOwnPropertyDescriptor(
+        constructor.prototype,
+        method,
+      );
+      GrpcMethod('CourseService', method)(
+        constructor.prototype[method],
+        method,
+        descriptor,
+      );
     }
     const grpcStreamMethods: string[] = [];
     for (const method of grpcStreamMethods) {
-      const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
-      GrpcStreamMethod("CourseService", method)(constructor.prototype[method], method, descriptor);
+      const descriptor: any = Reflect.getOwnPropertyDescriptor(
+        constructor.prototype,
+        method,
+      );
+      GrpcStreamMethod('CourseService', method)(
+        constructor.prototype[method],
+        method,
+        descriptor,
+      );
     }
   };
 }
 
-export const COURSE_SERVICE_NAME = "CourseService";
+export const COURSE_SERVICE_NAME = 'CourseService';
 
 export type CourseServiceService = typeof CourseServiceService;
 export const CourseServiceService = {
   /** Course CRUD */
   createCourse: {
-    path: "/course_service.CourseService/CreateCourse",
+    path: '/course_service.CourseService/CreateCourse',
     requestStream: false,
     responseStream: false,
-    requestSerialize: (value: CreateCourseRequest): Buffer => Buffer.from(CreateCourseRequest.encode(value).finish()),
-    requestDeserialize: (value: Buffer): CreateCourseRequest => CreateCourseRequest.decode(value),
-    responseSerialize: (value: CourseResponse): Buffer => Buffer.from(CourseResponse.encode(value).finish()),
-    responseDeserialize: (value: Buffer): CourseResponse => CourseResponse.decode(value),
+    requestSerialize: (value: CreateCourseRequest): Buffer =>
+      Buffer.from(CreateCourseRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): CreateCourseRequest =>
+      CreateCourseRequest.decode(value),
+    responseSerialize: (value: CourseResponse): Buffer =>
+      Buffer.from(CourseResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): CourseResponse =>
+      CourseResponse.decode(value),
   },
   getCourse: {
-    path: "/course_service.CourseService/GetCourse",
+    path: '/course_service.CourseService/GetCourse',
     requestStream: false,
     responseStream: false,
-    requestSerialize: (value: GetCourseRequest): Buffer => Buffer.from(GetCourseRequest.encode(value).finish()),
-    requestDeserialize: (value: Buffer): GetCourseRequest => GetCourseRequest.decode(value),
-    responseSerialize: (value: CourseResponse): Buffer => Buffer.from(CourseResponse.encode(value).finish()),
-    responseDeserialize: (value: Buffer): CourseResponse => CourseResponse.decode(value),
+    requestSerialize: (value: GetCourseRequest): Buffer =>
+      Buffer.from(GetCourseRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): GetCourseRequest =>
+      GetCourseRequest.decode(value),
+    responseSerialize: (value: CourseResponse): Buffer =>
+      Buffer.from(CourseResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): CourseResponse =>
+      CourseResponse.decode(value),
   },
   getCourseBySlug: {
-    path: "/course_service.CourseService/GetCourseBySlug",
+    path: '/course_service.CourseService/GetCourseBySlug',
     requestStream: false,
     responseStream: false,
     requestSerialize: (value: GetCourseBySlugRequest): Buffer =>
       Buffer.from(GetCourseBySlugRequest.encode(value).finish()),
-    requestDeserialize: (value: Buffer): GetCourseBySlugRequest => GetCourseBySlugRequest.decode(value),
-    responseSerialize: (value: CourseResponse): Buffer => Buffer.from(CourseResponse.encode(value).finish()),
-    responseDeserialize: (value: Buffer): CourseResponse => CourseResponse.decode(value),
+    requestDeserialize: (value: Buffer): GetCourseBySlugRequest =>
+      GetCourseBySlugRequest.decode(value),
+    responseSerialize: (value: CourseResponse): Buffer =>
+      Buffer.from(CourseResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): CourseResponse =>
+      CourseResponse.decode(value),
   },
   getCourses: {
-    path: "/course_service.CourseService/GetCourses",
+    path: '/course_service.CourseService/GetCourses',
     requestStream: false,
     responseStream: false,
-    requestSerialize: (value: GetCoursesRequest): Buffer => Buffer.from(GetCoursesRequest.encode(value).finish()),
-    requestDeserialize: (value: Buffer): GetCoursesRequest => GetCoursesRequest.decode(value),
-    responseSerialize: (value: CoursesListResponse): Buffer => Buffer.from(CoursesListResponse.encode(value).finish()),
-    responseDeserialize: (value: Buffer): CoursesListResponse => CoursesListResponse.decode(value),
+    requestSerialize: (value: GetCoursesRequest): Buffer =>
+      Buffer.from(GetCoursesRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): GetCoursesRequest =>
+      GetCoursesRequest.decode(value),
+    responseSerialize: (value: CoursesListResponse): Buffer =>
+      Buffer.from(CoursesListResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): CoursesListResponse =>
+      CoursesListResponse.decode(value),
   },
   updateCourse: {
-    path: "/course_service.CourseService/UpdateCourse",
+    path: '/course_service.CourseService/UpdateCourse',
     requestStream: false,
     responseStream: false,
-    requestSerialize: (value: UpdateCourseRequest): Buffer => Buffer.from(UpdateCourseRequest.encode(value).finish()),
-    requestDeserialize: (value: Buffer): UpdateCourseRequest => UpdateCourseRequest.decode(value),
-    responseSerialize: (value: CourseResponse): Buffer => Buffer.from(CourseResponse.encode(value).finish()),
-    responseDeserialize: (value: Buffer): CourseResponse => CourseResponse.decode(value),
+    requestSerialize: (value: UpdateCourseRequest): Buffer =>
+      Buffer.from(UpdateCourseRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): UpdateCourseRequest =>
+      UpdateCourseRequest.decode(value),
+    responseSerialize: (value: CourseResponse): Buffer =>
+      Buffer.from(CourseResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): CourseResponse =>
+      CourseResponse.decode(value),
   },
   publishCourse: {
-    path: "/course_service.CourseService/PublishCourse",
+    path: '/course_service.CourseService/PublishCourse',
     requestStream: false,
     responseStream: false,
-    requestSerialize: (value: PublishCourseRequest): Buffer => Buffer.from(PublishCourseRequest.encode(value).finish()),
-    requestDeserialize: (value: Buffer): PublishCourseRequest => PublishCourseRequest.decode(value),
-    responseSerialize: (value: CourseResponse): Buffer => Buffer.from(CourseResponse.encode(value).finish()),
-    responseDeserialize: (value: Buffer): CourseResponse => CourseResponse.decode(value),
+    requestSerialize: (value: PublishCourseRequest): Buffer =>
+      Buffer.from(PublishCourseRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): PublishCourseRequest =>
+      PublishCourseRequest.decode(value),
+    responseSerialize: (value: CourseResponse): Buffer =>
+      Buffer.from(CourseResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): CourseResponse =>
+      CourseResponse.decode(value),
   },
   unPublishCourse: {
-    path: "/course_service.CourseService/UnPublishCourse",
+    path: '/course_service.CourseService/UnPublishCourse',
     requestStream: false,
     responseStream: false,
     requestSerialize: (value: UnPublishCourseRequest): Buffer =>
       Buffer.from(UnPublishCourseRequest.encode(value).finish()),
-    requestDeserialize: (value: Buffer): UnPublishCourseRequest => UnPublishCourseRequest.decode(value),
-    responseSerialize: (value: CourseResponse): Buffer => Buffer.from(CourseResponse.encode(value).finish()),
-    responseDeserialize: (value: Buffer): CourseResponse => CourseResponse.decode(value),
+    requestDeserialize: (value: Buffer): UnPublishCourseRequest =>
+      UnPublishCourseRequest.decode(value),
+    responseSerialize: (value: CourseResponse): Buffer =>
+      Buffer.from(CourseResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): CourseResponse =>
+      CourseResponse.decode(value),
   },
   deleteCourse: {
-    path: "/course_service.CourseService/DeleteCourse",
+    path: '/course_service.CourseService/DeleteCourse',
     requestStream: false,
     responseStream: false,
-    requestSerialize: (value: DeleteCourseRequest): Buffer => Buffer.from(DeleteCourseRequest.encode(value).finish()),
-    requestDeserialize: (value: Buffer): DeleteCourseRequest => DeleteCourseRequest.decode(value),
+    requestSerialize: (value: DeleteCourseRequest): Buffer =>
+      Buffer.from(DeleteCourseRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): DeleteCourseRequest =>
+      DeleteCourseRequest.decode(value),
     responseSerialize: (value: DeleteCourseResponse): Buffer =>
       Buffer.from(DeleteCourseResponse.encode(value).finish()),
-    responseDeserialize: (value: Buffer): DeleteCourseResponse => DeleteCourseResponse.decode(value),
+    responseDeserialize: (value: Buffer): DeleteCourseResponse =>
+      DeleteCourseResponse.decode(value),
   },
   getCoursesByInstructor: {
-    path: "/course_service.CourseService/GetCoursesByInstructor",
+    path: '/course_service.CourseService/GetCoursesByInstructor',
     requestStream: false,
     responseStream: false,
     requestSerialize: (value: GetCoursesByInstructorRequest): Buffer =>
       Buffer.from(GetCoursesByInstructorRequest.encode(value).finish()),
-    requestDeserialize: (value: Buffer): GetCoursesByInstructorRequest => GetCoursesByInstructorRequest.decode(value),
-    responseSerialize: (value: CoursesListResponse): Buffer => Buffer.from(CoursesListResponse.encode(value).finish()),
-    responseDeserialize: (value: Buffer): CoursesListResponse => CoursesListResponse.decode(value),
+    requestDeserialize: (value: Buffer): GetCoursesByInstructorRequest =>
+      GetCoursesByInstructorRequest.decode(value),
+    responseSerialize: (value: CoursesListResponse): Buffer =>
+      Buffer.from(CoursesListResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): CoursesListResponse =>
+      CoursesListResponse.decode(value),
   },
   getEnrolledCourses: {
-    path: "/course_service.CourseService/GetEnrolledCourses",
+    path: '/course_service.CourseService/GetEnrolledCourses',
     requestStream: false,
     responseStream: false,
     requestSerialize: (value: GetEnrolledCoursesRequest): Buffer =>
       Buffer.from(GetEnrolledCoursesRequest.encode(value).finish()),
-    requestDeserialize: (value: Buffer): GetEnrolledCoursesRequest => GetEnrolledCoursesRequest.decode(value),
-    responseSerialize: (value: CoursesListResponse): Buffer => Buffer.from(CoursesListResponse.encode(value).finish()),
-    responseDeserialize: (value: Buffer): CoursesListResponse => CoursesListResponse.decode(value),
+    requestDeserialize: (value: Buffer): GetEnrolledCoursesRequest =>
+      GetEnrolledCoursesRequest.decode(value),
+    responseSerialize: (value: CoursesListResponse): Buffer =>
+      Buffer.from(CoursesListResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): CoursesListResponse =>
+      CoursesListResponse.decode(value),
   },
   getCoursesByIds: {
-    path: "/course_service.CourseService/GetCoursesByIds",
+    path: '/course_service.CourseService/GetCoursesByIds',
     requestStream: false,
     responseStream: false,
     requestSerialize: (value: GetCoursesByIdsRequest): Buffer =>
       Buffer.from(GetCoursesByIdsRequest.encode(value).finish()),
-    requestDeserialize: (value: Buffer): GetCoursesByIdsRequest => GetCoursesByIdsRequest.decode(value),
+    requestDeserialize: (value: Buffer): GetCoursesByIdsRequest =>
+      GetCoursesByIdsRequest.decode(value),
     responseSerialize: (value: GetCoursesByIdsResponse): Buffer =>
       Buffer.from(GetCoursesByIdsResponse.encode(value).finish()),
-    responseDeserialize: (value: Buffer): GetCoursesByIdsResponse => GetCoursesByIdsResponse.decode(value),
+    responseDeserialize: (value: Buffer): GetCoursesByIdsResponse =>
+      GetCoursesByIdsResponse.decode(value),
   },
   /** Section CRUD */
   createSection: {
-    path: "/course_service.CourseService/CreateSection",
+    path: '/course_service.CourseService/CreateSection',
     requestStream: false,
     responseStream: false,
-    requestSerialize: (value: CreateSectionRequest): Buffer => Buffer.from(CreateSectionRequest.encode(value).finish()),
-    requestDeserialize: (value: Buffer): CreateSectionRequest => CreateSectionRequest.decode(value),
-    responseSerialize: (value: SectionResponse): Buffer => Buffer.from(SectionResponse.encode(value).finish()),
-    responseDeserialize: (value: Buffer): SectionResponse => SectionResponse.decode(value),
+    requestSerialize: (value: CreateSectionRequest): Buffer =>
+      Buffer.from(CreateSectionRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): CreateSectionRequest =>
+      CreateSectionRequest.decode(value),
+    responseSerialize: (value: SectionResponse): Buffer =>
+      Buffer.from(SectionResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): SectionResponse =>
+      SectionResponse.decode(value),
   },
   getSection: {
-    path: "/course_service.CourseService/GetSection",
+    path: '/course_service.CourseService/GetSection',
     requestStream: false,
     responseStream: false,
-    requestSerialize: (value: GetSectionRequest): Buffer => Buffer.from(GetSectionRequest.encode(value).finish()),
-    requestDeserialize: (value: Buffer): GetSectionRequest => GetSectionRequest.decode(value),
-    responseSerialize: (value: SectionResponse): Buffer => Buffer.from(SectionResponse.encode(value).finish()),
-    responseDeserialize: (value: Buffer): SectionResponse => SectionResponse.decode(value),
+    requestSerialize: (value: GetSectionRequest): Buffer =>
+      Buffer.from(GetSectionRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): GetSectionRequest =>
+      GetSectionRequest.decode(value),
+    responseSerialize: (value: SectionResponse): Buffer =>
+      Buffer.from(SectionResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): SectionResponse =>
+      SectionResponse.decode(value),
   },
   updateSection: {
-    path: "/course_service.CourseService/UpdateSection",
+    path: '/course_service.CourseService/UpdateSection',
     requestStream: false,
     responseStream: false,
-    requestSerialize: (value: UpdateSectionRequest): Buffer => Buffer.from(UpdateSectionRequest.encode(value).finish()),
-    requestDeserialize: (value: Buffer): UpdateSectionRequest => UpdateSectionRequest.decode(value),
-    responseSerialize: (value: SectionResponse): Buffer => Buffer.from(SectionResponse.encode(value).finish()),
-    responseDeserialize: (value: Buffer): SectionResponse => SectionResponse.decode(value),
+    requestSerialize: (value: UpdateSectionRequest): Buffer =>
+      Buffer.from(UpdateSectionRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): UpdateSectionRequest =>
+      UpdateSectionRequest.decode(value),
+    responseSerialize: (value: SectionResponse): Buffer =>
+      Buffer.from(SectionResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): SectionResponse =>
+      SectionResponse.decode(value),
   },
   deleteSection: {
-    path: "/course_service.CourseService/DeleteSection",
+    path: '/course_service.CourseService/DeleteSection',
     requestStream: false,
     responseStream: false,
-    requestSerialize: (value: DeleteSectionRequest): Buffer => Buffer.from(DeleteSectionRequest.encode(value).finish()),
-    requestDeserialize: (value: Buffer): DeleteSectionRequest => DeleteSectionRequest.decode(value),
+    requestSerialize: (value: DeleteSectionRequest): Buffer =>
+      Buffer.from(DeleteSectionRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): DeleteSectionRequest =>
+      DeleteSectionRequest.decode(value),
     responseSerialize: (value: DeleteSectionResponse): Buffer =>
       Buffer.from(DeleteSectionResponse.encode(value).finish()),
-    responseDeserialize: (value: Buffer): DeleteSectionResponse => DeleteSectionResponse.decode(value),
+    responseDeserialize: (value: Buffer): DeleteSectionResponse =>
+      DeleteSectionResponse.decode(value),
   },
   getSectionsByCourse: {
-    path: "/course_service.CourseService/GetSectionsByCourse",
+    path: '/course_service.CourseService/GetSectionsByCourse',
     requestStream: false,
     responseStream: false,
     requestSerialize: (value: GetSectionsByCourseRequest): Buffer =>
       Buffer.from(GetSectionsByCourseRequest.encode(value).finish()),
-    requestDeserialize: (value: Buffer): GetSectionsByCourseRequest => GetSectionsByCourseRequest.decode(value),
-    responseSerialize: (value: SectionsResponse): Buffer => Buffer.from(SectionsResponse.encode(value).finish()),
-    responseDeserialize: (value: Buffer): SectionsResponse => SectionsResponse.decode(value),
+    requestDeserialize: (value: Buffer): GetSectionsByCourseRequest =>
+      GetSectionsByCourseRequest.decode(value),
+    responseSerialize: (value: SectionsResponse): Buffer =>
+      Buffer.from(SectionsResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): SectionsResponse =>
+      SectionsResponse.decode(value),
   },
   /** Lesson CRUD */
   createLesson: {
-    path: "/course_service.CourseService/CreateLesson",
+    path: '/course_service.CourseService/CreateLesson',
     requestStream: false,
     responseStream: false,
-    requestSerialize: (value: CreateLessonRequest): Buffer => Buffer.from(CreateLessonRequest.encode(value).finish()),
-    requestDeserialize: (value: Buffer): CreateLessonRequest => CreateLessonRequest.decode(value),
-    responseSerialize: (value: LessonResponse): Buffer => Buffer.from(LessonResponse.encode(value).finish()),
-    responseDeserialize: (value: Buffer): LessonResponse => LessonResponse.decode(value),
+    requestSerialize: (value: CreateLessonRequest): Buffer =>
+      Buffer.from(CreateLessonRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): CreateLessonRequest =>
+      CreateLessonRequest.decode(value),
+    responseSerialize: (value: LessonResponse): Buffer =>
+      Buffer.from(LessonResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): LessonResponse =>
+      LessonResponse.decode(value),
   },
   getLesson: {
-    path: "/course_service.CourseService/GetLesson",
+    path: '/course_service.CourseService/GetLesson',
     requestStream: false,
     responseStream: false,
-    requestSerialize: (value: GetLessonRequest): Buffer => Buffer.from(GetLessonRequest.encode(value).finish()),
-    requestDeserialize: (value: Buffer): GetLessonRequest => GetLessonRequest.decode(value),
-    responseSerialize: (value: LessonResponse): Buffer => Buffer.from(LessonResponse.encode(value).finish()),
-    responseDeserialize: (value: Buffer): LessonResponse => LessonResponse.decode(value),
+    requestSerialize: (value: GetLessonRequest): Buffer =>
+      Buffer.from(GetLessonRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): GetLessonRequest =>
+      GetLessonRequest.decode(value),
+    responseSerialize: (value: LessonResponse): Buffer =>
+      Buffer.from(LessonResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): LessonResponse =>
+      LessonResponse.decode(value),
   },
   updateLesson: {
-    path: "/course_service.CourseService/UpdateLesson",
+    path: '/course_service.CourseService/UpdateLesson',
     requestStream: false,
     responseStream: false,
-    requestSerialize: (value: UpdateLessonRequest): Buffer => Buffer.from(UpdateLessonRequest.encode(value).finish()),
-    requestDeserialize: (value: Buffer): UpdateLessonRequest => UpdateLessonRequest.decode(value),
-    responseSerialize: (value: LessonResponse): Buffer => Buffer.from(LessonResponse.encode(value).finish()),
-    responseDeserialize: (value: Buffer): LessonResponse => LessonResponse.decode(value),
+    requestSerialize: (value: UpdateLessonRequest): Buffer =>
+      Buffer.from(UpdateLessonRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): UpdateLessonRequest =>
+      UpdateLessonRequest.decode(value),
+    responseSerialize: (value: LessonResponse): Buffer =>
+      Buffer.from(LessonResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): LessonResponse =>
+      LessonResponse.decode(value),
   },
   deleteLesson: {
-    path: "/course_service.CourseService/DeleteLesson",
+    path: '/course_service.CourseService/DeleteLesson',
     requestStream: false,
     responseStream: false,
-    requestSerialize: (value: DeleteLessonRequest): Buffer => Buffer.from(DeleteLessonRequest.encode(value).finish()),
-    requestDeserialize: (value: Buffer): DeleteLessonRequest => DeleteLessonRequest.decode(value),
+    requestSerialize: (value: DeleteLessonRequest): Buffer =>
+      Buffer.from(DeleteLessonRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): DeleteLessonRequest =>
+      DeleteLessonRequest.decode(value),
     responseSerialize: (value: DeleteLessonResponse): Buffer =>
       Buffer.from(DeleteLessonResponse.encode(value).finish()),
-    responseDeserialize: (value: Buffer): DeleteLessonResponse => DeleteLessonResponse.decode(value),
+    responseDeserialize: (value: Buffer): DeleteLessonResponse =>
+      DeleteLessonResponse.decode(value),
   },
   getLessonsBySection: {
-    path: "/course_service.CourseService/GetLessonsBySection",
+    path: '/course_service.CourseService/GetLessonsBySection',
     requestStream: false,
     responseStream: false,
     requestSerialize: (value: GetLessonsBySectionRequest): Buffer =>
       Buffer.from(GetLessonsBySectionRequest.encode(value).finish()),
-    requestDeserialize: (value: Buffer): GetLessonsBySectionRequest => GetLessonsBySectionRequest.decode(value),
-    responseSerialize: (value: LessonsResponse): Buffer => Buffer.from(LessonsResponse.encode(value).finish()),
-    responseDeserialize: (value: Buffer): LessonsResponse => LessonsResponse.decode(value),
+    requestDeserialize: (value: Buffer): GetLessonsBySectionRequest =>
+      GetLessonsBySectionRequest.decode(value),
+    responseSerialize: (value: LessonsResponse): Buffer =>
+      Buffer.from(LessonsResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): LessonsResponse =>
+      LessonsResponse.decode(value),
   },
   /** Quiz CRUD */
   createQuiz: {
-    path: "/course_service.CourseService/CreateQuiz",
+    path: '/course_service.CourseService/CreateQuiz',
     requestStream: false,
     responseStream: false,
-    requestSerialize: (value: CreateQuizRequest): Buffer => Buffer.from(CreateQuizRequest.encode(value).finish()),
-    requestDeserialize: (value: Buffer): CreateQuizRequest => CreateQuizRequest.decode(value),
-    responseSerialize: (value: QuizResponse): Buffer => Buffer.from(QuizResponse.encode(value).finish()),
-    responseDeserialize: (value: Buffer): QuizResponse => QuizResponse.decode(value),
+    requestSerialize: (value: CreateQuizRequest): Buffer =>
+      Buffer.from(CreateQuizRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): CreateQuizRequest =>
+      CreateQuizRequest.decode(value),
+    responseSerialize: (value: QuizResponse): Buffer =>
+      Buffer.from(QuizResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): QuizResponse =>
+      QuizResponse.decode(value),
   },
   getQuiz: {
-    path: "/course_service.CourseService/GetQuiz",
+    path: '/course_service.CourseService/GetQuiz',
     requestStream: false,
     responseStream: false,
-    requestSerialize: (value: GetQuizRequest): Buffer => Buffer.from(GetQuizRequest.encode(value).finish()),
-    requestDeserialize: (value: Buffer): GetQuizRequest => GetQuizRequest.decode(value),
-    responseSerialize: (value: QuizResponse): Buffer => Buffer.from(QuizResponse.encode(value).finish()),
-    responseDeserialize: (value: Buffer): QuizResponse => QuizResponse.decode(value),
+    requestSerialize: (value: GetQuizRequest): Buffer =>
+      Buffer.from(GetQuizRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): GetQuizRequest =>
+      GetQuizRequest.decode(value),
+    responseSerialize: (value: QuizResponse): Buffer =>
+      Buffer.from(QuizResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): QuizResponse =>
+      QuizResponse.decode(value),
   },
   updateQuiz: {
-    path: "/course_service.CourseService/UpdateQuiz",
+    path: '/course_service.CourseService/UpdateQuiz',
     requestStream: false,
     responseStream: false,
-    requestSerialize: (value: UpdateQuizRequest): Buffer => Buffer.from(UpdateQuizRequest.encode(value).finish()),
-    requestDeserialize: (value: Buffer): UpdateQuizRequest => UpdateQuizRequest.decode(value),
-    responseSerialize: (value: QuizResponse): Buffer => Buffer.from(QuizResponse.encode(value).finish()),
-    responseDeserialize: (value: Buffer): QuizResponse => QuizResponse.decode(value),
+    requestSerialize: (value: UpdateQuizRequest): Buffer =>
+      Buffer.from(UpdateQuizRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): UpdateQuizRequest =>
+      UpdateQuizRequest.decode(value),
+    responseSerialize: (value: QuizResponse): Buffer =>
+      Buffer.from(QuizResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): QuizResponse =>
+      QuizResponse.decode(value),
   },
   deleteQuiz: {
-    path: "/course_service.CourseService/DeleteQuiz",
+    path: '/course_service.CourseService/DeleteQuiz',
     requestStream: false,
     responseStream: false,
-    requestSerialize: (value: DeleteQuizRequest): Buffer => Buffer.from(DeleteQuizRequest.encode(value).finish()),
-    requestDeserialize: (value: Buffer): DeleteQuizRequest => DeleteQuizRequest.decode(value),
-    responseSerialize: (value: DeleteQuizResponse): Buffer => Buffer.from(DeleteQuizResponse.encode(value).finish()),
-    responseDeserialize: (value: Buffer): DeleteQuizResponse => DeleteQuizResponse.decode(value),
+    requestSerialize: (value: DeleteQuizRequest): Buffer =>
+      Buffer.from(DeleteQuizRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): DeleteQuizRequest =>
+      DeleteQuizRequest.decode(value),
+    responseSerialize: (value: DeleteQuizResponse): Buffer =>
+      Buffer.from(DeleteQuizResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): DeleteQuizResponse =>
+      DeleteQuizResponse.decode(value),
   },
   getQuizzesByCourse: {
-    path: "/course_service.CourseService/GetQuizzesByCourse",
+    path: '/course_service.CourseService/GetQuizzesByCourse',
     requestStream: false,
     responseStream: false,
     requestSerialize: (value: GetQuizzesByCourseRequest): Buffer =>
       Buffer.from(GetQuizzesByCourseRequest.encode(value).finish()),
-    requestDeserialize: (value: Buffer): GetQuizzesByCourseRequest => GetQuizzesByCourseRequest.decode(value),
-    responseSerialize: (value: QuizzesResponse): Buffer => Buffer.from(QuizzesResponse.encode(value).finish()),
-    responseDeserialize: (value: Buffer): QuizzesResponse => QuizzesResponse.decode(value),
+    requestDeserialize: (value: Buffer): GetQuizzesByCourseRequest =>
+      GetQuizzesByCourseRequest.decode(value),
+    responseSerialize: (value: QuizzesResponse): Buffer =>
+      Buffer.from(QuizzesResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): QuizzesResponse =>
+      QuizzesResponse.decode(value),
   },
 } as const;
 
@@ -571,27 +744,45 @@ export interface CourseServiceServer extends UntypedServiceImplementation {
   publishCourse: handleUnaryCall<PublishCourseRequest, CourseResponse>;
   unPublishCourse: handleUnaryCall<UnPublishCourseRequest, CourseResponse>;
   deleteCourse: handleUnaryCall<DeleteCourseRequest, DeleteCourseResponse>;
-  getCoursesByInstructor: handleUnaryCall<GetCoursesByInstructorRequest, CoursesListResponse>;
-  getEnrolledCourses: handleUnaryCall<GetEnrolledCoursesRequest, CoursesListResponse>;
-  getCoursesByIds: handleUnaryCall<GetCoursesByIdsRequest, GetCoursesByIdsResponse>;
+  getCoursesByInstructor: handleUnaryCall<
+    GetCoursesByInstructorRequest,
+    CoursesListResponse
+  >;
+  getEnrolledCourses: handleUnaryCall<
+    GetEnrolledCoursesRequest,
+    CoursesListResponse
+  >;
+  getCoursesByIds: handleUnaryCall<
+    GetCoursesByIdsRequest,
+    GetCoursesByIdsResponse
+  >;
   /** Section CRUD */
   createSection: handleUnaryCall<CreateSectionRequest, SectionResponse>;
   getSection: handleUnaryCall<GetSectionRequest, SectionResponse>;
   updateSection: handleUnaryCall<UpdateSectionRequest, SectionResponse>;
   deleteSection: handleUnaryCall<DeleteSectionRequest, DeleteSectionResponse>;
-  getSectionsByCourse: handleUnaryCall<GetSectionsByCourseRequest, SectionsResponse>;
+  getSectionsByCourse: handleUnaryCall<
+    GetSectionsByCourseRequest,
+    SectionsResponse
+  >;
   /** Lesson CRUD */
   createLesson: handleUnaryCall<CreateLessonRequest, LessonResponse>;
   getLesson: handleUnaryCall<GetLessonRequest, LessonResponse>;
   updateLesson: handleUnaryCall<UpdateLessonRequest, LessonResponse>;
   deleteLesson: handleUnaryCall<DeleteLessonRequest, DeleteLessonResponse>;
-  getLessonsBySection: handleUnaryCall<GetLessonsBySectionRequest, LessonsResponse>;
+  getLessonsBySection: handleUnaryCall<
+    GetLessonsBySectionRequest,
+    LessonsResponse
+  >;
   /** Quiz CRUD */
   createQuiz: handleUnaryCall<CreateQuizRequest, QuizResponse>;
   getQuiz: handleUnaryCall<GetQuizRequest, QuizResponse>;
   updateQuiz: handleUnaryCall<UpdateQuizRequest, QuizResponse>;
   deleteQuiz: handleUnaryCall<DeleteQuizRequest, DeleteQuizResponse>;
-  getQuizzesByCourse: handleUnaryCall<GetQuizzesByCourseRequest, QuizzesResponse>;
+  getQuizzesByCourse: handleUnaryCall<
+    GetQuizzesByCourseRequest,
+    QuizzesResponse
+  >;
 }
 
 export interface EnrollmentServiceClient {
@@ -600,21 +791,37 @@ export interface EnrollmentServiceClient {
    * rpc CreateEnrollment(course.enrollment.CreateEnrollmentRequest) returns (course.enrollment.EnrollmentResponse);
    */
 
-  getEnrollment(request: GetEnrollmentRequest): Observable<GetEnrollmentResponse>;
+  getEnrollment(
+    request: GetEnrollmentRequest,
+  ): Observable<GetEnrollmentResponse>;
 
-  getEnrollmentDetails(request: GetEnrollmentRequest): Observable<GetEnrollmentDetailsResponse>;
+  getEnrollmentDetails(
+    request: GetEnrollmentRequest,
+  ): Observable<GetEnrollmentDetailsResponse>;
 
-  updateEnrollment(request: UpdateEnrollmentRequest): Observable<EnrollmentResponse>;
+  updateEnrollment(
+    request: UpdateEnrollmentRequest,
+  ): Observable<EnrollmentResponse>;
 
-  deleteEnrollment(request: DeleteEnrollmentRequest): Observable<DeleteEnrollmentResponse>;
+  deleteEnrollment(
+    request: DeleteEnrollmentRequest,
+  ): Observable<DeleteEnrollmentResponse>;
 
-  checkEnrollment(request: CheckEnrollmentRequest): Observable<CheckEnrollmentResponse>;
+  checkEnrollment(
+    request: CheckEnrollmentRequest,
+  ): Observable<CheckEnrollmentResponse>;
 
-  checkCourseEnrollment(request: CheckCourseEnrollmentRequest): Observable<CheckEnrollmentResponse>;
+  checkCourseEnrollment(
+    request: CheckCourseEnrollmentRequest,
+  ): Observable<CheckEnrollmentResponse>;
 
-  getEnrollmentsByUser(request: GetEnrollmentsByUserRequest): Observable<EnrollmentsResponse>;
+  getEnrollmentsByUser(
+    request: GetEnrollmentsByUserRequest,
+  ): Observable<EnrollmentsResponse>;
 
-  getEnrollmentsByCourse(request: GetEnrollmentsByCourseRequest): Observable<EnrollmentsResponse>;
+  getEnrollmentsByCourse(
+    request: GetEnrollmentsByCourseRequest,
+  ): Observable<EnrollmentsResponse>;
 
   /** Progress CRUD */
 
@@ -622,39 +829,63 @@ export interface EnrollmentServiceClient {
 
   getProgress(request: GetProgressRequest): Observable<ProgressResponse>;
 
-  updateLessonProgress(request: UpdateLessonProgressRequest): Observable<UpdateLessonProgressResponse>;
+  updateLessonProgress(
+    request: UpdateLessonProgressRequest,
+  ): Observable<UpdateLessonProgressResponse>;
 
-  submitQuizProgress(request: SubmitQuizAttemptRequest): Observable<SubmitQuizAttemptResponse>;
+  submitQuizProgress(
+    request: SubmitQuizAttemptRequest,
+  ): Observable<SubmitQuizAttemptResponse>;
 
-  deleteProgress(request: DeleteProgressRequest): Observable<DeleteProgressResponse>;
+  deleteProgress(
+    request: DeleteProgressRequest,
+  ): Observable<DeleteProgressResponse>;
 
-  getProgressByEnrollment(request: GetProgressByEnrollmentRequest): Observable<EnrollmentProgressResponse>;
+  getProgressByEnrollment(
+    request: GetProgressByEnrollmentRequest,
+  ): Observable<EnrollmentProgressResponse>;
 
   /** Review CRUD */
 
-  submitCourseReview(request: SubmitCourseReviewRequest): Observable<ReviewResponse>;
+  submitCourseReview(
+    request: SubmitCourseReviewRequest,
+  ): Observable<ReviewResponse>;
 
   getReview(request: GetReviewRequest): Observable<ReviewResponse>;
 
-  getReviewByEnrollment(request: GetReviewByEnrollmentRequest): Observable<ReviewResponse>;
+  getReviewByEnrollment(
+    request: GetReviewByEnrollmentRequest,
+  ): Observable<ReviewResponse>;
 
   updateReview(request: UpdateReviewRequest): Observable<ReviewResponse>;
 
   deleteReview(request: DeleteReviewRequest): Observable<DeleteReviewResponse>;
 
-  getReviewsByCourse(request: GetReviewsByCourseRequest): Observable<ReviewsResponse>;
+  getReviewsByCourse(
+    request: GetReviewsByCourseRequest,
+  ): Observable<ReviewsResponse>;
 
   /** CERTIFICATE CRUD */
 
-  getCertificate(request: GetCertificateRequest): Observable<CertificateResponse>;
+  getCertificate(
+    request: GetCertificateRequest,
+  ): Observable<CertificateResponse>;
 
-  getCertificateByEnrollment(request: GetCertificateByEnrollmentRequest): Observable<CertificateResponse>;
+  getCertificateByEnrollment(
+    request: GetCertificateByEnrollmentRequest,
+  ): Observable<CertificateResponse>;
 
-  getCertificatesByUser(request: GetCertificatesByUserRequest): Observable<CertificatesResponse>;
+  getCertificatesByUser(
+    request: GetCertificatesByUserRequest,
+  ): Observable<CertificatesResponse>;
 
-  generateCertificate(request: GenerateCertificateRequest): Observable<CertificateResponse>;
+  generateCertificate(
+    request: GenerateCertificateRequest,
+  ): Observable<CertificateResponse>;
 
-  downloadCertificate(request: DownloadCertificateRequest): Observable<CertificatePDFChunk>;
+  downloadCertificate(
+    request: DownloadCertificateRequest,
+  ): Observable<CertificatePDFChunk>;
 }
 
 export interface EnrollmentServiceController {
@@ -665,59 +896,103 @@ export interface EnrollmentServiceController {
 
   getEnrollment(
     request: GetEnrollmentRequest,
-  ): Promise<GetEnrollmentResponse> | Observable<GetEnrollmentResponse> | GetEnrollmentResponse;
+  ):
+    | Promise<GetEnrollmentResponse>
+    | Observable<GetEnrollmentResponse>
+    | GetEnrollmentResponse;
 
   getEnrollmentDetails(
     request: GetEnrollmentRequest,
-  ): Promise<GetEnrollmentDetailsResponse> | Observable<GetEnrollmentDetailsResponse> | GetEnrollmentDetailsResponse;
+  ):
+    | Promise<GetEnrollmentDetailsResponse>
+    | Observable<GetEnrollmentDetailsResponse>
+    | GetEnrollmentDetailsResponse;
 
   updateEnrollment(
     request: UpdateEnrollmentRequest,
-  ): Promise<EnrollmentResponse> | Observable<EnrollmentResponse> | EnrollmentResponse;
+  ):
+    | Promise<EnrollmentResponse>
+    | Observable<EnrollmentResponse>
+    | EnrollmentResponse;
 
   deleteEnrollment(
     request: DeleteEnrollmentRequest,
-  ): Promise<DeleteEnrollmentResponse> | Observable<DeleteEnrollmentResponse> | DeleteEnrollmentResponse;
+  ):
+    | Promise<DeleteEnrollmentResponse>
+    | Observable<DeleteEnrollmentResponse>
+    | DeleteEnrollmentResponse;
 
   checkEnrollment(
     request: CheckEnrollmentRequest,
-  ): Promise<CheckEnrollmentResponse> | Observable<CheckEnrollmentResponse> | CheckEnrollmentResponse;
+  ):
+    | Promise<CheckEnrollmentResponse>
+    | Observable<CheckEnrollmentResponse>
+    | CheckEnrollmentResponse;
 
   checkCourseEnrollment(
     request: CheckCourseEnrollmentRequest,
-  ): Promise<CheckEnrollmentResponse> | Observable<CheckEnrollmentResponse> | CheckEnrollmentResponse;
+  ):
+    | Promise<CheckEnrollmentResponse>
+    | Observable<CheckEnrollmentResponse>
+    | CheckEnrollmentResponse;
 
   getEnrollmentsByUser(
     request: GetEnrollmentsByUserRequest,
-  ): Promise<EnrollmentsResponse> | Observable<EnrollmentsResponse> | EnrollmentsResponse;
+  ):
+    | Promise<EnrollmentsResponse>
+    | Observable<EnrollmentsResponse>
+    | EnrollmentsResponse;
 
   getEnrollmentsByCourse(
     request: GetEnrollmentsByCourseRequest,
-  ): Promise<EnrollmentsResponse> | Observable<EnrollmentsResponse> | EnrollmentsResponse;
+  ):
+    | Promise<EnrollmentsResponse>
+    | Observable<EnrollmentsResponse>
+    | EnrollmentsResponse;
 
   /** Progress CRUD */
 
   createProgress(
     request: CreateProgressRequest,
-  ): Promise<ProgressResponse> | Observable<ProgressResponse> | ProgressResponse;
+  ):
+    | Promise<ProgressResponse>
+    | Observable<ProgressResponse>
+    | ProgressResponse;
 
-  getProgress(request: GetProgressRequest): Promise<ProgressResponse> | Observable<ProgressResponse> | ProgressResponse;
+  getProgress(
+    request: GetProgressRequest,
+  ):
+    | Promise<ProgressResponse>
+    | Observable<ProgressResponse>
+    | ProgressResponse;
 
   updateLessonProgress(
     request: UpdateLessonProgressRequest,
-  ): Promise<UpdateLessonProgressResponse> | Observable<UpdateLessonProgressResponse> | UpdateLessonProgressResponse;
+  ):
+    | Promise<UpdateLessonProgressResponse>
+    | Observable<UpdateLessonProgressResponse>
+    | UpdateLessonProgressResponse;
 
   submitQuizProgress(
     request: SubmitQuizAttemptRequest,
-  ): Promise<SubmitQuizAttemptResponse> | Observable<SubmitQuizAttemptResponse> | SubmitQuizAttemptResponse;
+  ):
+    | Promise<SubmitQuizAttemptResponse>
+    | Observable<SubmitQuizAttemptResponse>
+    | SubmitQuizAttemptResponse;
 
   deleteProgress(
     request: DeleteProgressRequest,
-  ): Promise<DeleteProgressResponse> | Observable<DeleteProgressResponse> | DeleteProgressResponse;
+  ):
+    | Promise<DeleteProgressResponse>
+    | Observable<DeleteProgressResponse>
+    | DeleteProgressResponse;
 
   getProgressByEnrollment(
     request: GetProgressByEnrollmentRequest,
-  ): Promise<EnrollmentProgressResponse> | Observable<EnrollmentProgressResponse> | EnrollmentProgressResponse;
+  ):
+    | Promise<EnrollmentProgressResponse>
+    | Observable<EnrollmentProgressResponse>
+    | EnrollmentProgressResponse;
 
   /** Review CRUD */
 
@@ -725,17 +1000,24 @@ export interface EnrollmentServiceController {
     request: SubmitCourseReviewRequest,
   ): Promise<ReviewResponse> | Observable<ReviewResponse> | ReviewResponse;
 
-  getReview(request: GetReviewRequest): Promise<ReviewResponse> | Observable<ReviewResponse> | ReviewResponse;
+  getReview(
+    request: GetReviewRequest,
+  ): Promise<ReviewResponse> | Observable<ReviewResponse> | ReviewResponse;
 
   getReviewByEnrollment(
     request: GetReviewByEnrollmentRequest,
   ): Promise<ReviewResponse> | Observable<ReviewResponse> | ReviewResponse;
 
-  updateReview(request: UpdateReviewRequest): Promise<ReviewResponse> | Observable<ReviewResponse> | ReviewResponse;
+  updateReview(
+    request: UpdateReviewRequest,
+  ): Promise<ReviewResponse> | Observable<ReviewResponse> | ReviewResponse;
 
   deleteReview(
     request: DeleteReviewRequest,
-  ): Promise<DeleteReviewResponse> | Observable<DeleteReviewResponse> | DeleteReviewResponse;
+  ):
+    | Promise<DeleteReviewResponse>
+    | Observable<DeleteReviewResponse>
+    | DeleteReviewResponse;
 
   getReviewsByCourse(
     request: GetReviewsByCourseRequest,
@@ -745,65 +1027,93 @@ export interface EnrollmentServiceController {
 
   getCertificate(
     request: GetCertificateRequest,
-  ): Promise<CertificateResponse> | Observable<CertificateResponse> | CertificateResponse;
+  ):
+    | Promise<CertificateResponse>
+    | Observable<CertificateResponse>
+    | CertificateResponse;
 
   getCertificateByEnrollment(
     request: GetCertificateByEnrollmentRequest,
-  ): Promise<CertificateResponse> | Observable<CertificateResponse> | CertificateResponse;
+  ):
+    | Promise<CertificateResponse>
+    | Observable<CertificateResponse>
+    | CertificateResponse;
 
   getCertificatesByUser(
     request: GetCertificatesByUserRequest,
-  ): Promise<CertificatesResponse> | Observable<CertificatesResponse> | CertificatesResponse;
+  ):
+    | Promise<CertificatesResponse>
+    | Observable<CertificatesResponse>
+    | CertificatesResponse;
 
   generateCertificate(
     request: GenerateCertificateRequest,
-  ): Promise<CertificateResponse> | Observable<CertificateResponse> | CertificateResponse;
+  ):
+    | Promise<CertificateResponse>
+    | Observable<CertificateResponse>
+    | CertificateResponse;
 
-  downloadCertificate(request: DownloadCertificateRequest): Observable<CertificatePDFChunk>;
+  downloadCertificate(
+    request: DownloadCertificateRequest,
+  ): Observable<CertificatePDFChunk>;
 }
 
 export function EnrollmentServiceControllerMethods() {
   return function (constructor: Function) {
     const grpcMethods: string[] = [
-      "getEnrollment",
-      "getEnrollmentDetails",
-      "updateEnrollment",
-      "deleteEnrollment",
-      "checkEnrollment",
-      "checkCourseEnrollment",
-      "getEnrollmentsByUser",
-      "getEnrollmentsByCourse",
-      "createProgress",
-      "getProgress",
-      "updateLessonProgress",
-      "submitQuizProgress",
-      "deleteProgress",
-      "getProgressByEnrollment",
-      "submitCourseReview",
-      "getReview",
-      "getReviewByEnrollment",
-      "updateReview",
-      "deleteReview",
-      "getReviewsByCourse",
-      "getCertificate",
-      "getCertificateByEnrollment",
-      "getCertificatesByUser",
-      "generateCertificate",
-      "downloadCertificate",
+      'getEnrollment',
+      'getEnrollmentDetails',
+      'updateEnrollment',
+      'deleteEnrollment',
+      'checkEnrollment',
+      'checkCourseEnrollment',
+      'getEnrollmentsByUser',
+      'getEnrollmentsByCourse',
+      'createProgress',
+      'getProgress',
+      'updateLessonProgress',
+      'submitQuizProgress',
+      'deleteProgress',
+      'getProgressByEnrollment',
+      'submitCourseReview',
+      'getReview',
+      'getReviewByEnrollment',
+      'updateReview',
+      'deleteReview',
+      'getReviewsByCourse',
+      'getCertificate',
+      'getCertificateByEnrollment',
+      'getCertificatesByUser',
+      'generateCertificate',
+      'downloadCertificate',
     ];
     for (const method of grpcMethods) {
-      const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
-      GrpcMethod("EnrollmentService", method)(constructor.prototype[method], method, descriptor);
+      const descriptor: any = Reflect.getOwnPropertyDescriptor(
+        constructor.prototype,
+        method,
+      );
+      GrpcMethod('EnrollmentService', method)(
+        constructor.prototype[method],
+        method,
+        descriptor,
+      );
     }
     const grpcStreamMethods: string[] = [];
     for (const method of grpcStreamMethods) {
-      const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
-      GrpcStreamMethod("EnrollmentService", method)(constructor.prototype[method], method, descriptor);
+      const descriptor: any = Reflect.getOwnPropertyDescriptor(
+        constructor.prototype,
+        method,
+      );
+      GrpcStreamMethod('EnrollmentService', method)(
+        constructor.prototype[method],
+        method,
+        descriptor,
+      );
     }
   };
 }
 
-export const ENROLLMENT_SERVICE_NAME = "EnrollmentService";
+export const ENROLLMENT_SERVICE_NAME = 'EnrollmentService';
 
 export type EnrollmentServiceService = typeof EnrollmentServiceService;
 export const EnrollmentServiceService = {
@@ -812,263 +1122,332 @@ export const EnrollmentServiceService = {
    * rpc CreateEnrollment(course.enrollment.CreateEnrollmentRequest) returns (course.enrollment.EnrollmentResponse);
    */
   getEnrollment: {
-    path: "/course_service.EnrollmentService/GetEnrollment",
+    path: '/course_service.EnrollmentService/GetEnrollment',
     requestStream: false,
     responseStream: false,
-    requestSerialize: (value: GetEnrollmentRequest): Buffer => Buffer.from(GetEnrollmentRequest.encode(value).finish()),
-    requestDeserialize: (value: Buffer): GetEnrollmentRequest => GetEnrollmentRequest.decode(value),
+    requestSerialize: (value: GetEnrollmentRequest): Buffer =>
+      Buffer.from(GetEnrollmentRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): GetEnrollmentRequest =>
+      GetEnrollmentRequest.decode(value),
     responseSerialize: (value: GetEnrollmentResponse): Buffer =>
       Buffer.from(GetEnrollmentResponse.encode(value).finish()),
-    responseDeserialize: (value: Buffer): GetEnrollmentResponse => GetEnrollmentResponse.decode(value),
+    responseDeserialize: (value: Buffer): GetEnrollmentResponse =>
+      GetEnrollmentResponse.decode(value),
   },
   getEnrollmentDetails: {
-    path: "/course_service.EnrollmentService/GetEnrollmentDetails",
+    path: '/course_service.EnrollmentService/GetEnrollmentDetails',
     requestStream: false,
     responseStream: false,
-    requestSerialize: (value: GetEnrollmentRequest): Buffer => Buffer.from(GetEnrollmentRequest.encode(value).finish()),
-    requestDeserialize: (value: Buffer): GetEnrollmentRequest => GetEnrollmentRequest.decode(value),
+    requestSerialize: (value: GetEnrollmentRequest): Buffer =>
+      Buffer.from(GetEnrollmentRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): GetEnrollmentRequest =>
+      GetEnrollmentRequest.decode(value),
     responseSerialize: (value: GetEnrollmentDetailsResponse): Buffer =>
       Buffer.from(GetEnrollmentDetailsResponse.encode(value).finish()),
-    responseDeserialize: (value: Buffer): GetEnrollmentDetailsResponse => GetEnrollmentDetailsResponse.decode(value),
+    responseDeserialize: (value: Buffer): GetEnrollmentDetailsResponse =>
+      GetEnrollmentDetailsResponse.decode(value),
   },
   updateEnrollment: {
-    path: "/course_service.EnrollmentService/UpdateEnrollment",
+    path: '/course_service.EnrollmentService/UpdateEnrollment',
     requestStream: false,
     responseStream: false,
     requestSerialize: (value: UpdateEnrollmentRequest): Buffer =>
       Buffer.from(UpdateEnrollmentRequest.encode(value).finish()),
-    requestDeserialize: (value: Buffer): UpdateEnrollmentRequest => UpdateEnrollmentRequest.decode(value),
-    responseSerialize: (value: EnrollmentResponse): Buffer => Buffer.from(EnrollmentResponse.encode(value).finish()),
-    responseDeserialize: (value: Buffer): EnrollmentResponse => EnrollmentResponse.decode(value),
+    requestDeserialize: (value: Buffer): UpdateEnrollmentRequest =>
+      UpdateEnrollmentRequest.decode(value),
+    responseSerialize: (value: EnrollmentResponse): Buffer =>
+      Buffer.from(EnrollmentResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): EnrollmentResponse =>
+      EnrollmentResponse.decode(value),
   },
   deleteEnrollment: {
-    path: "/course_service.EnrollmentService/DeleteEnrollment",
+    path: '/course_service.EnrollmentService/DeleteEnrollment',
     requestStream: false,
     responseStream: false,
     requestSerialize: (value: DeleteEnrollmentRequest): Buffer =>
       Buffer.from(DeleteEnrollmentRequest.encode(value).finish()),
-    requestDeserialize: (value: Buffer): DeleteEnrollmentRequest => DeleteEnrollmentRequest.decode(value),
+    requestDeserialize: (value: Buffer): DeleteEnrollmentRequest =>
+      DeleteEnrollmentRequest.decode(value),
     responseSerialize: (value: DeleteEnrollmentResponse): Buffer =>
       Buffer.from(DeleteEnrollmentResponse.encode(value).finish()),
-    responseDeserialize: (value: Buffer): DeleteEnrollmentResponse => DeleteEnrollmentResponse.decode(value),
+    responseDeserialize: (value: Buffer): DeleteEnrollmentResponse =>
+      DeleteEnrollmentResponse.decode(value),
   },
   checkEnrollment: {
-    path: "/course_service.EnrollmentService/CheckEnrollment",
+    path: '/course_service.EnrollmentService/CheckEnrollment',
     requestStream: false,
     responseStream: false,
     requestSerialize: (value: CheckEnrollmentRequest): Buffer =>
       Buffer.from(CheckEnrollmentRequest.encode(value).finish()),
-    requestDeserialize: (value: Buffer): CheckEnrollmentRequest => CheckEnrollmentRequest.decode(value),
+    requestDeserialize: (value: Buffer): CheckEnrollmentRequest =>
+      CheckEnrollmentRequest.decode(value),
     responseSerialize: (value: CheckEnrollmentResponse): Buffer =>
       Buffer.from(CheckEnrollmentResponse.encode(value).finish()),
-    responseDeserialize: (value: Buffer): CheckEnrollmentResponse => CheckEnrollmentResponse.decode(value),
+    responseDeserialize: (value: Buffer): CheckEnrollmentResponse =>
+      CheckEnrollmentResponse.decode(value),
   },
   checkCourseEnrollment: {
-    path: "/course_service.EnrollmentService/CheckCourseEnrollment",
+    path: '/course_service.EnrollmentService/CheckCourseEnrollment',
     requestStream: false,
     responseStream: false,
     requestSerialize: (value: CheckCourseEnrollmentRequest): Buffer =>
       Buffer.from(CheckCourseEnrollmentRequest.encode(value).finish()),
-    requestDeserialize: (value: Buffer): CheckCourseEnrollmentRequest => CheckCourseEnrollmentRequest.decode(value),
+    requestDeserialize: (value: Buffer): CheckCourseEnrollmentRequest =>
+      CheckCourseEnrollmentRequest.decode(value),
     responseSerialize: (value: CheckEnrollmentResponse): Buffer =>
       Buffer.from(CheckEnrollmentResponse.encode(value).finish()),
-    responseDeserialize: (value: Buffer): CheckEnrollmentResponse => CheckEnrollmentResponse.decode(value),
+    responseDeserialize: (value: Buffer): CheckEnrollmentResponse =>
+      CheckEnrollmentResponse.decode(value),
   },
   getEnrollmentsByUser: {
-    path: "/course_service.EnrollmentService/GetEnrollmentsByUser",
+    path: '/course_service.EnrollmentService/GetEnrollmentsByUser',
     requestStream: false,
     responseStream: false,
     requestSerialize: (value: GetEnrollmentsByUserRequest): Buffer =>
       Buffer.from(GetEnrollmentsByUserRequest.encode(value).finish()),
-    requestDeserialize: (value: Buffer): GetEnrollmentsByUserRequest => GetEnrollmentsByUserRequest.decode(value),
-    responseSerialize: (value: EnrollmentsResponse): Buffer => Buffer.from(EnrollmentsResponse.encode(value).finish()),
-    responseDeserialize: (value: Buffer): EnrollmentsResponse => EnrollmentsResponse.decode(value),
+    requestDeserialize: (value: Buffer): GetEnrollmentsByUserRequest =>
+      GetEnrollmentsByUserRequest.decode(value),
+    responseSerialize: (value: EnrollmentsResponse): Buffer =>
+      Buffer.from(EnrollmentsResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): EnrollmentsResponse =>
+      EnrollmentsResponse.decode(value),
   },
   getEnrollmentsByCourse: {
-    path: "/course_service.EnrollmentService/GetEnrollmentsByCourse",
+    path: '/course_service.EnrollmentService/GetEnrollmentsByCourse',
     requestStream: false,
     responseStream: false,
     requestSerialize: (value: GetEnrollmentsByCourseRequest): Buffer =>
       Buffer.from(GetEnrollmentsByCourseRequest.encode(value).finish()),
-    requestDeserialize: (value: Buffer): GetEnrollmentsByCourseRequest => GetEnrollmentsByCourseRequest.decode(value),
-    responseSerialize: (value: EnrollmentsResponse): Buffer => Buffer.from(EnrollmentsResponse.encode(value).finish()),
-    responseDeserialize: (value: Buffer): EnrollmentsResponse => EnrollmentsResponse.decode(value),
+    requestDeserialize: (value: Buffer): GetEnrollmentsByCourseRequest =>
+      GetEnrollmentsByCourseRequest.decode(value),
+    responseSerialize: (value: EnrollmentsResponse): Buffer =>
+      Buffer.from(EnrollmentsResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): EnrollmentsResponse =>
+      EnrollmentsResponse.decode(value),
   },
   /** Progress CRUD */
   createProgress: {
-    path: "/course_service.EnrollmentService/CreateProgress",
+    path: '/course_service.EnrollmentService/CreateProgress',
     requestStream: false,
     responseStream: false,
     requestSerialize: (value: CreateProgressRequest): Buffer =>
       Buffer.from(CreateProgressRequest.encode(value).finish()),
-    requestDeserialize: (value: Buffer): CreateProgressRequest => CreateProgressRequest.decode(value),
-    responseSerialize: (value: ProgressResponse): Buffer => Buffer.from(ProgressResponse.encode(value).finish()),
-    responseDeserialize: (value: Buffer): ProgressResponse => ProgressResponse.decode(value),
+    requestDeserialize: (value: Buffer): CreateProgressRequest =>
+      CreateProgressRequest.decode(value),
+    responseSerialize: (value: ProgressResponse): Buffer =>
+      Buffer.from(ProgressResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): ProgressResponse =>
+      ProgressResponse.decode(value),
   },
   getProgress: {
-    path: "/course_service.EnrollmentService/GetProgress",
+    path: '/course_service.EnrollmentService/GetProgress',
     requestStream: false,
     responseStream: false,
-    requestSerialize: (value: GetProgressRequest): Buffer => Buffer.from(GetProgressRequest.encode(value).finish()),
-    requestDeserialize: (value: Buffer): GetProgressRequest => GetProgressRequest.decode(value),
-    responseSerialize: (value: ProgressResponse): Buffer => Buffer.from(ProgressResponse.encode(value).finish()),
-    responseDeserialize: (value: Buffer): ProgressResponse => ProgressResponse.decode(value),
+    requestSerialize: (value: GetProgressRequest): Buffer =>
+      Buffer.from(GetProgressRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): GetProgressRequest =>
+      GetProgressRequest.decode(value),
+    responseSerialize: (value: ProgressResponse): Buffer =>
+      Buffer.from(ProgressResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): ProgressResponse =>
+      ProgressResponse.decode(value),
   },
   updateLessonProgress: {
-    path: "/course_service.EnrollmentService/UpdateLessonProgress",
+    path: '/course_service.EnrollmentService/UpdateLessonProgress',
     requestStream: false,
     responseStream: false,
     requestSerialize: (value: UpdateLessonProgressRequest): Buffer =>
       Buffer.from(UpdateLessonProgressRequest.encode(value).finish()),
-    requestDeserialize: (value: Buffer): UpdateLessonProgressRequest => UpdateLessonProgressRequest.decode(value),
+    requestDeserialize: (value: Buffer): UpdateLessonProgressRequest =>
+      UpdateLessonProgressRequest.decode(value),
     responseSerialize: (value: UpdateLessonProgressResponse): Buffer =>
       Buffer.from(UpdateLessonProgressResponse.encode(value).finish()),
-    responseDeserialize: (value: Buffer): UpdateLessonProgressResponse => UpdateLessonProgressResponse.decode(value),
+    responseDeserialize: (value: Buffer): UpdateLessonProgressResponse =>
+      UpdateLessonProgressResponse.decode(value),
   },
   submitQuizProgress: {
-    path: "/course_service.EnrollmentService/SubmitQuizProgress",
+    path: '/course_service.EnrollmentService/SubmitQuizProgress',
     requestStream: false,
     responseStream: false,
     requestSerialize: (value: SubmitQuizAttemptRequest): Buffer =>
       Buffer.from(SubmitQuizAttemptRequest.encode(value).finish()),
-    requestDeserialize: (value: Buffer): SubmitQuizAttemptRequest => SubmitQuizAttemptRequest.decode(value),
+    requestDeserialize: (value: Buffer): SubmitQuizAttemptRequest =>
+      SubmitQuizAttemptRequest.decode(value),
     responseSerialize: (value: SubmitQuizAttemptResponse): Buffer =>
       Buffer.from(SubmitQuizAttemptResponse.encode(value).finish()),
-    responseDeserialize: (value: Buffer): SubmitQuizAttemptResponse => SubmitQuizAttemptResponse.decode(value),
+    responseDeserialize: (value: Buffer): SubmitQuizAttemptResponse =>
+      SubmitQuizAttemptResponse.decode(value),
   },
   deleteProgress: {
-    path: "/course_service.EnrollmentService/DeleteProgress",
+    path: '/course_service.EnrollmentService/DeleteProgress',
     requestStream: false,
     responseStream: false,
     requestSerialize: (value: DeleteProgressRequest): Buffer =>
       Buffer.from(DeleteProgressRequest.encode(value).finish()),
-    requestDeserialize: (value: Buffer): DeleteProgressRequest => DeleteProgressRequest.decode(value),
+    requestDeserialize: (value: Buffer): DeleteProgressRequest =>
+      DeleteProgressRequest.decode(value),
     responseSerialize: (value: DeleteProgressResponse): Buffer =>
       Buffer.from(DeleteProgressResponse.encode(value).finish()),
-    responseDeserialize: (value: Buffer): DeleteProgressResponse => DeleteProgressResponse.decode(value),
+    responseDeserialize: (value: Buffer): DeleteProgressResponse =>
+      DeleteProgressResponse.decode(value),
   },
   getProgressByEnrollment: {
-    path: "/course_service.EnrollmentService/GetProgressByEnrollment",
+    path: '/course_service.EnrollmentService/GetProgressByEnrollment',
     requestStream: false,
     responseStream: false,
     requestSerialize: (value: GetProgressByEnrollmentRequest): Buffer =>
       Buffer.from(GetProgressByEnrollmentRequest.encode(value).finish()),
-    requestDeserialize: (value: Buffer): GetProgressByEnrollmentRequest => GetProgressByEnrollmentRequest.decode(value),
+    requestDeserialize: (value: Buffer): GetProgressByEnrollmentRequest =>
+      GetProgressByEnrollmentRequest.decode(value),
     responseSerialize: (value: EnrollmentProgressResponse): Buffer =>
       Buffer.from(EnrollmentProgressResponse.encode(value).finish()),
-    responseDeserialize: (value: Buffer): EnrollmentProgressResponse => EnrollmentProgressResponse.decode(value),
+    responseDeserialize: (value: Buffer): EnrollmentProgressResponse =>
+      EnrollmentProgressResponse.decode(value),
   },
   /** Review CRUD */
   submitCourseReview: {
-    path: "/course_service.EnrollmentService/SubmitCourseReview",
+    path: '/course_service.EnrollmentService/SubmitCourseReview',
     requestStream: false,
     responseStream: false,
     requestSerialize: (value: SubmitCourseReviewRequest): Buffer =>
       Buffer.from(SubmitCourseReviewRequest.encode(value).finish()),
-    requestDeserialize: (value: Buffer): SubmitCourseReviewRequest => SubmitCourseReviewRequest.decode(value),
-    responseSerialize: (value: ReviewResponse): Buffer => Buffer.from(ReviewResponse.encode(value).finish()),
-    responseDeserialize: (value: Buffer): ReviewResponse => ReviewResponse.decode(value),
+    requestDeserialize: (value: Buffer): SubmitCourseReviewRequest =>
+      SubmitCourseReviewRequest.decode(value),
+    responseSerialize: (value: ReviewResponse): Buffer =>
+      Buffer.from(ReviewResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): ReviewResponse =>
+      ReviewResponse.decode(value),
   },
   getReview: {
-    path: "/course_service.EnrollmentService/GetReview",
+    path: '/course_service.EnrollmentService/GetReview',
     requestStream: false,
     responseStream: false,
-    requestSerialize: (value: GetReviewRequest): Buffer => Buffer.from(GetReviewRequest.encode(value).finish()),
-    requestDeserialize: (value: Buffer): GetReviewRequest => GetReviewRequest.decode(value),
-    responseSerialize: (value: ReviewResponse): Buffer => Buffer.from(ReviewResponse.encode(value).finish()),
-    responseDeserialize: (value: Buffer): ReviewResponse => ReviewResponse.decode(value),
+    requestSerialize: (value: GetReviewRequest): Buffer =>
+      Buffer.from(GetReviewRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): GetReviewRequest =>
+      GetReviewRequest.decode(value),
+    responseSerialize: (value: ReviewResponse): Buffer =>
+      Buffer.from(ReviewResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): ReviewResponse =>
+      ReviewResponse.decode(value),
   },
   getReviewByEnrollment: {
-    path: "/course_service.EnrollmentService/GetReviewByEnrollment",
+    path: '/course_service.EnrollmentService/GetReviewByEnrollment',
     requestStream: false,
     responseStream: false,
     requestSerialize: (value: GetReviewByEnrollmentRequest): Buffer =>
       Buffer.from(GetReviewByEnrollmentRequest.encode(value).finish()),
-    requestDeserialize: (value: Buffer): GetReviewByEnrollmentRequest => GetReviewByEnrollmentRequest.decode(value),
-    responseSerialize: (value: ReviewResponse): Buffer => Buffer.from(ReviewResponse.encode(value).finish()),
-    responseDeserialize: (value: Buffer): ReviewResponse => ReviewResponse.decode(value),
+    requestDeserialize: (value: Buffer): GetReviewByEnrollmentRequest =>
+      GetReviewByEnrollmentRequest.decode(value),
+    responseSerialize: (value: ReviewResponse): Buffer =>
+      Buffer.from(ReviewResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): ReviewResponse =>
+      ReviewResponse.decode(value),
   },
   updateReview: {
-    path: "/course_service.EnrollmentService/UpdateReview",
+    path: '/course_service.EnrollmentService/UpdateReview',
     requestStream: false,
     responseStream: false,
-    requestSerialize: (value: UpdateReviewRequest): Buffer => Buffer.from(UpdateReviewRequest.encode(value).finish()),
-    requestDeserialize: (value: Buffer): UpdateReviewRequest => UpdateReviewRequest.decode(value),
-    responseSerialize: (value: ReviewResponse): Buffer => Buffer.from(ReviewResponse.encode(value).finish()),
-    responseDeserialize: (value: Buffer): ReviewResponse => ReviewResponse.decode(value),
+    requestSerialize: (value: UpdateReviewRequest): Buffer =>
+      Buffer.from(UpdateReviewRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): UpdateReviewRequest =>
+      UpdateReviewRequest.decode(value),
+    responseSerialize: (value: ReviewResponse): Buffer =>
+      Buffer.from(ReviewResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): ReviewResponse =>
+      ReviewResponse.decode(value),
   },
   deleteReview: {
-    path: "/course_service.EnrollmentService/DeleteReview",
+    path: '/course_service.EnrollmentService/DeleteReview',
     requestStream: false,
     responseStream: false,
-    requestSerialize: (value: DeleteReviewRequest): Buffer => Buffer.from(DeleteReviewRequest.encode(value).finish()),
-    requestDeserialize: (value: Buffer): DeleteReviewRequest => DeleteReviewRequest.decode(value),
+    requestSerialize: (value: DeleteReviewRequest): Buffer =>
+      Buffer.from(DeleteReviewRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): DeleteReviewRequest =>
+      DeleteReviewRequest.decode(value),
     responseSerialize: (value: DeleteReviewResponse): Buffer =>
       Buffer.from(DeleteReviewResponse.encode(value).finish()),
-    responseDeserialize: (value: Buffer): DeleteReviewResponse => DeleteReviewResponse.decode(value),
+    responseDeserialize: (value: Buffer): DeleteReviewResponse =>
+      DeleteReviewResponse.decode(value),
   },
   getReviewsByCourse: {
-    path: "/course_service.EnrollmentService/GetReviewsByCourse",
+    path: '/course_service.EnrollmentService/GetReviewsByCourse',
     requestStream: false,
     responseStream: false,
     requestSerialize: (value: GetReviewsByCourseRequest): Buffer =>
       Buffer.from(GetReviewsByCourseRequest.encode(value).finish()),
-    requestDeserialize: (value: Buffer): GetReviewsByCourseRequest => GetReviewsByCourseRequest.decode(value),
-    responseSerialize: (value: ReviewsResponse): Buffer => Buffer.from(ReviewsResponse.encode(value).finish()),
-    responseDeserialize: (value: Buffer): ReviewsResponse => ReviewsResponse.decode(value),
+    requestDeserialize: (value: Buffer): GetReviewsByCourseRequest =>
+      GetReviewsByCourseRequest.decode(value),
+    responseSerialize: (value: ReviewsResponse): Buffer =>
+      Buffer.from(ReviewsResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): ReviewsResponse =>
+      ReviewsResponse.decode(value),
   },
   /** CERTIFICATE CRUD */
   getCertificate: {
-    path: "/course_service.EnrollmentService/GetCertificate",
+    path: '/course_service.EnrollmentService/GetCertificate',
     requestStream: false,
     responseStream: false,
     requestSerialize: (value: GetCertificateRequest): Buffer =>
       Buffer.from(GetCertificateRequest.encode(value).finish()),
-    requestDeserialize: (value: Buffer): GetCertificateRequest => GetCertificateRequest.decode(value),
-    responseSerialize: (value: CertificateResponse): Buffer => Buffer.from(CertificateResponse.encode(value).finish()),
-    responseDeserialize: (value: Buffer): CertificateResponse => CertificateResponse.decode(value),
+    requestDeserialize: (value: Buffer): GetCertificateRequest =>
+      GetCertificateRequest.decode(value),
+    responseSerialize: (value: CertificateResponse): Buffer =>
+      Buffer.from(CertificateResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): CertificateResponse =>
+      CertificateResponse.decode(value),
   },
   getCertificateByEnrollment: {
-    path: "/course_service.EnrollmentService/GetCertificateByEnrollment",
+    path: '/course_service.EnrollmentService/GetCertificateByEnrollment',
     requestStream: false,
     responseStream: false,
     requestSerialize: (value: GetCertificateByEnrollmentRequest): Buffer =>
       Buffer.from(GetCertificateByEnrollmentRequest.encode(value).finish()),
     requestDeserialize: (value: Buffer): GetCertificateByEnrollmentRequest =>
       GetCertificateByEnrollmentRequest.decode(value),
-    responseSerialize: (value: CertificateResponse): Buffer => Buffer.from(CertificateResponse.encode(value).finish()),
-    responseDeserialize: (value: Buffer): CertificateResponse => CertificateResponse.decode(value),
+    responseSerialize: (value: CertificateResponse): Buffer =>
+      Buffer.from(CertificateResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): CertificateResponse =>
+      CertificateResponse.decode(value),
   },
   getCertificatesByUser: {
-    path: "/course_service.EnrollmentService/GetCertificatesByUser",
+    path: '/course_service.EnrollmentService/GetCertificatesByUser',
     requestStream: false,
     responseStream: false,
     requestSerialize: (value: GetCertificatesByUserRequest): Buffer =>
       Buffer.from(GetCertificatesByUserRequest.encode(value).finish()),
-    requestDeserialize: (value: Buffer): GetCertificatesByUserRequest => GetCertificatesByUserRequest.decode(value),
+    requestDeserialize: (value: Buffer): GetCertificatesByUserRequest =>
+      GetCertificatesByUserRequest.decode(value),
     responseSerialize: (value: CertificatesResponse): Buffer =>
       Buffer.from(CertificatesResponse.encode(value).finish()),
-    responseDeserialize: (value: Buffer): CertificatesResponse => CertificatesResponse.decode(value),
+    responseDeserialize: (value: Buffer): CertificatesResponse =>
+      CertificatesResponse.decode(value),
   },
   generateCertificate: {
-    path: "/course_service.EnrollmentService/GenerateCertificate",
+    path: '/course_service.EnrollmentService/GenerateCertificate',
     requestStream: false,
     responseStream: false,
     requestSerialize: (value: GenerateCertificateRequest): Buffer =>
       Buffer.from(GenerateCertificateRequest.encode(value).finish()),
-    requestDeserialize: (value: Buffer): GenerateCertificateRequest => GenerateCertificateRequest.decode(value),
-    responseSerialize: (value: CertificateResponse): Buffer => Buffer.from(CertificateResponse.encode(value).finish()),
-    responseDeserialize: (value: Buffer): CertificateResponse => CertificateResponse.decode(value),
+    requestDeserialize: (value: Buffer): GenerateCertificateRequest =>
+      GenerateCertificateRequest.decode(value),
+    responseSerialize: (value: CertificateResponse): Buffer =>
+      Buffer.from(CertificateResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): CertificateResponse =>
+      CertificateResponse.decode(value),
   },
   downloadCertificate: {
-    path: "/course_service.EnrollmentService/DownloadCertificate",
+    path: '/course_service.EnrollmentService/DownloadCertificate',
     requestStream: false,
     responseStream: true,
     requestSerialize: (value: DownloadCertificateRequest): Buffer =>
       Buffer.from(DownloadCertificateRequest.encode(value).finish()),
-    requestDeserialize: (value: Buffer): DownloadCertificateRequest => DownloadCertificateRequest.decode(value),
-    responseSerialize: (value: CertificatePDFChunk): Buffer => Buffer.from(CertificatePDFChunk.encode(value).finish()),
-    responseDeserialize: (value: Buffer): CertificatePDFChunk => CertificatePDFChunk.decode(value),
+    requestDeserialize: (value: Buffer): DownloadCertificateRequest =>
+      DownloadCertificateRequest.decode(value),
+    responseSerialize: (value: CertificatePDFChunk): Buffer =>
+      Buffer.from(CertificatePDFChunk.encode(value).finish()),
+    responseDeserialize: (value: Buffer): CertificatePDFChunk =>
+      CertificatePDFChunk.decode(value),
   },
 } as const;
 
@@ -1078,31 +1457,85 @@ export interface EnrollmentServiceServer extends UntypedServiceImplementation {
    * rpc CreateEnrollment(course.enrollment.CreateEnrollmentRequest) returns (course.enrollment.EnrollmentResponse);
    */
   getEnrollment: handleUnaryCall<GetEnrollmentRequest, GetEnrollmentResponse>;
-  getEnrollmentDetails: handleUnaryCall<GetEnrollmentRequest, GetEnrollmentDetailsResponse>;
-  updateEnrollment: handleUnaryCall<UpdateEnrollmentRequest, EnrollmentResponse>;
-  deleteEnrollment: handleUnaryCall<DeleteEnrollmentRequest, DeleteEnrollmentResponse>;
-  checkEnrollment: handleUnaryCall<CheckEnrollmentRequest, CheckEnrollmentResponse>;
-  checkCourseEnrollment: handleUnaryCall<CheckCourseEnrollmentRequest, CheckEnrollmentResponse>;
-  getEnrollmentsByUser: handleUnaryCall<GetEnrollmentsByUserRequest, EnrollmentsResponse>;
-  getEnrollmentsByCourse: handleUnaryCall<GetEnrollmentsByCourseRequest, EnrollmentsResponse>;
+  getEnrollmentDetails: handleUnaryCall<
+    GetEnrollmentRequest,
+    GetEnrollmentDetailsResponse
+  >;
+  updateEnrollment: handleUnaryCall<
+    UpdateEnrollmentRequest,
+    EnrollmentResponse
+  >;
+  deleteEnrollment: handleUnaryCall<
+    DeleteEnrollmentRequest,
+    DeleteEnrollmentResponse
+  >;
+  checkEnrollment: handleUnaryCall<
+    CheckEnrollmentRequest,
+    CheckEnrollmentResponse
+  >;
+  checkCourseEnrollment: handleUnaryCall<
+    CheckCourseEnrollmentRequest,
+    CheckEnrollmentResponse
+  >;
+  getEnrollmentsByUser: handleUnaryCall<
+    GetEnrollmentsByUserRequest,
+    EnrollmentsResponse
+  >;
+  getEnrollmentsByCourse: handleUnaryCall<
+    GetEnrollmentsByCourseRequest,
+    EnrollmentsResponse
+  >;
   /** Progress CRUD */
   createProgress: handleUnaryCall<CreateProgressRequest, ProgressResponse>;
   getProgress: handleUnaryCall<GetProgressRequest, ProgressResponse>;
-  updateLessonProgress: handleUnaryCall<UpdateLessonProgressRequest, UpdateLessonProgressResponse>;
-  submitQuizProgress: handleUnaryCall<SubmitQuizAttemptRequest, SubmitQuizAttemptResponse>;
-  deleteProgress: handleUnaryCall<DeleteProgressRequest, DeleteProgressResponse>;
-  getProgressByEnrollment: handleUnaryCall<GetProgressByEnrollmentRequest, EnrollmentProgressResponse>;
+  updateLessonProgress: handleUnaryCall<
+    UpdateLessonProgressRequest,
+    UpdateLessonProgressResponse
+  >;
+  submitQuizProgress: handleUnaryCall<
+    SubmitQuizAttemptRequest,
+    SubmitQuizAttemptResponse
+  >;
+  deleteProgress: handleUnaryCall<
+    DeleteProgressRequest,
+    DeleteProgressResponse
+  >;
+  getProgressByEnrollment: handleUnaryCall<
+    GetProgressByEnrollmentRequest,
+    EnrollmentProgressResponse
+  >;
   /** Review CRUD */
-  submitCourseReview: handleUnaryCall<SubmitCourseReviewRequest, ReviewResponse>;
+  submitCourseReview: handleUnaryCall<
+    SubmitCourseReviewRequest,
+    ReviewResponse
+  >;
   getReview: handleUnaryCall<GetReviewRequest, ReviewResponse>;
-  getReviewByEnrollment: handleUnaryCall<GetReviewByEnrollmentRequest, ReviewResponse>;
+  getReviewByEnrollment: handleUnaryCall<
+    GetReviewByEnrollmentRequest,
+    ReviewResponse
+  >;
   updateReview: handleUnaryCall<UpdateReviewRequest, ReviewResponse>;
   deleteReview: handleUnaryCall<DeleteReviewRequest, DeleteReviewResponse>;
-  getReviewsByCourse: handleUnaryCall<GetReviewsByCourseRequest, ReviewsResponse>;
+  getReviewsByCourse: handleUnaryCall<
+    GetReviewsByCourseRequest,
+    ReviewsResponse
+  >;
   /** CERTIFICATE CRUD */
   getCertificate: handleUnaryCall<GetCertificateRequest, CertificateResponse>;
-  getCertificateByEnrollment: handleUnaryCall<GetCertificateByEnrollmentRequest, CertificateResponse>;
-  getCertificatesByUser: handleUnaryCall<GetCertificatesByUserRequest, CertificatesResponse>;
-  generateCertificate: handleUnaryCall<GenerateCertificateRequest, CertificateResponse>;
-  downloadCertificate: handleServerStreamingCall<DownloadCertificateRequest, CertificatePDFChunk>;
+  getCertificateByEnrollment: handleUnaryCall<
+    GetCertificateByEnrollmentRequest,
+    CertificateResponse
+  >;
+  getCertificatesByUser: handleUnaryCall<
+    GetCertificatesByUserRequest,
+    CertificatesResponse
+  >;
+  generateCertificate: handleUnaryCall<
+    GenerateCertificateRequest,
+    CertificateResponse
+  >;
+  downloadCertificate: handleServerStreamingCall<
+    DownloadCertificateRequest,
+    CertificatePDFChunk
+  >;
 }

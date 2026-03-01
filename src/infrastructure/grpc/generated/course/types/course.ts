@@ -5,11 +5,11 @@
 // source: course/types/course.proto
 
 /* eslint-disable */
-import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
-import { DeleteSuccess, Error, Pagination, User } from "../common";
-import { SectionData } from "./section";
+import { BinaryReader, BinaryWriter } from '@bufbuild/protobuf/wire';
+import { DeleteSuccess, Error, Pagination, User } from '../common';
+import { SectionData } from './section';
 
-export const protobufPackage = "course";
+export const protobufPackage = 'course';
 
 export interface CourseFilters {
   search?: string | undefined;
@@ -216,14 +216,17 @@ export interface DeleteCourseResponse {
   error?: Error | undefined;
 }
 
-export const COURSE_PACKAGE_NAME = "course";
+export const COURSE_PACKAGE_NAME = 'course';
 
 function createBaseCourseFilters(): CourseFilters {
   return { category: [], level: [] };
 }
 
 export const CourseFilters: MessageFns<CourseFilters> = {
-  encode(message: CourseFilters, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+  encode(
+    message: CourseFilters,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
     if (message.search !== undefined) {
       writer.uint32(10).string(message.search);
     }
@@ -249,7 +252,8 @@ export const CourseFilters: MessageFns<CourseFilters> = {
   },
 
   decode(input: BinaryReader | Uint8Array, length?: number): CourseFilters {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const reader =
+      input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseCourseFilters();
     while (reader.pos < end) {
@@ -326,7 +330,10 @@ function createBaseGetCoursesParams(): GetCoursesParams {
 }
 
 export const GetCoursesParams: MessageFns<GetCoursesParams> = {
-  encode(message: GetCoursesParams, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+  encode(
+    message: GetCoursesParams,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
     if (message.pagination !== undefined) {
       Pagination.encode(message.pagination, writer.uint32(10).fork()).join();
     }
@@ -337,7 +344,8 @@ export const GetCoursesParams: MessageFns<GetCoursesParams> = {
   },
 
   decode(input: BinaryReader | Uint8Array, length?: number): GetCoursesParams {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const reader =
+      input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseGetCoursesParams();
     while (reader.pos < end) {
@@ -374,7 +382,10 @@ function createBaseGetCoursesRequest(): GetCoursesRequest {
 }
 
 export const GetCoursesRequest: MessageFns<GetCoursesRequest> = {
-  encode(message: GetCoursesRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+  encode(
+    message: GetCoursesRequest,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
     if (message.params !== undefined) {
       GetCoursesParams.encode(message.params, writer.uint32(10).fork()).join();
     }
@@ -382,7 +393,8 @@ export const GetCoursesRequest: MessageFns<GetCoursesRequest> = {
   },
 
   decode(input: BinaryReader | Uint8Array, length?: number): GetCoursesRequest {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const reader =
+      input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseGetCoursesRequest();
     while (reader.pos < end) {
@@ -408,64 +420,71 @@ export const GetCoursesRequest: MessageFns<GetCoursesRequest> = {
 
 function createBaseCreateCourseRequest(): CreateCourseRequest {
   return {
-    title: "",
+    title: '',
     topics: [],
-    instructorId: "",
+    instructorId: '',
     instructor: undefined,
-    subTitle: "",
-    category: "",
-    subCategory: "",
-    language: "",
-    level: "",
-    subtitleLanguage: "",
-    durationValue: "",
-    durationUnit: "",
+    subTitle: '',
+    category: '',
+    subCategory: '',
+    language: '',
+    level: '',
+    subtitleLanguage: '',
+    durationValue: '',
+    durationUnit: '',
   };
 }
 
 export const CreateCourseRequest: MessageFns<CreateCourseRequest> = {
-  encode(message: CreateCourseRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.title !== "") {
+  encode(
+    message: CreateCourseRequest,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
+    if (message.title !== '') {
       writer.uint32(10).string(message.title);
     }
     for (const v of message.topics) {
       writer.uint32(18).string(v!);
     }
-    if (message.instructorId !== "") {
+    if (message.instructorId !== '') {
       writer.uint32(26).string(message.instructorId);
     }
     if (message.instructor !== undefined) {
       User.encode(message.instructor, writer.uint32(98).fork()).join();
     }
-    if (message.subTitle !== "") {
+    if (message.subTitle !== '') {
       writer.uint32(34).string(message.subTitle);
     }
-    if (message.category !== "") {
+    if (message.category !== '') {
       writer.uint32(42).string(message.category);
     }
-    if (message.subCategory !== "") {
+    if (message.subCategory !== '') {
       writer.uint32(50).string(message.subCategory);
     }
-    if (message.language !== "") {
+    if (message.language !== '') {
       writer.uint32(58).string(message.language);
     }
-    if (message.level !== "") {
+    if (message.level !== '') {
       writer.uint32(66).string(message.level);
     }
-    if (message.subtitleLanguage !== "") {
+    if (message.subtitleLanguage !== '') {
       writer.uint32(74).string(message.subtitleLanguage);
     }
-    if (message.durationValue !== "") {
+    if (message.durationValue !== '') {
       writer.uint32(82).string(message.durationValue);
     }
-    if (message.durationUnit !== "") {
+    if (message.durationUnit !== '') {
       writer.uint32(90).string(message.durationUnit);
     }
     return writer;
   },
 
-  decode(input: BinaryReader | Uint8Array, length?: number): CreateCourseRequest {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+  decode(
+    input: BinaryReader | Uint8Array,
+    length?: number,
+  ): CreateCourseRequest {
+    const reader =
+      input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseCreateCourseRequest();
     while (reader.pos < end) {
@@ -578,19 +597,23 @@ export const CreateCourseRequest: MessageFns<CreateCourseRequest> = {
 };
 
 function createBaseGetCourseRequest(): GetCourseRequest {
-  return { courseId: "" };
+  return { courseId: '' };
 }
 
 export const GetCourseRequest: MessageFns<GetCourseRequest> = {
-  encode(message: GetCourseRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.courseId !== "") {
+  encode(
+    message: GetCourseRequest,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
+    if (message.courseId !== '') {
       writer.uint32(10).string(message.courseId);
     }
     return writer;
   },
 
   decode(input: BinaryReader | Uint8Array, length?: number): GetCourseRequest {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const reader =
+      input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseGetCourseRequest();
     while (reader.pos < end) {
@@ -619,15 +642,22 @@ function createBaseGetCoursesByIdsRequest(): GetCoursesByIdsRequest {
 }
 
 export const GetCoursesByIdsRequest: MessageFns<GetCoursesByIdsRequest> = {
-  encode(message: GetCoursesByIdsRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+  encode(
+    message: GetCoursesByIdsRequest,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
     for (const v of message.courseIds) {
       writer.uint32(10).string(v!);
     }
     return writer;
   },
 
-  decode(input: BinaryReader | Uint8Array, length?: number): GetCoursesByIdsRequest {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+  decode(
+    input: BinaryReader | Uint8Array,
+    length?: number,
+  ): GetCoursesByIdsRequest {
+    const reader =
+      input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseGetCoursesByIdsRequest();
     while (reader.pos < end) {
@@ -656,9 +686,15 @@ function createBaseGetCoursesByIdsResponse(): GetCoursesByIdsResponse {
 }
 
 export const GetCoursesByIdsResponse: MessageFns<GetCoursesByIdsResponse> = {
-  encode(message: GetCoursesByIdsResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+  encode(
+    message: GetCoursesByIdsResponse,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
     if (message.success !== undefined) {
-      CoursesListResponse.encode(message.success, writer.uint32(10).fork()).join();
+      CoursesListResponse.encode(
+        message.success,
+        writer.uint32(10).fork(),
+      ).join();
     }
     if (message.error !== undefined) {
       Error.encode(message.error, writer.uint32(18).fork()).join();
@@ -666,8 +702,12 @@ export const GetCoursesByIdsResponse: MessageFns<GetCoursesByIdsResponse> = {
     return writer;
   },
 
-  decode(input: BinaryReader | Uint8Array, length?: number): GetCoursesByIdsResponse {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+  decode(
+    input: BinaryReader | Uint8Array,
+    length?: number,
+  ): GetCoursesByIdsResponse {
+    const reader =
+      input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseGetCoursesByIdsResponse();
     while (reader.pos < end) {
@@ -700,19 +740,26 @@ export const GetCoursesByIdsResponse: MessageFns<GetCoursesByIdsResponse> = {
 };
 
 function createBaseGetCourseBySlugRequest(): GetCourseBySlugRequest {
-  return { slug: "" };
+  return { slug: '' };
 }
 
 export const GetCourseBySlugRequest: MessageFns<GetCourseBySlugRequest> = {
-  encode(message: GetCourseBySlugRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.slug !== "") {
+  encode(
+    message: GetCourseBySlugRequest,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
+    if (message.slug !== '') {
       writer.uint32(10).string(message.slug);
     }
     return writer;
   },
 
-  decode(input: BinaryReader | Uint8Array, length?: number): GetCourseBySlugRequest {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+  decode(
+    input: BinaryReader | Uint8Array,
+    length?: number,
+  ): GetCourseBySlugRequest {
+    const reader =
+      input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseGetCourseBySlugRequest();
     while (reader.pos < end) {
@@ -737,11 +784,21 @@ export const GetCourseBySlugRequest: MessageFns<GetCourseBySlugRequest> = {
 };
 
 function createBaseUpdateCourseRequest(): UpdateCourseRequest {
-  return { topics: [], courseId: "", userId: "", learningOutcomes: [], targetAudience: [], requirements: [] };
+  return {
+    topics: [],
+    courseId: '',
+    userId: '',
+    learningOutcomes: [],
+    targetAudience: [],
+    requirements: [],
+  };
 }
 
 export const UpdateCourseRequest: MessageFns<UpdateCourseRequest> = {
-  encode(message: UpdateCourseRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+  encode(
+    message: UpdateCourseRequest,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
     if (message.title !== undefined) {
       writer.uint32(10).string(message.title);
     }
@@ -772,10 +829,10 @@ export const UpdateCourseRequest: MessageFns<UpdateCourseRequest> = {
     if (message.durationUnit !== undefined) {
       writer.uint32(90).string(message.durationUnit);
     }
-    if (message.courseId !== "") {
+    if (message.courseId !== '') {
       writer.uint32(98).string(message.courseId);
     }
-    if (message.userId !== "") {
+    if (message.userId !== '') {
       writer.uint32(178).string(message.userId);
     }
     if (message.description !== undefined) {
@@ -808,8 +865,12 @@ export const UpdateCourseRequest: MessageFns<UpdateCourseRequest> = {
     return writer;
   },
 
-  decode(input: BinaryReader | Uint8Array, length?: number): UpdateCourseRequest {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+  decode(
+    input: BinaryReader | Uint8Array,
+    length?: number,
+  ): UpdateCourseRequest {
+    const reader =
+      input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseUpdateCourseRequest();
     while (reader.pos < end) {
@@ -994,15 +1055,18 @@ export const UpdateCourseRequest: MessageFns<UpdateCourseRequest> = {
 };
 
 function createBaseDeleteCourseRequest(): DeleteCourseRequest {
-  return { courseId: "", userId: "", isAdmin: false };
+  return { courseId: '', userId: '', isAdmin: false };
 }
 
 export const DeleteCourseRequest: MessageFns<DeleteCourseRequest> = {
-  encode(message: DeleteCourseRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.courseId !== "") {
+  encode(
+    message: DeleteCourseRequest,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
+    if (message.courseId !== '') {
       writer.uint32(10).string(message.courseId);
     }
-    if (message.userId !== "") {
+    if (message.userId !== '') {
       writer.uint32(18).string(message.userId);
     }
     if (message.isAdmin !== false) {
@@ -1011,8 +1075,12 @@ export const DeleteCourseRequest: MessageFns<DeleteCourseRequest> = {
     return writer;
   },
 
-  decode(input: BinaryReader | Uint8Array, length?: number): DeleteCourseRequest {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+  decode(
+    input: BinaryReader | Uint8Array,
+    length?: number,
+  ): DeleteCourseRequest {
+    const reader =
+      input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseDeleteCourseRequest();
     while (reader.pos < end) {
@@ -1053,12 +1121,15 @@ export const DeleteCourseRequest: MessageFns<DeleteCourseRequest> = {
 };
 
 function createBaseUnPublishCourseRequest(): UnPublishCourseRequest {
-  return { courseId: "", isAdmin: false };
+  return { courseId: '', isAdmin: false };
 }
 
 export const UnPublishCourseRequest: MessageFns<UnPublishCourseRequest> = {
-  encode(message: UnPublishCourseRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.courseId !== "") {
+  encode(
+    message: UnPublishCourseRequest,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
+    if (message.courseId !== '') {
       writer.uint32(10).string(message.courseId);
     }
     if (message.userId !== undefined) {
@@ -1070,8 +1141,12 @@ export const UnPublishCourseRequest: MessageFns<UnPublishCourseRequest> = {
     return writer;
   },
 
-  decode(input: BinaryReader | Uint8Array, length?: number): UnPublishCourseRequest {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+  decode(
+    input: BinaryReader | Uint8Array,
+    length?: number,
+  ): UnPublishCourseRequest {
+    const reader =
+      input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseUnPublishCourseRequest();
     while (reader.pos < end) {
@@ -1112,12 +1187,15 @@ export const UnPublishCourseRequest: MessageFns<UnPublishCourseRequest> = {
 };
 
 function createBasePublishCourseRequest(): PublishCourseRequest {
-  return { courseId: "", isAdmin: false };
+  return { courseId: '', isAdmin: false };
 }
 
 export const PublishCourseRequest: MessageFns<PublishCourseRequest> = {
-  encode(message: PublishCourseRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.courseId !== "") {
+  encode(
+    message: PublishCourseRequest,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
+    if (message.courseId !== '') {
       writer.uint32(10).string(message.courseId);
     }
     if (message.userId !== undefined) {
@@ -1129,8 +1207,12 @@ export const PublishCourseRequest: MessageFns<PublishCourseRequest> = {
     return writer;
   },
 
-  decode(input: BinaryReader | Uint8Array, length?: number): PublishCourseRequest {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+  decode(
+    input: BinaryReader | Uint8Array,
+    length?: number,
+  ): PublishCourseRequest {
+    const reader =
+      input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBasePublishCourseRequest();
     while (reader.pos < end) {
@@ -1171,135 +1253,154 @@ export const PublishCourseRequest: MessageFns<PublishCourseRequest> = {
 };
 
 function createBaseGetCoursesByInstructorRequest(): GetCoursesByInstructorRequest {
-  return { instructorId: "", pagination: undefined };
+  return { instructorId: '', pagination: undefined };
 }
 
-export const GetCoursesByInstructorRequest: MessageFns<GetCoursesByInstructorRequest> = {
-  encode(message: GetCoursesByInstructorRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.instructorId !== "") {
-      writer.uint32(10).string(message.instructorId);
-    }
-    if (message.pagination !== undefined) {
-      Pagination.encode(message.pagination, writer.uint32(18).fork()).join();
-    }
-    return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): GetCoursesByInstructorRequest {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseGetCoursesByInstructorRequest();
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 10) {
-            break;
-          }
-
-          message.instructorId = reader.string();
-          continue;
-        }
-        case 2: {
-          if (tag !== 18) {
-            break;
-          }
-
-          message.pagination = Pagination.decode(reader, reader.uint32());
-          continue;
-        }
+export const GetCoursesByInstructorRequest: MessageFns<GetCoursesByInstructorRequest> =
+  {
+    encode(
+      message: GetCoursesByInstructorRequest,
+      writer: BinaryWriter = new BinaryWriter(),
+    ): BinaryWriter {
+      if (message.instructorId !== '') {
+        writer.uint32(10).string(message.instructorId);
       }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
+      if (message.pagination !== undefined) {
+        Pagination.encode(message.pagination, writer.uint32(18).fork()).join();
       }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-};
+      return writer;
+    },
+
+    decode(
+      input: BinaryReader | Uint8Array,
+      length?: number,
+    ): GetCoursesByInstructorRequest {
+      const reader =
+        input instanceof BinaryReader ? input : new BinaryReader(input);
+      const end = length === undefined ? reader.len : reader.pos + length;
+      const message = createBaseGetCoursesByInstructorRequest();
+      while (reader.pos < end) {
+        const tag = reader.uint32();
+        switch (tag >>> 3) {
+          case 1: {
+            if (tag !== 10) {
+              break;
+            }
+
+            message.instructorId = reader.string();
+            continue;
+          }
+          case 2: {
+            if (tag !== 18) {
+              break;
+            }
+
+            message.pagination = Pagination.decode(reader, reader.uint32());
+            continue;
+          }
+        }
+        if ((tag & 7) === 4 || tag === 0) {
+          break;
+        }
+        reader.skip(tag & 7);
+      }
+      return message;
+    },
+  };
 
 function createBaseGetEnrolledCoursesRequest(): GetEnrolledCoursesRequest {
-  return { userId: "", pagination: undefined };
+  return { userId: '', pagination: undefined };
 }
 
-export const GetEnrolledCoursesRequest: MessageFns<GetEnrolledCoursesRequest> = {
-  encode(message: GetEnrolledCoursesRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.userId !== "") {
-      writer.uint32(10).string(message.userId);
-    }
-    if (message.pagination !== undefined) {
-      Pagination.encode(message.pagination, writer.uint32(18).fork()).join();
-    }
-    return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): GetEnrolledCoursesRequest {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseGetEnrolledCoursesRequest();
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 10) {
-            break;
-          }
-
-          message.userId = reader.string();
-          continue;
-        }
-        case 2: {
-          if (tag !== 18) {
-            break;
-          }
-
-          message.pagination = Pagination.decode(reader, reader.uint32());
-          continue;
-        }
+export const GetEnrolledCoursesRequest: MessageFns<GetEnrolledCoursesRequest> =
+  {
+    encode(
+      message: GetEnrolledCoursesRequest,
+      writer: BinaryWriter = new BinaryWriter(),
+    ): BinaryWriter {
+      if (message.userId !== '') {
+        writer.uint32(10).string(message.userId);
       }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
+      if (message.pagination !== undefined) {
+        Pagination.encode(message.pagination, writer.uint32(18).fork()).join();
       }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-};
+      return writer;
+    },
+
+    decode(
+      input: BinaryReader | Uint8Array,
+      length?: number,
+    ): GetEnrolledCoursesRequest {
+      const reader =
+        input instanceof BinaryReader ? input : new BinaryReader(input);
+      const end = length === undefined ? reader.len : reader.pos + length;
+      const message = createBaseGetEnrolledCoursesRequest();
+      while (reader.pos < end) {
+        const tag = reader.uint32();
+        switch (tag >>> 3) {
+          case 1: {
+            if (tag !== 10) {
+              break;
+            }
+
+            message.userId = reader.string();
+            continue;
+          }
+          case 2: {
+            if (tag !== 18) {
+              break;
+            }
+
+            message.pagination = Pagination.decode(reader, reader.uint32());
+            continue;
+          }
+        }
+        if ((tag & 7) === 4 || tag === 0) {
+          break;
+        }
+        reader.skip(tag & 7);
+      }
+      return message;
+    },
+  };
 
 function createBaseCourseData(): CourseData {
   return {
-    id: "",
-    title: "",
+    id: '',
+    title: '',
     topics: [],
-    instructorId: "",
-    category: "",
+    instructorId: '',
+    category: '',
     learningOutcomes: [],
     targetAudience: [],
     requirements: [],
     sections: [],
-    createdAt: "",
-    updatedAt: "",
+    createdAt: '',
+    updatedAt: '',
   };
 }
 
 export const CourseData: MessageFns<CourseData> = {
-  encode(message: CourseData, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.id !== "") {
+  encode(
+    message: CourseData,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
+    if (message.id !== '') {
       writer.uint32(98).string(message.id);
     }
-    if (message.title !== "") {
+    if (message.title !== '') {
       writer.uint32(10).string(message.title);
     }
     for (const v of message.topics) {
       writer.uint32(18).string(v!);
     }
-    if (message.instructorId !== "") {
+    if (message.instructorId !== '') {
       writer.uint32(26).string(message.instructorId);
     }
     if (message.subTitle !== undefined) {
       writer.uint32(34).string(message.subTitle);
     }
-    if (message.category !== "") {
+    if (message.category !== '') {
       writer.uint32(42).string(message.category);
     }
     if (message.subCategory !== undefined) {
@@ -1356,10 +1457,10 @@ export const CourseData: MessageFns<CourseData> = {
     for (const v of message.sections) {
       SectionData.encode(v!, writer.uint32(154).fork()).join();
     }
-    if (message.createdAt !== "") {
+    if (message.createdAt !== '') {
       writer.uint32(170).string(message.createdAt);
     }
-    if (message.updatedAt !== "") {
+    if (message.updatedAt !== '') {
       writer.uint32(178).string(message.updatedAt);
     }
     if (message.deletedAt !== undefined) {
@@ -1381,7 +1482,8 @@ export const CourseData: MessageFns<CourseData> = {
   },
 
   decode(input: BinaryReader | Uint8Array, length?: number): CourseData {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const reader =
+      input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseCourseData();
     while (reader.pos < end) {
@@ -1647,28 +1749,28 @@ export const CourseData: MessageFns<CourseData> = {
 
 function createBaseCourseMetadata(): CourseMetadata {
   return {
-    id: "",
-    title: "",
+    id: '',
+    title: '',
     topics: [],
-    instructorId: "",
-    subTitle: "",
-    category: "",
-    subCategory: "",
-    language: "",
-    subtitleLanguage: "",
-    level: "",
-    durationValue: "",
-    durationUnit: "",
+    instructorId: '',
+    subTitle: '',
+    category: '',
+    subCategory: '',
+    language: '',
+    subtitleLanguage: '',
+    level: '',
+    durationValue: '',
+    durationUnit: '',
     learningOutcomes: [],
     targetAudience: [],
     requirements: [],
-    status: "",
-    slug: "",
+    status: '',
+    slug: '',
     rating: 0,
     numberOfRating: 0,
     students: 0,
-    createdAt: "",
-    updatedAt: "",
+    createdAt: '',
+    updatedAt: '',
     noOfLessons: 0,
     noOfSections: 0,
     noOfQuizzes: 0,
@@ -1677,41 +1779,44 @@ function createBaseCourseMetadata(): CourseMetadata {
 }
 
 export const CourseMetadata: MessageFns<CourseMetadata> = {
-  encode(message: CourseMetadata, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.id !== "") {
+  encode(
+    message: CourseMetadata,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
+    if (message.id !== '') {
       writer.uint32(98).string(message.id);
     }
-    if (message.title !== "") {
+    if (message.title !== '') {
       writer.uint32(10).string(message.title);
     }
     for (const v of message.topics) {
       writer.uint32(18).string(v!);
     }
-    if (message.instructorId !== "") {
+    if (message.instructorId !== '') {
       writer.uint32(26).string(message.instructorId);
     }
-    if (message.subTitle !== "") {
+    if (message.subTitle !== '') {
       writer.uint32(34).string(message.subTitle);
     }
-    if (message.category !== "") {
+    if (message.category !== '') {
       writer.uint32(42).string(message.category);
     }
-    if (message.subCategory !== "") {
+    if (message.subCategory !== '') {
       writer.uint32(50).string(message.subCategory);
     }
-    if (message.language !== "") {
+    if (message.language !== '') {
       writer.uint32(58).string(message.language);
     }
-    if (message.subtitleLanguage !== "") {
+    if (message.subtitleLanguage !== '') {
       writer.uint32(66).string(message.subtitleLanguage);
     }
-    if (message.level !== "") {
+    if (message.level !== '') {
       writer.uint32(74).string(message.level);
     }
-    if (message.durationValue !== "") {
+    if (message.durationValue !== '') {
       writer.uint32(82).string(message.durationValue);
     }
-    if (message.durationUnit !== "") {
+    if (message.durationUnit !== '') {
       writer.uint32(90).string(message.durationUnit);
     }
     if (message.description !== undefined) {
@@ -1732,10 +1837,10 @@ export const CourseMetadata: MessageFns<CourseMetadata> = {
     if (message.trailer !== undefined) {
       writer.uint32(146).string(message.trailer);
     }
-    if (message.status !== "") {
+    if (message.status !== '') {
       writer.uint32(218).string(message.status);
     }
-    if (message.slug !== "") {
+    if (message.slug !== '') {
       writer.uint32(226).string(message.slug);
     }
     if (message.rating !== 0) {
@@ -1747,10 +1852,10 @@ export const CourseMetadata: MessageFns<CourseMetadata> = {
     if (message.students !== 0) {
       writer.uint32(248).int32(message.students);
     }
-    if (message.createdAt !== "") {
+    if (message.createdAt !== '') {
       writer.uint32(170).string(message.createdAt);
     }
-    if (message.updatedAt !== "") {
+    if (message.updatedAt !== '') {
       writer.uint32(178).string(message.updatedAt);
     }
     if (message.deletedAt !== undefined) {
@@ -1781,7 +1886,8 @@ export const CourseMetadata: MessageFns<CourseMetadata> = {
   },
 
   decode(input: BinaryReader | Uint8Array, length?: number): CourseMetadata {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const reader =
+      input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseCourseMetadata();
     while (reader.pos < end) {
@@ -2066,7 +2172,10 @@ function createBaseCourseResponse(): CourseResponse {
 }
 
 export const CourseResponse: MessageFns<CourseResponse> = {
-  encode(message: CourseResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+  encode(
+    message: CourseResponse,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
     if (message.course !== undefined) {
       CourseData.encode(message.course, writer.uint32(10).fork()).join();
     }
@@ -2077,7 +2186,8 @@ export const CourseResponse: MessageFns<CourseResponse> = {
   },
 
   decode(input: BinaryReader | Uint8Array, length?: number): CourseResponse {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const reader =
+      input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseCourseResponse();
     while (reader.pos < end) {
@@ -2114,7 +2224,10 @@ function createBaseCoursesData(): CoursesData {
 }
 
 export const CoursesData: MessageFns<CoursesData> = {
-  encode(message: CoursesData, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+  encode(
+    message: CoursesData,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
     for (const v of message.courses) {
       CourseData.encode(v!, writer.uint32(10).fork()).join();
     }
@@ -2125,7 +2238,8 @@ export const CoursesData: MessageFns<CoursesData> = {
   },
 
   decode(input: BinaryReader | Uint8Array, length?: number): CoursesData {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const reader =
+      input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseCoursesData();
     while (reader.pos < end) {
@@ -2162,7 +2276,10 @@ function createBaseCoursesListData(): CoursesListData {
 }
 
 export const CoursesListData: MessageFns<CoursesListData> = {
-  encode(message: CoursesListData, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+  encode(
+    message: CoursesListData,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
     for (const v of message.courses) {
       CourseMetadata.encode(v!, writer.uint32(10).fork()).join();
     }
@@ -2173,7 +2290,8 @@ export const CoursesListData: MessageFns<CoursesListData> = {
   },
 
   decode(input: BinaryReader | Uint8Array, length?: number): CoursesListData {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const reader =
+      input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseCoursesListData();
     while (reader.pos < end) {
@@ -2210,7 +2328,10 @@ function createBaseCoursesResponse(): CoursesResponse {
 }
 
 export const CoursesResponse: MessageFns<CoursesResponse> = {
-  encode(message: CoursesResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+  encode(
+    message: CoursesResponse,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
     if (message.courses !== undefined) {
       CoursesData.encode(message.courses, writer.uint32(10).fork()).join();
     }
@@ -2221,7 +2342,8 @@ export const CoursesResponse: MessageFns<CoursesResponse> = {
   },
 
   decode(input: BinaryReader | Uint8Array, length?: number): CoursesResponse {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const reader =
+      input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseCoursesResponse();
     while (reader.pos < end) {
@@ -2258,7 +2380,10 @@ function createBaseCoursesListResponse(): CoursesListResponse {
 }
 
 export const CoursesListResponse: MessageFns<CoursesListResponse> = {
-  encode(message: CoursesListResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+  encode(
+    message: CoursesListResponse,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
     if (message.courses !== undefined) {
       CoursesListData.encode(message.courses, writer.uint32(10).fork()).join();
     }
@@ -2268,8 +2393,12 @@ export const CoursesListResponse: MessageFns<CoursesListResponse> = {
     return writer;
   },
 
-  decode(input: BinaryReader | Uint8Array, length?: number): CoursesListResponse {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+  decode(
+    input: BinaryReader | Uint8Array,
+    length?: number,
+  ): CoursesListResponse {
+    const reader =
+      input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseCoursesListResponse();
     while (reader.pos < end) {
@@ -2306,7 +2435,10 @@ function createBaseDeleteCourseResponse(): DeleteCourseResponse {
 }
 
 export const DeleteCourseResponse: MessageFns<DeleteCourseResponse> = {
-  encode(message: DeleteCourseResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+  encode(
+    message: DeleteCourseResponse,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
     if (message.success !== undefined) {
       DeleteSuccess.encode(message.success, writer.uint32(10).fork()).join();
     }
@@ -2316,8 +2448,12 @@ export const DeleteCourseResponse: MessageFns<DeleteCourseResponse> = {
     return writer;
   },
 
-  decode(input: BinaryReader | Uint8Array, length?: number): DeleteCourseResponse {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+  decode(
+    input: BinaryReader | Uint8Array,
+    length?: number,
+  ): DeleteCourseResponse {
+    const reader =
+      input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseDeleteCourseResponse();
     while (reader.pos < end) {

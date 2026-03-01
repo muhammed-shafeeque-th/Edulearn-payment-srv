@@ -5,12 +5,12 @@
 // source: course/types/section.proto
 
 /* eslint-disable */
-import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
-import { DeleteSuccess, Error } from "../common";
-import { LessonData } from "./lesson";
-import { QuizData } from "./quiz";
+import { BinaryReader, BinaryWriter } from '@bufbuild/protobuf/wire';
+import { DeleteSuccess, Error } from '../common';
+import { LessonData } from './lesson';
+import { QuizData } from './quiz';
 
-export const protobufPackage = "course.section";
+export const protobufPackage = 'course.section';
 
 /** Section Messages */
 export interface CreateSectionRequest {
@@ -79,21 +79,24 @@ export interface DeleteSectionResponse {
   error?: Error | undefined;
 }
 
-export const COURSE_SECTION_PACKAGE_NAME = "course.section";
+export const COURSE_SECTION_PACKAGE_NAME = 'course.section';
 
 function createBaseCreateSectionRequest(): CreateSectionRequest {
-  return { courseId: "", userId: "", title: "", order: 0, isPublished: false };
+  return { courseId: '', userId: '', title: '', order: 0, isPublished: false };
 }
 
 export const CreateSectionRequest: MessageFns<CreateSectionRequest> = {
-  encode(message: CreateSectionRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.courseId !== "") {
+  encode(
+    message: CreateSectionRequest,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
+    if (message.courseId !== '') {
       writer.uint32(10).string(message.courseId);
     }
-    if (message.userId !== "") {
+    if (message.userId !== '') {
       writer.uint32(90).string(message.userId);
     }
-    if (message.title !== "") {
+    if (message.title !== '') {
       writer.uint32(18).string(message.title);
     }
     if (message.description !== undefined) {
@@ -108,8 +111,12 @@ export const CreateSectionRequest: MessageFns<CreateSectionRequest> = {
     return writer;
   },
 
-  decode(input: BinaryReader | Uint8Array, length?: number): CreateSectionRequest {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+  decode(
+    input: BinaryReader | Uint8Array,
+    length?: number,
+  ): CreateSectionRequest {
+    const reader =
+      input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseCreateSectionRequest();
     while (reader.pos < end) {
@@ -174,19 +181,23 @@ export const CreateSectionRequest: MessageFns<CreateSectionRequest> = {
 };
 
 function createBaseGetSectionRequest(): GetSectionRequest {
-  return { sectionId: "" };
+  return { sectionId: '' };
 }
 
 export const GetSectionRequest: MessageFns<GetSectionRequest> = {
-  encode(message: GetSectionRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.sectionId !== "") {
+  encode(
+    message: GetSectionRequest,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
+    if (message.sectionId !== '') {
       writer.uint32(10).string(message.sectionId);
     }
     return writer;
   },
 
   decode(input: BinaryReader | Uint8Array, length?: number): GetSectionRequest {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const reader =
+      input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseGetSectionRequest();
     while (reader.pos < end) {
@@ -211,24 +222,35 @@ export const GetSectionRequest: MessageFns<GetSectionRequest> = {
 };
 
 function createBaseUpdateSectionRequest(): UpdateSectionRequest {
-  return { sectionId: "", userId: "", courseId: "", title: "", description: "", isPublished: false, order: 0 };
+  return {
+    sectionId: '',
+    userId: '',
+    courseId: '',
+    title: '',
+    description: '',
+    isPublished: false,
+    order: 0,
+  };
 }
 
 export const UpdateSectionRequest: MessageFns<UpdateSectionRequest> = {
-  encode(message: UpdateSectionRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.sectionId !== "") {
+  encode(
+    message: UpdateSectionRequest,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
+    if (message.sectionId !== '') {
       writer.uint32(10).string(message.sectionId);
     }
-    if (message.userId !== "") {
+    if (message.userId !== '') {
       writer.uint32(90).string(message.userId);
     }
-    if (message.courseId !== "") {
+    if (message.courseId !== '') {
       writer.uint32(82).string(message.courseId);
     }
-    if (message.title !== "") {
+    if (message.title !== '') {
       writer.uint32(18).string(message.title);
     }
-    if (message.description !== "") {
+    if (message.description !== '') {
       writer.uint32(26).string(message.description);
     }
     if (message.isPublished !== false) {
@@ -240,8 +262,12 @@ export const UpdateSectionRequest: MessageFns<UpdateSectionRequest> = {
     return writer;
   },
 
-  decode(input: BinaryReader | Uint8Array, length?: number): UpdateSectionRequest {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+  decode(
+    input: BinaryReader | Uint8Array,
+    length?: number,
+  ): UpdateSectionRequest {
+    const reader =
+      input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseUpdateSectionRequest();
     while (reader.pos < end) {
@@ -314,25 +340,32 @@ export const UpdateSectionRequest: MessageFns<UpdateSectionRequest> = {
 };
 
 function createBaseDeleteSectionRequest(): DeleteSectionRequest {
-  return { sectionId: "", courseId: "", userId: "" };
+  return { sectionId: '', courseId: '', userId: '' };
 }
 
 export const DeleteSectionRequest: MessageFns<DeleteSectionRequest> = {
-  encode(message: DeleteSectionRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.sectionId !== "") {
+  encode(
+    message: DeleteSectionRequest,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
+    if (message.sectionId !== '') {
       writer.uint32(10).string(message.sectionId);
     }
-    if (message.courseId !== "") {
+    if (message.courseId !== '') {
       writer.uint32(26).string(message.courseId);
     }
-    if (message.userId !== "") {
+    if (message.userId !== '') {
       writer.uint32(18).string(message.userId);
     }
     return writer;
   },
 
-  decode(input: BinaryReader | Uint8Array, length?: number): DeleteSectionRequest {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+  decode(
+    input: BinaryReader | Uint8Array,
+    length?: number,
+  ): DeleteSectionRequest {
+    const reader =
+      input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseDeleteSectionRequest();
     while (reader.pos < end) {
@@ -373,51 +406,59 @@ export const DeleteSectionRequest: MessageFns<DeleteSectionRequest> = {
 };
 
 function createBaseGetSectionsByCourseRequest(): GetSectionsByCourseRequest {
-  return { courseId: "" };
+  return { courseId: '' };
 }
 
-export const GetSectionsByCourseRequest: MessageFns<GetSectionsByCourseRequest> = {
-  encode(message: GetSectionsByCourseRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.courseId !== "") {
-      writer.uint32(10).string(message.courseId);
-    }
-    return writer;
-  },
+export const GetSectionsByCourseRequest: MessageFns<GetSectionsByCourseRequest> =
+  {
+    encode(
+      message: GetSectionsByCourseRequest,
+      writer: BinaryWriter = new BinaryWriter(),
+    ): BinaryWriter {
+      if (message.courseId !== '') {
+        writer.uint32(10).string(message.courseId);
+      }
+      return writer;
+    },
 
-  decode(input: BinaryReader | Uint8Array, length?: number): GetSectionsByCourseRequest {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseGetSectionsByCourseRequest();
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 10) {
-            break;
+    decode(
+      input: BinaryReader | Uint8Array,
+      length?: number,
+    ): GetSectionsByCourseRequest {
+      const reader =
+        input instanceof BinaryReader ? input : new BinaryReader(input);
+      const end = length === undefined ? reader.len : reader.pos + length;
+      const message = createBaseGetSectionsByCourseRequest();
+      while (reader.pos < end) {
+        const tag = reader.uint32();
+        switch (tag >>> 3) {
+          case 1: {
+            if (tag !== 10) {
+              break;
+            }
+
+            message.courseId = reader.string();
+            continue;
           }
-
-          message.courseId = reader.string();
-          continue;
         }
+        if ((tag & 7) === 4 || tag === 0) {
+          break;
+        }
+        reader.skip(tag & 7);
       }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-};
+      return message;
+    },
+  };
 
 function createBaseSectionData(): SectionData {
   return {
-    id: "",
-    courseId: "",
-    title: "",
+    id: '',
+    courseId: '',
+    title: '',
     lessons: [],
-    createdAt: "",
-    updatedAt: "",
-    description: "",
+    createdAt: '',
+    updatedAt: '',
+    description: '',
     isPublished: false,
     order: 0,
     quiz: undefined,
@@ -425,29 +466,32 @@ function createBaseSectionData(): SectionData {
 }
 
 export const SectionData: MessageFns<SectionData> = {
-  encode(message: SectionData, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.id !== "") {
+  encode(
+    message: SectionData,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
+    if (message.id !== '') {
       writer.uint32(10).string(message.id);
     }
-    if (message.courseId !== "") {
+    if (message.courseId !== '') {
       writer.uint32(18).string(message.courseId);
     }
-    if (message.title !== "") {
+    if (message.title !== '') {
       writer.uint32(26).string(message.title);
     }
     for (const v of message.lessons) {
       LessonData.encode(v!, writer.uint32(34).fork()).join();
     }
-    if (message.createdAt !== "") {
+    if (message.createdAt !== '') {
       writer.uint32(42).string(message.createdAt);
     }
-    if (message.updatedAt !== "") {
+    if (message.updatedAt !== '') {
       writer.uint32(50).string(message.updatedAt);
     }
     if (message.deletedAt !== undefined) {
       writer.uint32(58).string(message.deletedAt);
     }
-    if (message.description !== "") {
+    if (message.description !== '') {
       writer.uint32(66).string(message.description);
     }
     if (message.isPublished !== false) {
@@ -463,7 +507,8 @@ export const SectionData: MessageFns<SectionData> = {
   },
 
   decode(input: BinaryReader | Uint8Array, length?: number): SectionData {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const reader =
+      input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseSectionData();
     while (reader.pos < end) {
@@ -572,7 +617,10 @@ function createBaseSectionResponse(): SectionResponse {
 }
 
 export const SectionResponse: MessageFns<SectionResponse> = {
-  encode(message: SectionResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+  encode(
+    message: SectionResponse,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
     if (message.section !== undefined) {
       SectionData.encode(message.section, writer.uint32(10).fork()).join();
     }
@@ -583,7 +631,8 @@ export const SectionResponse: MessageFns<SectionResponse> = {
   },
 
   decode(input: BinaryReader | Uint8Array, length?: number): SectionResponse {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const reader =
+      input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseSectionResponse();
     while (reader.pos < end) {
@@ -620,7 +669,10 @@ function createBaseSectionsData(): SectionsData {
 }
 
 export const SectionsData: MessageFns<SectionsData> = {
-  encode(message: SectionsData, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+  encode(
+    message: SectionsData,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
     for (const v of message.sections) {
       SectionData.encode(v!, writer.uint32(10).fork()).join();
     }
@@ -628,7 +680,8 @@ export const SectionsData: MessageFns<SectionsData> = {
   },
 
   decode(input: BinaryReader | Uint8Array, length?: number): SectionsData {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const reader =
+      input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseSectionsData();
     while (reader.pos < end) {
@@ -657,7 +710,10 @@ function createBaseSectionsResponse(): SectionsResponse {
 }
 
 export const SectionsResponse: MessageFns<SectionsResponse> = {
-  encode(message: SectionsResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+  encode(
+    message: SectionsResponse,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
     if (message.sections !== undefined) {
       SectionsData.encode(message.sections, writer.uint32(10).fork()).join();
     }
@@ -668,7 +724,8 @@ export const SectionsResponse: MessageFns<SectionsResponse> = {
   },
 
   decode(input: BinaryReader | Uint8Array, length?: number): SectionsResponse {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const reader =
+      input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseSectionsResponse();
     while (reader.pos < end) {
@@ -705,7 +762,10 @@ function createBaseDeleteSectionResponse(): DeleteSectionResponse {
 }
 
 export const DeleteSectionResponse: MessageFns<DeleteSectionResponse> = {
-  encode(message: DeleteSectionResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+  encode(
+    message: DeleteSectionResponse,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
     if (message.success !== undefined) {
       DeleteSuccess.encode(message.success, writer.uint32(10).fork()).join();
     }
@@ -715,8 +775,12 @@ export const DeleteSectionResponse: MessageFns<DeleteSectionResponse> = {
     return writer;
   },
 
-  decode(input: BinaryReader | Uint8Array, length?: number): DeleteSectionResponse {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+  decode(
+    input: BinaryReader | Uint8Array,
+    length?: number,
+  ): DeleteSectionResponse {
+    const reader =
+      input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseDeleteSectionResponse();
     while (reader.pos < end) {

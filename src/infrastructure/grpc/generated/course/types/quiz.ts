@@ -5,10 +5,10 @@
 // source: course/types/quiz.proto
 
 /* eslint-disable */
-import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
-import { DeleteSuccess, Error } from "../common";
+import { BinaryReader, BinaryWriter } from '@bufbuild/protobuf/wire';
+import { DeleteSuccess, Error } from '../common';
 
-export const protobufPackage = "course.quiz";
+export const protobufPackage = 'course.quiz';
 
 export interface QuestionOption {
   value: string;
@@ -25,9 +25,7 @@ export interface Question {
   required: boolean;
   options: QuestionOption[];
   /** Index of the correct option (0-based) */
-  correctAnswer?:
-    | string
-    | undefined;
+  correctAnswer?: string | undefined;
   /** Optional explanation for the correct answer */
   explanation?: string | undefined;
 }
@@ -105,15 +103,18 @@ export interface DeleteQuizResponse {
   error?: Error | undefined;
 }
 
-export const COURSE_QUIZ_PACKAGE_NAME = "course.quiz";
+export const COURSE_QUIZ_PACKAGE_NAME = 'course.quiz';
 
 function createBaseQuestionOption(): QuestionOption {
-  return { value: "", isCorrect: false };
+  return { value: '', isCorrect: false };
 }
 
 export const QuestionOption: MessageFns<QuestionOption> = {
-  encode(message: QuestionOption, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.value !== "") {
+  encode(
+    message: QuestionOption,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
+    if (message.value !== '') {
       writer.uint32(10).string(message.value);
     }
     if (message.isCorrect !== false) {
@@ -123,7 +124,8 @@ export const QuestionOption: MessageFns<QuestionOption> = {
   },
 
   decode(input: BinaryReader | Uint8Array, length?: number): QuestionOption {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const reader =
+      input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseQuestionOption();
     while (reader.pos < end) {
@@ -156,15 +158,18 @@ export const QuestionOption: MessageFns<QuestionOption> = {
 };
 
 function createBaseQuestion(): Question {
-  return { id: "", type: "", question: "", required: false, options: [] };
+  return { id: '', type: '', question: '', required: false, options: [] };
 }
 
 export const Question: MessageFns<Question> = {
-  encode(message: Question, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.id !== "") {
+  encode(
+    message: Question,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
+    if (message.id !== '') {
       writer.uint32(74).string(message.id);
     }
-    if (message.type !== "") {
+    if (message.type !== '') {
       writer.uint32(10).string(message.type);
     }
     if (message.points !== undefined) {
@@ -173,7 +178,7 @@ export const Question: MessageFns<Question> = {
     if (message.timeLimit !== undefined) {
       writer.uint32(48).int32(message.timeLimit);
     }
-    if (message.question !== "") {
+    if (message.question !== '') {
       writer.uint32(26).string(message.question);
     }
     if (message.required !== false) {
@@ -192,7 +197,8 @@ export const Question: MessageFns<Question> = {
   },
 
   decode(input: BinaryReader | Uint8Array, length?: number): Question {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const reader =
+      input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseQuestion();
     while (reader.pos < end) {
@@ -282,10 +288,10 @@ export const Question: MessageFns<Question> = {
 
 function createBaseCreateQuizRequest(): CreateQuizRequest {
   return {
-    courseId: "",
-    userId: "",
-    sectionId: "",
-    title: "",
+    courseId: '',
+    userId: '',
+    sectionId: '',
+    title: '',
     isRequired: false,
     timeLimit: 0,
     passingScore: 0,
@@ -295,20 +301,23 @@ function createBaseCreateQuizRequest(): CreateQuizRequest {
 }
 
 export const CreateQuizRequest: MessageFns<CreateQuizRequest> = {
-  encode(message: CreateQuizRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.courseId !== "") {
+  encode(
+    message: CreateQuizRequest,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
+    if (message.courseId !== '') {
       writer.uint32(10).string(message.courseId);
     }
-    if (message.userId !== "") {
+    if (message.userId !== '') {
       writer.uint32(162).string(message.userId);
     }
-    if (message.sectionId !== "") {
+    if (message.sectionId !== '') {
       writer.uint32(26).string(message.sectionId);
     }
     if (message.description !== undefined) {
       writer.uint32(74).string(message.description);
     }
-    if (message.title !== "") {
+    if (message.title !== '') {
       writer.uint32(66).string(message.title);
     }
     if (message.isRequired !== false) {
@@ -330,7 +339,8 @@ export const CreateQuizRequest: MessageFns<CreateQuizRequest> = {
   },
 
   decode(input: BinaryReader | Uint8Array, length?: number): CreateQuizRequest {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const reader =
+      input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseCreateQuizRequest();
     while (reader.pos < end) {
@@ -427,19 +437,23 @@ export const CreateQuizRequest: MessageFns<CreateQuizRequest> = {
 };
 
 function createBaseGetQuizRequest(): GetQuizRequest {
-  return { quizId: "" };
+  return { quizId: '' };
 }
 
 export const GetQuizRequest: MessageFns<GetQuizRequest> = {
-  encode(message: GetQuizRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.quizId !== "") {
+  encode(
+    message: GetQuizRequest,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
+    if (message.quizId !== '') {
       writer.uint32(10).string(message.quizId);
     }
     return writer;
   },
 
   decode(input: BinaryReader | Uint8Array, length?: number): GetQuizRequest {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const reader =
+      input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseGetQuizRequest();
     while (reader.pos < end) {
@@ -465,11 +479,11 @@ export const GetQuizRequest: MessageFns<GetQuizRequest> = {
 
 function createBaseUpdateQuizRequest(): UpdateQuizRequest {
   return {
-    quizId: "",
-    courseId: "",
-    userId: "",
-    description: "",
-    title: "",
+    quizId: '',
+    courseId: '',
+    userId: '',
+    description: '',
+    title: '',
     isRequired: false,
     timeLimit: 0,
     passingScore: 0,
@@ -479,20 +493,23 @@ function createBaseUpdateQuizRequest(): UpdateQuizRequest {
 }
 
 export const UpdateQuizRequest: MessageFns<UpdateQuizRequest> = {
-  encode(message: UpdateQuizRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.quizId !== "") {
+  encode(
+    message: UpdateQuizRequest,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
+    if (message.quizId !== '') {
       writer.uint32(10).string(message.quizId);
     }
-    if (message.courseId !== "") {
+    if (message.courseId !== '') {
       writer.uint32(98).string(message.courseId);
     }
-    if (message.userId !== "") {
+    if (message.userId !== '') {
       writer.uint32(162).string(message.userId);
     }
-    if (message.description !== "") {
+    if (message.description !== '') {
       writer.uint32(26).string(message.description);
     }
-    if (message.title !== "") {
+    if (message.title !== '') {
       writer.uint32(66).string(message.title);
     }
     if (message.isRequired !== false) {
@@ -514,7 +531,8 @@ export const UpdateQuizRequest: MessageFns<UpdateQuizRequest> = {
   },
 
   decode(input: BinaryReader | Uint8Array, length?: number): UpdateQuizRequest {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const reader =
+      input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseUpdateQuizRequest();
     while (reader.pos < end) {
@@ -611,25 +629,29 @@ export const UpdateQuizRequest: MessageFns<UpdateQuizRequest> = {
 };
 
 function createBaseDeleteQuizRequest(): DeleteQuizRequest {
-  return { quizId: "", courseId: "", userId: "" };
+  return { quizId: '', courseId: '', userId: '' };
 }
 
 export const DeleteQuizRequest: MessageFns<DeleteQuizRequest> = {
-  encode(message: DeleteQuizRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.quizId !== "") {
+  encode(
+    message: DeleteQuizRequest,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
+    if (message.quizId !== '') {
       writer.uint32(10).string(message.quizId);
     }
-    if (message.courseId !== "") {
+    if (message.courseId !== '') {
       writer.uint32(18).string(message.courseId);
     }
-    if (message.userId !== "") {
+    if (message.userId !== '') {
       writer.uint32(162).string(message.userId);
     }
     return writer;
   },
 
   decode(input: BinaryReader | Uint8Array, length?: number): DeleteQuizRequest {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const reader =
+      input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseDeleteQuizRequest();
     while (reader.pos < end) {
@@ -670,68 +692,79 @@ export const DeleteQuizRequest: MessageFns<DeleteQuizRequest> = {
 };
 
 function createBaseGetQuizzesByCourseRequest(): GetQuizzesByCourseRequest {
-  return { courseId: "" };
+  return { courseId: '' };
 }
 
-export const GetQuizzesByCourseRequest: MessageFns<GetQuizzesByCourseRequest> = {
-  encode(message: GetQuizzesByCourseRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.courseId !== "") {
-      writer.uint32(10).string(message.courseId);
-    }
-    return writer;
-  },
+export const GetQuizzesByCourseRequest: MessageFns<GetQuizzesByCourseRequest> =
+  {
+    encode(
+      message: GetQuizzesByCourseRequest,
+      writer: BinaryWriter = new BinaryWriter(),
+    ): BinaryWriter {
+      if (message.courseId !== '') {
+        writer.uint32(10).string(message.courseId);
+      }
+      return writer;
+    },
 
-  decode(input: BinaryReader | Uint8Array, length?: number): GetQuizzesByCourseRequest {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseGetQuizzesByCourseRequest();
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 10) {
-            break;
+    decode(
+      input: BinaryReader | Uint8Array,
+      length?: number,
+    ): GetQuizzesByCourseRequest {
+      const reader =
+        input instanceof BinaryReader ? input : new BinaryReader(input);
+      const end = length === undefined ? reader.len : reader.pos + length;
+      const message = createBaseGetQuizzesByCourseRequest();
+      while (reader.pos < end) {
+        const tag = reader.uint32();
+        switch (tag >>> 3) {
+          case 1: {
+            if (tag !== 10) {
+              break;
+            }
+
+            message.courseId = reader.string();
+            continue;
           }
-
-          message.courseId = reader.string();
-          continue;
         }
+        if ((tag & 7) === 4 || tag === 0) {
+          break;
+        }
+        reader.skip(tag & 7);
       }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-};
+      return message;
+    },
+  };
 
 function createBaseQuizData(): QuizData {
   return {
-    id: "",
-    courseId: "",
-    sectionId: "",
-    title: "",
+    id: '',
+    courseId: '',
+    sectionId: '',
+    title: '',
     timeLimit: 0,
     passingScore: 0,
     questions: [],
-    createdAt: "",
-    updatedAt: "",
+    createdAt: '',
+    updatedAt: '',
   };
 }
 
 export const QuizData: MessageFns<QuizData> = {
-  encode(message: QuizData, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.id !== "") {
+  encode(
+    message: QuizData,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
+    if (message.id !== '') {
       writer.uint32(10).string(message.id);
     }
-    if (message.courseId !== "") {
+    if (message.courseId !== '') {
       writer.uint32(18).string(message.courseId);
     }
-    if (message.sectionId !== "") {
+    if (message.sectionId !== '') {
       writer.uint32(90).string(message.sectionId);
     }
-    if (message.title !== "") {
+    if (message.title !== '') {
       writer.uint32(26).string(message.title);
     }
     if (message.description !== undefined) {
@@ -746,10 +779,10 @@ export const QuizData: MessageFns<QuizData> = {
     for (const v of message.questions) {
       Question.encode(v!, writer.uint32(58).fork()).join();
     }
-    if (message.createdAt !== "") {
+    if (message.createdAt !== '') {
       writer.uint32(66).string(message.createdAt);
     }
-    if (message.updatedAt !== "") {
+    if (message.updatedAt !== '') {
       writer.uint32(74).string(message.updatedAt);
     }
     if (message.deletedAt !== undefined) {
@@ -759,7 +792,8 @@ export const QuizData: MessageFns<QuizData> = {
   },
 
   decode(input: BinaryReader | Uint8Array, length?: number): QuizData {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const reader =
+      input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseQuizData();
     while (reader.pos < end) {
@@ -868,7 +902,10 @@ function createBaseQuizResponse(): QuizResponse {
 }
 
 export const QuizResponse: MessageFns<QuizResponse> = {
-  encode(message: QuizResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+  encode(
+    message: QuizResponse,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
     if (message.quiz !== undefined) {
       QuizData.encode(message.quiz, writer.uint32(10).fork()).join();
     }
@@ -879,7 +916,8 @@ export const QuizResponse: MessageFns<QuizResponse> = {
   },
 
   decode(input: BinaryReader | Uint8Array, length?: number): QuizResponse {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const reader =
+      input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseQuizResponse();
     while (reader.pos < end) {
@@ -916,7 +954,10 @@ function createBaseQuizzesData(): QuizzesData {
 }
 
 export const QuizzesData: MessageFns<QuizzesData> = {
-  encode(message: QuizzesData, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+  encode(
+    message: QuizzesData,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
     for (const v of message.quizzes) {
       QuizData.encode(v!, writer.uint32(10).fork()).join();
     }
@@ -924,7 +965,8 @@ export const QuizzesData: MessageFns<QuizzesData> = {
   },
 
   decode(input: BinaryReader | Uint8Array, length?: number): QuizzesData {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const reader =
+      input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseQuizzesData();
     while (reader.pos < end) {
@@ -953,7 +995,10 @@ function createBaseQuizzesResponse(): QuizzesResponse {
 }
 
 export const QuizzesResponse: MessageFns<QuizzesResponse> = {
-  encode(message: QuizzesResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+  encode(
+    message: QuizzesResponse,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
     if (message.quizzes !== undefined) {
       QuizzesData.encode(message.quizzes, writer.uint32(10).fork()).join();
     }
@@ -964,7 +1009,8 @@ export const QuizzesResponse: MessageFns<QuizzesResponse> = {
   },
 
   decode(input: BinaryReader | Uint8Array, length?: number): QuizzesResponse {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const reader =
+      input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseQuizzesResponse();
     while (reader.pos < end) {
@@ -1001,7 +1047,10 @@ function createBaseDeleteQuizResponse(): DeleteQuizResponse {
 }
 
 export const DeleteQuizResponse: MessageFns<DeleteQuizResponse> = {
-  encode(message: DeleteQuizResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+  encode(
+    message: DeleteQuizResponse,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
     if (message.success !== undefined) {
       DeleteSuccess.encode(message.success, writer.uint32(10).fork()).join();
     }
@@ -1011,8 +1060,12 @@ export const DeleteQuizResponse: MessageFns<DeleteQuizResponse> = {
     return writer;
   },
 
-  decode(input: BinaryReader | Uint8Array, length?: number): DeleteQuizResponse {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+  decode(
+    input: BinaryReader | Uint8Array,
+    length?: number,
+  ): DeleteQuizResponse {
+    const reader =
+      input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseDeleteQuizResponse();
     while (reader.pos < end) {
