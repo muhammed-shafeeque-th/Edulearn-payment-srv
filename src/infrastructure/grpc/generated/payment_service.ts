@@ -5,16 +5,28 @@
 // source: payment_service.proto
 
 /* eslint-disable */
-import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
-import type { handleUnaryCall, UntypedServiceImplementation } from "@grpc/grpc-js";
-import { GrpcMethod, GrpcStreamMethod } from "@nestjs/microservices";
-import { Observable } from "rxjs";
-import { Provider } from "./payment/common";
-import { PayPalPaymentSession, PayPalResolveRequest } from "./payment/types/paypal";
-import { RazorpayPaymentSession, RazorpayResolveRequest } from "./payment/types/razorpay";
-import { StripePaymentSession, StripeResolveRequest } from "./payment/types/stripe";
+import { BinaryReader, BinaryWriter } from '@bufbuild/protobuf/wire';
+import type {
+  handleUnaryCall,
+  UntypedServiceImplementation,
+} from '@grpc/grpc-js';
+import { GrpcMethod, GrpcStreamMethod } from '@nestjs/microservices';
+import { Observable } from 'rxjs';
+import { Provider } from './payment/common';
+import {
+  PayPalPaymentSession,
+  PayPalResolveRequest,
+} from './payment/types/paypal';
+import {
+  RazorpayPaymentSession,
+  RazorpayResolveRequest,
+} from './payment/types/razorpay';
+import {
+  StripePaymentSession,
+  StripeResolveRequest,
+} from './payment/types/stripe';
 
-export const protobufPackage = "payment_service";
+export const protobufPackage = 'payment_service';
 
 /** Structured error message */
 export interface Error {
@@ -35,13 +47,10 @@ export interface ErrorDetail {
 }
 
 export interface CreatePaymentRequest {
-  provider: Provider;
   userId: string;
   orderId: string;
   /** For ensuring idempotency */
   idempotencyKey: string;
-  successUrl?: string | undefined;
-  cancelUrl?: string | undefined;
 }
 
 export interface CreatePaymentResponse {
@@ -50,10 +59,26 @@ export interface CreatePaymentResponse {
 }
 
 export interface CreatePaymentSuccess {
-  provider: Provider;
   paymentId: string;
   status: string;
   orderId: string;
+}
+
+export interface CreateProviderSessionRequest {
+  paymentId: string;
+  provider: Provider;
+  successUrl?: string | undefined;
+  cancelUrl?: string | undefined;
+}
+
+export interface CreateProviderSessionResponse {
+  success?: CreateProviderSessionSuccess | undefined;
+  error?: Error | undefined;
+}
+
+export interface CreateProviderSessionSuccess {
+  paymentId: string;
+  provider: Provider;
   stripe?: StripePaymentSession | undefined;
   razorpay?: RazorpayPaymentSession | undefined;
   paypal?: PayPalPaymentSession | undefined;
@@ -129,8 +154,7 @@ export interface PaymentData {
 }
 
 /** Health check request (for monitoring) */
-export interface HealthCheckRequest {
-}
+export interface HealthCheckRequest {}
 
 /** Health check response */
 export interface HealthCheckResponse {
@@ -138,18 +162,45 @@ export interface HealthCheckResponse {
   status: string;
 }
 
-export const PAYMENT_SERVICE_PACKAGE_NAME = "payment_service";
+export interface PaymentService {
+  createPayment(
+    request: CreatePaymentRequest,
+  ): Promise<CreatePaymentResponse> | Observable<CreatePaymentResponse>;
+  createProviderSession(
+    request: CreateProviderSessionRequest,
+  ):
+    | Promise<CreateProviderSessionResponse>
+    | Observable<CreateProviderSessionResponse>;
+  resolvePayment(
+    request: ResolvePaymentRequest,
+  ): Promise<ResolvePaymentResponse> | Observable<ResolvePaymentResponse>;
+  cancelPayment(
+    request: CancelPaymentRequest,
+  ): Promise<CancelPaymentResponse> | Observable<CancelPaymentResponse>;
+  getPayment(
+    request: GetPaymentRequest,
+  ): Promise<GetPaymentResponse> | Observable<GetPaymentResponse>;
+  /** Health check endpoint */
+  healthCheck(
+    request: HealthCheckRequest,
+  ): Promise<HealthCheckResponse> | Observable<HealthCheckResponse>;
+}
+
+export const PAYMENT_SERVICE_PACKAGE_NAME = 'payment_service';
 
 function createBaseError(): Error {
-  return { code: "", message: "", details: [] };
+  return { code: '', message: '', details: [] };
 }
 
 export const Error: MessageFns<Error> = {
-  encode(message: Error, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.code !== "") {
+  encode(
+    message: Error,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
+    if (message.code !== '') {
       writer.uint32(10).string(message.code);
     }
-    if (message.message !== "") {
+    if (message.message !== '') {
       writer.uint32(18).string(message.message);
     }
     for (const v of message.details) {
@@ -159,7 +210,8 @@ export const Error: MessageFns<Error> = {
   },
 
   decode(input: BinaryReader | Uint8Array, length?: number): Error {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const reader =
+      input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseError();
     while (reader.pos < end) {
@@ -200,22 +252,26 @@ export const Error: MessageFns<Error> = {
 };
 
 function createBaseErrorDetail(): ErrorDetail {
-  return { field: "", message: "" };
+  return { field: '', message: '' };
 }
 
 export const ErrorDetail: MessageFns<ErrorDetail> = {
-  encode(message: ErrorDetail, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.field !== "") {
+  encode(
+    message: ErrorDetail,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
+    if (message.field !== '') {
       writer.uint32(10).string(message.field);
     }
-    if (message.message !== "") {
+    if (message.message !== '') {
       writer.uint32(18).string(message.message);
     }
     return writer;
   },
 
   decode(input: BinaryReader | Uint8Array, length?: number): ErrorDetail {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const reader =
+      input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseErrorDetail();
     while (reader.pos < end) {
@@ -248,45 +304,43 @@ export const ErrorDetail: MessageFns<ErrorDetail> = {
 };
 
 function createBaseCreatePaymentRequest(): CreatePaymentRequest {
-  return { provider: 0, userId: "", orderId: "", idempotencyKey: "" };
+  return { userId: '', orderId: '', idempotencyKey: '' };
 }
 
 export const CreatePaymentRequest: MessageFns<CreatePaymentRequest> = {
-  encode(message: CreatePaymentRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.provider !== 0) {
-      writer.uint32(8).int32(message.provider);
+  encode(
+    message: CreatePaymentRequest,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
+    if (message.userId !== '') {
+      writer.uint32(10).string(message.userId);
     }
-    if (message.userId !== "") {
-      writer.uint32(18).string(message.userId);
+    if (message.orderId !== '') {
+      writer.uint32(18).string(message.orderId);
     }
-    if (message.orderId !== "") {
-      writer.uint32(26).string(message.orderId);
-    }
-    if (message.idempotencyKey !== "") {
-      writer.uint32(42).string(message.idempotencyKey);
-    }
-    if (message.successUrl !== undefined) {
-      writer.uint32(58).string(message.successUrl);
-    }
-    if (message.cancelUrl !== undefined) {
-      writer.uint32(66).string(message.cancelUrl);
+    if (message.idempotencyKey !== '') {
+      writer.uint32(26).string(message.idempotencyKey);
     }
     return writer;
   },
 
-  decode(input: BinaryReader | Uint8Array, length?: number): CreatePaymentRequest {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+  decode(
+    input: BinaryReader | Uint8Array,
+    length?: number,
+  ): CreatePaymentRequest {
+    const reader =
+      input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseCreatePaymentRequest();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
         case 1: {
-          if (tag !== 8) {
+          if (tag !== 10) {
             break;
           }
 
-          message.provider = reader.int32() as any;
+          message.userId = reader.string();
           continue;
         }
         case 2: {
@@ -294,7 +348,7 @@ export const CreatePaymentRequest: MessageFns<CreatePaymentRequest> = {
             break;
           }
 
-          message.userId = reader.string();
+          message.orderId = reader.string();
           continue;
         }
         case 3: {
@@ -302,31 +356,7 @@ export const CreatePaymentRequest: MessageFns<CreatePaymentRequest> = {
             break;
           }
 
-          message.orderId = reader.string();
-          continue;
-        }
-        case 5: {
-          if (tag !== 42) {
-            break;
-          }
-
           message.idempotencyKey = reader.string();
-          continue;
-        }
-        case 7: {
-          if (tag !== 58) {
-            break;
-          }
-
-          message.successUrl = reader.string();
-          continue;
-        }
-        case 8: {
-          if (tag !== 66) {
-            break;
-          }
-
-          message.cancelUrl = reader.string();
           continue;
         }
       }
@@ -344,9 +374,15 @@ function createBaseCreatePaymentResponse(): CreatePaymentResponse {
 }
 
 export const CreatePaymentResponse: MessageFns<CreatePaymentResponse> = {
-  encode(message: CreatePaymentResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+  encode(
+    message: CreatePaymentResponse,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
     if (message.success !== undefined) {
-      CreatePaymentSuccess.encode(message.success, writer.uint32(10).fork()).join();
+      CreatePaymentSuccess.encode(
+        message.success,
+        writer.uint32(10).fork(),
+      ).join();
     }
     if (message.error !== undefined) {
       Error.encode(message.error, writer.uint32(18).fork()).join();
@@ -354,8 +390,12 @@ export const CreatePaymentResponse: MessageFns<CreatePaymentResponse> = {
     return writer;
   },
 
-  decode(input: BinaryReader | Uint8Array, length?: number): CreatePaymentResponse {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+  decode(
+    input: BinaryReader | Uint8Array,
+    length?: number,
+  ): CreatePaymentResponse {
+    const reader =
+      input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseCreatePaymentResponse();
     while (reader.pos < end) {
@@ -366,7 +406,10 @@ export const CreatePaymentResponse: MessageFns<CreatePaymentResponse> = {
             break;
           }
 
-          message.success = CreatePaymentSuccess.decode(reader, reader.uint32());
+          message.success = CreatePaymentSuccess.decode(
+            reader,
+            reader.uint32(),
+          );
           continue;
         }
         case 2: {
@@ -388,72 +431,43 @@ export const CreatePaymentResponse: MessageFns<CreatePaymentResponse> = {
 };
 
 function createBaseCreatePaymentSuccess(): CreatePaymentSuccess {
-  return { provider: 0, paymentId: "", status: "", orderId: "" };
+  return { paymentId: '', status: '', orderId: '' };
 }
 
 export const CreatePaymentSuccess: MessageFns<CreatePaymentSuccess> = {
-  encode(message: CreatePaymentSuccess, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.provider !== 0) {
-      writer.uint32(8).int32(message.provider);
+  encode(
+    message: CreatePaymentSuccess,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
+    if (message.paymentId !== '') {
+      writer.uint32(10).string(message.paymentId);
     }
-    if (message.paymentId !== "") {
-      writer.uint32(82).string(message.paymentId);
+    if (message.status !== '') {
+      writer.uint32(18).string(message.status);
     }
-    if (message.status !== "") {
-      writer.uint32(90).string(message.status);
-    }
-    if (message.orderId !== "") {
-      writer.uint32(98).string(message.orderId);
-    }
-    if (message.stripe !== undefined) {
-      StripePaymentSession.encode(message.stripe, writer.uint32(18).fork()).join();
-    }
-    if (message.razorpay !== undefined) {
-      RazorpayPaymentSession.encode(message.razorpay, writer.uint32(26).fork()).join();
-    }
-    if (message.paypal !== undefined) {
-      PayPalPaymentSession.encode(message.paypal, writer.uint32(34).fork()).join();
+    if (message.orderId !== '') {
+      writer.uint32(26).string(message.orderId);
     }
     return writer;
   },
 
-  decode(input: BinaryReader | Uint8Array, length?: number): CreatePaymentSuccess {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+  decode(
+    input: BinaryReader | Uint8Array,
+    length?: number,
+  ): CreatePaymentSuccess {
+    const reader =
+      input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseCreatePaymentSuccess();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
         case 1: {
-          if (tag !== 8) {
-            break;
-          }
-
-          message.provider = reader.int32() as any;
-          continue;
-        }
-        case 10: {
-          if (tag !== 82) {
+          if (tag !== 10) {
             break;
           }
 
           message.paymentId = reader.string();
-          continue;
-        }
-        case 11: {
-          if (tag !== 90) {
-            break;
-          }
-
-          message.status = reader.string();
-          continue;
-        }
-        case 12: {
-          if (tag !== 98) {
-            break;
-          }
-
-          message.orderId = reader.string();
           continue;
         }
         case 2: {
@@ -461,7 +475,7 @@ export const CreatePaymentSuccess: MessageFns<CreatePaymentSuccess> = {
             break;
           }
 
-          message.stripe = StripePaymentSession.decode(reader, reader.uint32());
+          message.status = reader.string();
           continue;
         }
         case 3: {
@@ -469,15 +483,7 @@ export const CreatePaymentSuccess: MessageFns<CreatePaymentSuccess> = {
             break;
           }
 
-          message.razorpay = RazorpayPaymentSession.decode(reader, reader.uint32());
-          continue;
-        }
-        case 4: {
-          if (tag !== 34) {
-            break;
-          }
-
-          message.paypal = PayPalPaymentSession.decode(reader, reader.uint32());
+          message.orderId = reader.string();
           continue;
         }
       }
@@ -490,29 +496,292 @@ export const CreatePaymentSuccess: MessageFns<CreatePaymentSuccess> = {
   },
 };
 
+function createBaseCreateProviderSessionRequest(): CreateProviderSessionRequest {
+  return { paymentId: '', provider: 0 };
+}
+
+export const CreateProviderSessionRequest: MessageFns<CreateProviderSessionRequest> =
+  {
+    encode(
+      message: CreateProviderSessionRequest,
+      writer: BinaryWriter = new BinaryWriter(),
+    ): BinaryWriter {
+      if (message.paymentId !== '') {
+        writer.uint32(10).string(message.paymentId);
+      }
+      if (message.provider !== 0) {
+        writer.uint32(16).int32(message.provider);
+      }
+      if (message.successUrl !== undefined) {
+        writer.uint32(26).string(message.successUrl);
+      }
+      if (message.cancelUrl !== undefined) {
+        writer.uint32(34).string(message.cancelUrl);
+      }
+      return writer;
+    },
+
+    decode(
+      input: BinaryReader | Uint8Array,
+      length?: number,
+    ): CreateProviderSessionRequest {
+      const reader =
+        input instanceof BinaryReader ? input : new BinaryReader(input);
+      const end = length === undefined ? reader.len : reader.pos + length;
+      const message = createBaseCreateProviderSessionRequest();
+      while (reader.pos < end) {
+        const tag = reader.uint32();
+        switch (tag >>> 3) {
+          case 1: {
+            if (tag !== 10) {
+              break;
+            }
+
+            message.paymentId = reader.string();
+            continue;
+          }
+          case 2: {
+            if (tag !== 16) {
+              break;
+            }
+
+            message.provider = reader.int32() as any;
+            continue;
+          }
+          case 3: {
+            if (tag !== 26) {
+              break;
+            }
+
+            message.successUrl = reader.string();
+            continue;
+          }
+          case 4: {
+            if (tag !== 34) {
+              break;
+            }
+
+            message.cancelUrl = reader.string();
+            continue;
+          }
+        }
+        if ((tag & 7) === 4 || tag === 0) {
+          break;
+        }
+        reader.skip(tag & 7);
+      }
+      return message;
+    },
+  };
+
+function createBaseCreateProviderSessionSuccess(): CreateProviderSessionSuccess {
+  return { paymentId: '', provider: 0 };
+}
+
+export const CreateProviderSessionSuccess: MessageFns<CreateProviderSessionSuccess> =
+  {
+    encode(
+      message: CreateProviderSessionSuccess,
+      writer: BinaryWriter = new BinaryWriter(),
+    ): BinaryWriter {
+      if (message.paymentId !== '') {
+        writer.uint32(10).string(message.paymentId);
+      }
+      if (message.provider !== 0) {
+        writer.uint32(16).int32(message.provider);
+      }
+      if (message.stripe !== undefined) {
+        StripePaymentSession.encode(
+          message.stripe,
+          writer.uint32(26).fork(),
+        ).join();
+      }
+      if (message.razorpay !== undefined) {
+        RazorpayPaymentSession.encode(
+          message.razorpay,
+          writer.uint32(34).fork(),
+        ).join();
+      }
+      if (message.paypal !== undefined) {
+        PayPalPaymentSession.encode(
+          message.paypal,
+          writer.uint32(42).fork(),
+        ).join();
+      }
+      return writer;
+    },
+
+    decode(
+      input: BinaryReader | Uint8Array,
+      length?: number,
+    ): CreateProviderSessionSuccess {
+      const reader =
+        input instanceof BinaryReader ? input : new BinaryReader(input);
+      const end = length === undefined ? reader.len : reader.pos + length;
+      const message = createBaseCreateProviderSessionSuccess();
+      while (reader.pos < end) {
+        const tag = reader.uint32();
+        switch (tag >>> 3) {
+          case 1: {
+            if (tag !== 10) {
+              break;
+            }
+
+            message.paymentId = reader.string();
+            continue;
+          }
+          case 2: {
+            if (tag !== 16) {
+              break;
+            }
+
+            message.provider = reader.int32() as any;
+            continue;
+          }
+          case 3: {
+            if (tag !== 26) {
+              break;
+            }
+
+            message.stripe = StripePaymentSession.decode(
+              reader,
+              reader.uint32(),
+            );
+            continue;
+          }
+          case 4: {
+            if (tag !== 34) {
+              break;
+            }
+
+            message.razorpay = RazorpayPaymentSession.decode(
+              reader,
+              reader.uint32(),
+            );
+            continue;
+          }
+          case 5: {
+            if (tag !== 42) {
+              break;
+            }
+
+            message.paypal = PayPalPaymentSession.decode(
+              reader,
+              reader.uint32(),
+            );
+            continue;
+          }
+        }
+        if ((tag & 7) === 4 || tag === 0) {
+          break;
+        }
+        reader.skip(tag & 7);
+      }
+      return message;
+    },
+  };
+
+function createBaseCreateProviderSessionResponse(): CreateProviderSessionResponse {
+  return {};
+}
+
+export const CreateProviderSessionResponse: MessageFns<CreateProviderSessionResponse> =
+  {
+    encode(
+      message: CreateProviderSessionResponse,
+      writer: BinaryWriter = new BinaryWriter(),
+    ): BinaryWriter {
+      if (message.success !== undefined) {
+        CreateProviderSessionSuccess.encode(
+          message.success,
+          writer.uint32(10).fork(),
+        ).join();
+      }
+      if (message.error !== undefined) {
+        Error.encode(message.error, writer.uint32(18).fork()).join();
+      }
+      return writer;
+    },
+
+    decode(
+      input: BinaryReader | Uint8Array,
+      length?: number,
+    ): CreateProviderSessionResponse {
+      const reader =
+        input instanceof BinaryReader ? input : new BinaryReader(input);
+      const end = length === undefined ? reader.len : reader.pos + length;
+      const message = createBaseCreateProviderSessionResponse();
+      while (reader.pos < end) {
+        const tag = reader.uint32();
+        switch (tag >>> 3) {
+          case 1: {
+            if (tag !== 10) {
+              break;
+            }
+
+            message.success = CreateProviderSessionSuccess.decode(
+              reader,
+              reader.uint32(),
+            );
+            continue;
+          }
+          case 2: {
+            if (tag !== 18) {
+              break;
+            }
+
+            message.error = Error.decode(reader, reader.uint32());
+            continue;
+          }
+        }
+        if ((tag & 7) === 4 || tag === 0) {
+          break;
+        }
+        reader.skip(tag & 7);
+      }
+      return message;
+    },
+  };
+
 function createBaseResolvePaymentRequest(): ResolvePaymentRequest {
   return { provider: 0 };
 }
 
 export const ResolvePaymentRequest: MessageFns<ResolvePaymentRequest> = {
-  encode(message: ResolvePaymentRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+  encode(
+    message: ResolvePaymentRequest,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
     if (message.provider !== 0) {
       writer.uint32(8).int32(message.provider);
     }
     if (message.stripe !== undefined) {
-      StripeResolveRequest.encode(message.stripe, writer.uint32(18).fork()).join();
+      StripeResolveRequest.encode(
+        message.stripe,
+        writer.uint32(18).fork(),
+      ).join();
     }
     if (message.razorpay !== undefined) {
-      RazorpayResolveRequest.encode(message.razorpay, writer.uint32(26).fork()).join();
+      RazorpayResolveRequest.encode(
+        message.razorpay,
+        writer.uint32(26).fork(),
+      ).join();
     }
     if (message.paypal !== undefined) {
-      PayPalResolveRequest.encode(message.paypal, writer.uint32(34).fork()).join();
+      PayPalResolveRequest.encode(
+        message.paypal,
+        writer.uint32(34).fork(),
+      ).join();
     }
     return writer;
   },
 
-  decode(input: BinaryReader | Uint8Array, length?: number): ResolvePaymentRequest {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+  decode(
+    input: BinaryReader | Uint8Array,
+    length?: number,
+  ): ResolvePaymentRequest {
+    const reader =
+      input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseResolvePaymentRequest();
     while (reader.pos < end) {
@@ -539,7 +808,10 @@ export const ResolvePaymentRequest: MessageFns<ResolvePaymentRequest> = {
             break;
           }
 
-          message.razorpay = RazorpayResolveRequest.decode(reader, reader.uint32());
+          message.razorpay = RazorpayResolveRequest.decode(
+            reader,
+            reader.uint32(),
+          );
           continue;
         }
         case 4: {
@@ -561,22 +833,29 @@ export const ResolvePaymentRequest: MessageFns<ResolvePaymentRequest> = {
 };
 
 function createBaseCancelPaymentRequest(): CancelPaymentRequest {
-  return { provider: 0, providerOrderId: "" };
+  return { provider: 0, providerOrderId: '' };
 }
 
 export const CancelPaymentRequest: MessageFns<CancelPaymentRequest> = {
-  encode(message: CancelPaymentRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+  encode(
+    message: CancelPaymentRequest,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
     if (message.provider !== 0) {
       writer.uint32(8).int32(message.provider);
     }
-    if (message.providerOrderId !== "") {
+    if (message.providerOrderId !== '') {
       writer.uint32(18).string(message.providerOrderId);
     }
     return writer;
   },
 
-  decode(input: BinaryReader | Uint8Array, length?: number): CancelPaymentRequest {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+  decode(
+    input: BinaryReader | Uint8Array,
+    length?: number,
+  ): CancelPaymentRequest {
+    const reader =
+      input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseCancelPaymentRequest();
     while (reader.pos < end) {
@@ -613,9 +892,15 @@ function createBaseResolvePaymentResponse(): ResolvePaymentResponse {
 }
 
 export const ResolvePaymentResponse: MessageFns<ResolvePaymentResponse> = {
-  encode(message: ResolvePaymentResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+  encode(
+    message: ResolvePaymentResponse,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
     if (message.success !== undefined) {
-      ResolvePaymentSuccess.encode(message.success, writer.uint32(10).fork()).join();
+      ResolvePaymentSuccess.encode(
+        message.success,
+        writer.uint32(10).fork(),
+      ).join();
     }
     if (message.error !== undefined) {
       Error.encode(message.error, writer.uint32(18).fork()).join();
@@ -623,8 +908,12 @@ export const ResolvePaymentResponse: MessageFns<ResolvePaymentResponse> = {
     return writer;
   },
 
-  decode(input: BinaryReader | Uint8Array, length?: number): ResolvePaymentResponse {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+  decode(
+    input: BinaryReader | Uint8Array,
+    length?: number,
+  ): ResolvePaymentResponse {
+    const reader =
+      input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseResolvePaymentResponse();
     while (reader.pos < end) {
@@ -635,7 +924,10 @@ export const ResolvePaymentResponse: MessageFns<ResolvePaymentResponse> = {
             break;
           }
 
-          message.success = ResolvePaymentSuccess.decode(reader, reader.uint32());
+          message.success = ResolvePaymentSuccess.decode(
+            reader,
+            reader.uint32(),
+          );
           continue;
         }
         case 2: {
@@ -661,9 +953,15 @@ function createBaseCancelPaymentResponse(): CancelPaymentResponse {
 }
 
 export const CancelPaymentResponse: MessageFns<CancelPaymentResponse> = {
-  encode(message: CancelPaymentResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+  encode(
+    message: CancelPaymentResponse,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
     if (message.success !== undefined) {
-      CancelPaymentSuccess.encode(message.success, writer.uint32(10).fork()).join();
+      CancelPaymentSuccess.encode(
+        message.success,
+        writer.uint32(10).fork(),
+      ).join();
     }
     if (message.error !== undefined) {
       Error.encode(message.error, writer.uint32(18).fork()).join();
@@ -671,8 +969,12 @@ export const CancelPaymentResponse: MessageFns<CancelPaymentResponse> = {
     return writer;
   },
 
-  decode(input: BinaryReader | Uint8Array, length?: number): CancelPaymentResponse {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+  decode(
+    input: BinaryReader | Uint8Array,
+    length?: number,
+  ): CancelPaymentResponse {
+    const reader =
+      input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseCancelPaymentResponse();
     while (reader.pos < end) {
@@ -683,7 +985,10 @@ export const CancelPaymentResponse: MessageFns<CancelPaymentResponse> = {
             break;
           }
 
-          message.success = CancelPaymentSuccess.decode(reader, reader.uint32());
+          message.success = CancelPaymentSuccess.decode(
+            reader,
+            reader.uint32(),
+          );
           continue;
         }
         case 2: {
@@ -709,7 +1014,10 @@ function createBaseGetPaymentResponse(): GetPaymentResponse {
 }
 
 export const GetPaymentResponse: MessageFns<GetPaymentResponse> = {
-  encode(message: GetPaymentResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+  encode(
+    message: GetPaymentResponse,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
     if (message.success !== undefined) {
       PaymentData.encode(message.success, writer.uint32(10).fork()).join();
     }
@@ -719,8 +1027,12 @@ export const GetPaymentResponse: MessageFns<GetPaymentResponse> = {
     return writer;
   },
 
-  decode(input: BinaryReader | Uint8Array, length?: number): GetPaymentResponse {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+  decode(
+    input: BinaryReader | Uint8Array,
+    length?: number,
+  ): GetPaymentResponse {
+    const reader =
+      input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseGetPaymentResponse();
     while (reader.pos < end) {
@@ -753,18 +1065,21 @@ export const GetPaymentResponse: MessageFns<GetPaymentResponse> = {
 };
 
 function createBaseResolvePaymentSuccess(): ResolvePaymentSuccess {
-  return { status: "", paymentId: "", orderId: "", isResolved: false };
+  return { status: '', paymentId: '', orderId: '', isResolved: false };
 }
 
 export const ResolvePaymentSuccess: MessageFns<ResolvePaymentSuccess> = {
-  encode(message: ResolvePaymentSuccess, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.status !== "") {
+  encode(
+    message: ResolvePaymentSuccess,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
+    if (message.status !== '') {
       writer.uint32(10).string(message.status);
     }
-    if (message.paymentId !== "") {
+    if (message.paymentId !== '') {
       writer.uint32(18).string(message.paymentId);
     }
-    if (message.orderId !== "") {
+    if (message.orderId !== '') {
       writer.uint32(34).string(message.orderId);
     }
     if (message.isResolved !== false) {
@@ -773,8 +1088,12 @@ export const ResolvePaymentSuccess: MessageFns<ResolvePaymentSuccess> = {
     return writer;
   },
 
-  decode(input: BinaryReader | Uint8Array, length?: number): ResolvePaymentSuccess {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+  decode(
+    input: BinaryReader | Uint8Array,
+    length?: number,
+  ): ResolvePaymentSuccess {
+    const reader =
+      input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseResolvePaymentSuccess();
     while (reader.pos < end) {
@@ -823,25 +1142,32 @@ export const ResolvePaymentSuccess: MessageFns<ResolvePaymentSuccess> = {
 };
 
 function createBaseCancelPaymentSuccess(): CancelPaymentSuccess {
-  return { status: "", paymentId: "", providerOrderId: "" };
+  return { status: '', paymentId: '', providerOrderId: '' };
 }
 
 export const CancelPaymentSuccess: MessageFns<CancelPaymentSuccess> = {
-  encode(message: CancelPaymentSuccess, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.status !== "") {
+  encode(
+    message: CancelPaymentSuccess,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
+    if (message.status !== '') {
       writer.uint32(10).string(message.status);
     }
-    if (message.paymentId !== "") {
+    if (message.paymentId !== '') {
       writer.uint32(18).string(message.paymentId);
     }
-    if (message.providerOrderId !== "") {
+    if (message.providerOrderId !== '') {
       writer.uint32(26).string(message.providerOrderId);
     }
     return writer;
   },
 
-  decode(input: BinaryReader | Uint8Array, length?: number): CancelPaymentSuccess {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+  decode(
+    input: BinaryReader | Uint8Array,
+    length?: number,
+  ): CancelPaymentSuccess {
+    const reader =
+      input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseCancelPaymentSuccess();
     while (reader.pos < end) {
@@ -882,19 +1208,23 @@ export const CancelPaymentSuccess: MessageFns<CancelPaymentSuccess> = {
 };
 
 function createBaseGetPaymentRequest(): GetPaymentRequest {
-  return { paymentId: "" };
+  return { paymentId: '' };
 }
 
 export const GetPaymentRequest: MessageFns<GetPaymentRequest> = {
-  encode(message: GetPaymentRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.paymentId !== "") {
+  encode(
+    message: GetPaymentRequest,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
+    if (message.paymentId !== '') {
       writer.uint32(10).string(message.paymentId);
     }
     return writer;
   },
 
   decode(input: BinaryReader | Uint8Array, length?: number): GetPaymentRequest {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const reader =
+      input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseGetPaymentRequest();
     while (reader.pos < end) {
@@ -919,46 +1249,67 @@ export const GetPaymentRequest: MessageFns<GetPaymentRequest> = {
 };
 
 function createBaseGetPaymentSuccess(): GetPaymentSuccess {
-  return { paymentId: "", provider: 0, status: "", amount: 0, currency: "", createdAt: "", updatedAt: "" };
+  return {
+    paymentId: '',
+    provider: 0,
+    status: '',
+    amount: 0,
+    currency: '',
+    createdAt: '',
+    updatedAt: '',
+  };
 }
 
 export const GetPaymentSuccess: MessageFns<GetPaymentSuccess> = {
-  encode(message: GetPaymentSuccess, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.paymentId !== "") {
+  encode(
+    message: GetPaymentSuccess,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
+    if (message.paymentId !== '') {
       writer.uint32(10).string(message.paymentId);
     }
     if (message.provider !== 0) {
       writer.uint32(16).int32(message.provider);
     }
-    if (message.status !== "") {
+    if (message.status !== '') {
       writer.uint32(26).string(message.status);
     }
     if (message.amount !== 0) {
       writer.uint32(32).int64(message.amount);
     }
-    if (message.currency !== "") {
+    if (message.currency !== '') {
       writer.uint32(42).string(message.currency);
     }
-    if (message.createdAt !== "") {
+    if (message.createdAt !== '') {
       writer.uint32(50).string(message.createdAt);
     }
-    if (message.updatedAt !== "") {
+    if (message.updatedAt !== '') {
       writer.uint32(58).string(message.updatedAt);
     }
     if (message.stripe !== undefined) {
-      StripePaymentSession.encode(message.stripe, writer.uint32(66).fork()).join();
+      StripePaymentSession.encode(
+        message.stripe,
+        writer.uint32(66).fork(),
+      ).join();
     }
     if (message.razorpay !== undefined) {
-      RazorpayPaymentSession.encode(message.razorpay, writer.uint32(74).fork()).join();
+      RazorpayPaymentSession.encode(
+        message.razorpay,
+        writer.uint32(74).fork(),
+      ).join();
     }
     if (message.paypal !== undefined) {
-      PayPalPaymentSession.encode(message.paypal, writer.uint32(82).fork()).join();
+      PayPalPaymentSession.encode(
+        message.paypal,
+        writer.uint32(82).fork(),
+      ).join();
     }
     return writer;
   },
 
   decode(input: BinaryReader | Uint8Array, length?: number): GetPaymentSuccess {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const reader =
+      input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseGetPaymentSuccess();
     while (reader.pos < end) {
@@ -1033,7 +1384,10 @@ export const GetPaymentSuccess: MessageFns<GetPaymentSuccess> = {
             break;
           }
 
-          message.razorpay = RazorpayPaymentSession.decode(reader, reader.uint32());
+          message.razorpay = RazorpayPaymentSession.decode(
+            reader,
+            reader.uint32(),
+          );
           continue;
         }
         case 10: {
@@ -1056,52 +1410,56 @@ export const GetPaymentSuccess: MessageFns<GetPaymentSuccess> = {
 
 function createBasePaymentData(): PaymentData {
   return {
-    paymentId: "",
+    paymentId: '',
     provider: 0,
-    status: "",
+    status: '',
     amount: 0,
-    currency: "",
-    orderId: "",
-    providerOrderId: "",
-    createdAt: "",
-    updatedAt: "",
+    currency: '',
+    orderId: '',
+    providerOrderId: '',
+    createdAt: '',
+    updatedAt: '',
   };
 }
 
 export const PaymentData: MessageFns<PaymentData> = {
-  encode(message: PaymentData, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.paymentId !== "") {
+  encode(
+    message: PaymentData,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
+    if (message.paymentId !== '') {
       writer.uint32(10).string(message.paymentId);
     }
     if (message.provider !== 0) {
       writer.uint32(16).int32(message.provider);
     }
-    if (message.status !== "") {
+    if (message.status !== '') {
       writer.uint32(26).string(message.status);
     }
     if (message.amount !== 0) {
       writer.uint32(32).int64(message.amount);
     }
-    if (message.currency !== "") {
+    if (message.currency !== '') {
       writer.uint32(42).string(message.currency);
     }
-    if (message.orderId !== "") {
+    if (message.orderId !== '') {
       writer.uint32(98).string(message.orderId);
     }
-    if (message.providerOrderId !== "") {
+    if (message.providerOrderId !== '') {
       writer.uint32(90).string(message.providerOrderId);
     }
-    if (message.createdAt !== "") {
+    if (message.createdAt !== '') {
       writer.uint32(50).string(message.createdAt);
     }
-    if (message.updatedAt !== "") {
+    if (message.updatedAt !== '') {
       writer.uint32(58).string(message.updatedAt);
     }
     return writer;
   },
 
   decode(input: BinaryReader | Uint8Array, length?: number): PaymentData {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const reader =
+      input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBasePaymentData();
     while (reader.pos < end) {
@@ -1194,12 +1552,19 @@ function createBaseHealthCheckRequest(): HealthCheckRequest {
 }
 
 export const HealthCheckRequest: MessageFns<HealthCheckRequest> = {
-  encode(_: HealthCheckRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+  encode(
+    _: HealthCheckRequest,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
     return writer;
   },
 
-  decode(input: BinaryReader | Uint8Array, length?: number): HealthCheckRequest {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+  decode(
+    input: BinaryReader | Uint8Array,
+    length?: number,
+  ): HealthCheckRequest {
+    const reader =
+      input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseHealthCheckRequest();
     while (reader.pos < end) {
@@ -1216,19 +1581,26 @@ export const HealthCheckRequest: MessageFns<HealthCheckRequest> = {
 };
 
 function createBaseHealthCheckResponse(): HealthCheckResponse {
-  return { status: "" };
+  return { status: '' };
 }
 
 export const HealthCheckResponse: MessageFns<HealthCheckResponse> = {
-  encode(message: HealthCheckResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.status !== "") {
+  encode(
+    message: HealthCheckResponse,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
+    if (message.status !== '') {
       writer.uint32(10).string(message.status);
     }
     return writer;
   },
 
-  decode(input: BinaryReader | Uint8Array, length?: number): HealthCheckResponse {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+  decode(
+    input: BinaryReader | Uint8Array,
+    length?: number,
+  ): HealthCheckResponse {
+    const reader =
+      input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseHealthCheckResponse();
     while (reader.pos < end) {
@@ -1253,11 +1625,17 @@ export const HealthCheckResponse: MessageFns<HealthCheckResponse> = {
 };
 
 export interface PaymentServiceClient {
-  createPayment(request: CreatePaymentRequest): Observable<CreatePaymentResponse>;
+  createPayment(
+    request: CreatePaymentRequest,
+  ): Observable<CreatePaymentResponse>;
 
-  resolvePayment(request: ResolvePaymentRequest): Observable<ResolvePaymentResponse>;
+  resolvePayment(
+    request: ResolvePaymentRequest,
+  ): Observable<ResolvePaymentResponse>;
 
-  cancelPayment(request: CancelPaymentRequest): Observable<CancelPaymentResponse>;
+  cancelPayment(
+    request: CancelPaymentRequest,
+  ): Observable<CancelPaymentResponse>;
 
   getPayment(request: GetPaymentRequest): Observable<GetPaymentResponse>;
 
@@ -1269,101 +1647,155 @@ export interface PaymentServiceClient {
 export interface PaymentServiceController {
   createPayment(
     request: CreatePaymentRequest,
-  ): Promise<CreatePaymentResponse> | Observable<CreatePaymentResponse> | CreatePaymentResponse;
+  ):
+    | Promise<CreatePaymentResponse>
+    | Observable<CreatePaymentResponse>
+    | CreatePaymentResponse;
 
   resolvePayment(
     request: ResolvePaymentRequest,
-  ): Promise<ResolvePaymentResponse> | Observable<ResolvePaymentResponse> | ResolvePaymentResponse;
+  ):
+    | Promise<ResolvePaymentResponse>
+    | Observable<ResolvePaymentResponse>
+    | ResolvePaymentResponse;
 
   cancelPayment(
     request: CancelPaymentRequest,
-  ): Promise<CancelPaymentResponse> | Observable<CancelPaymentResponse> | CancelPaymentResponse;
+  ):
+    | Promise<CancelPaymentResponse>
+    | Observable<CancelPaymentResponse>
+    | CancelPaymentResponse;
 
   getPayment(
     request: GetPaymentRequest,
-  ): Promise<GetPaymentResponse> | Observable<GetPaymentResponse> | GetPaymentResponse;
+  ):
+    | Promise<GetPaymentResponse>
+    | Observable<GetPaymentResponse>
+    | GetPaymentResponse;
 
   /** Health check endpoint */
 
   healthCheck(
     request: HealthCheckRequest,
-  ): Promise<HealthCheckResponse> | Observable<HealthCheckResponse> | HealthCheckResponse;
+  ):
+    | Promise<HealthCheckResponse>
+    | Observable<HealthCheckResponse>
+    | HealthCheckResponse;
 }
 
 export function PaymentServiceControllerMethods() {
   return function (constructor: Function) {
-    const grpcMethods: string[] = ["createPayment", "resolvePayment", "cancelPayment", "getPayment", "healthCheck"];
+    const grpcMethods: string[] = [
+      'createPayment',
+      'resolvePayment',
+      'cancelPayment',
+      'getPayment',
+      'healthCheck',
+    ];
     for (const method of grpcMethods) {
-      const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
-      GrpcMethod("PaymentService", method)(constructor.prototype[method], method, descriptor);
+      const descriptor: any = Reflect.getOwnPropertyDescriptor(
+        constructor.prototype,
+        method,
+      );
+      GrpcMethod('PaymentService', method)(
+        constructor.prototype[method],
+        method,
+        descriptor,
+      );
     }
     const grpcStreamMethods: string[] = [];
     for (const method of grpcStreamMethods) {
-      const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
-      GrpcStreamMethod("PaymentService", method)(constructor.prototype[method], method, descriptor);
+      const descriptor: any = Reflect.getOwnPropertyDescriptor(
+        constructor.prototype,
+        method,
+      );
+      GrpcStreamMethod('PaymentService', method)(
+        constructor.prototype[method],
+        method,
+        descriptor,
+      );
     }
   };
 }
 
-export const PAYMENT_SERVICE_NAME = "PaymentService";
+export const PAYMENT_SERVICE_NAME = 'PaymentService';
 
 export type PaymentServiceService = typeof PaymentServiceService;
 export const PaymentServiceService = {
   createPayment: {
-    path: "/payment_service.PaymentService/CreatePayment",
+    path: '/payment_service.PaymentService/CreatePayment',
     requestStream: false,
     responseStream: false,
-    requestSerialize: (value: CreatePaymentRequest): Buffer => Buffer.from(CreatePaymentRequest.encode(value).finish()),
-    requestDeserialize: (value: Buffer): CreatePaymentRequest => CreatePaymentRequest.decode(value),
+    requestSerialize: (value: CreatePaymentRequest): Buffer =>
+      Buffer.from(CreatePaymentRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): CreatePaymentRequest =>
+      CreatePaymentRequest.decode(value),
     responseSerialize: (value: CreatePaymentResponse): Buffer =>
       Buffer.from(CreatePaymentResponse.encode(value).finish()),
-    responseDeserialize: (value: Buffer): CreatePaymentResponse => CreatePaymentResponse.decode(value),
+    responseDeserialize: (value: Buffer): CreatePaymentResponse =>
+      CreatePaymentResponse.decode(value),
   },
   resolvePayment: {
-    path: "/payment_service.PaymentService/ResolvePayment",
+    path: '/payment_service.PaymentService/ResolvePayment',
     requestStream: false,
     responseStream: false,
     requestSerialize: (value: ResolvePaymentRequest): Buffer =>
       Buffer.from(ResolvePaymentRequest.encode(value).finish()),
-    requestDeserialize: (value: Buffer): ResolvePaymentRequest => ResolvePaymentRequest.decode(value),
+    requestDeserialize: (value: Buffer): ResolvePaymentRequest =>
+      ResolvePaymentRequest.decode(value),
     responseSerialize: (value: ResolvePaymentResponse): Buffer =>
       Buffer.from(ResolvePaymentResponse.encode(value).finish()),
-    responseDeserialize: (value: Buffer): ResolvePaymentResponse => ResolvePaymentResponse.decode(value),
+    responseDeserialize: (value: Buffer): ResolvePaymentResponse =>
+      ResolvePaymentResponse.decode(value),
   },
   cancelPayment: {
-    path: "/payment_service.PaymentService/CancelPayment",
+    path: '/payment_service.PaymentService/CancelPayment',
     requestStream: false,
     responseStream: false,
-    requestSerialize: (value: CancelPaymentRequest): Buffer => Buffer.from(CancelPaymentRequest.encode(value).finish()),
-    requestDeserialize: (value: Buffer): CancelPaymentRequest => CancelPaymentRequest.decode(value),
+    requestSerialize: (value: CancelPaymentRequest): Buffer =>
+      Buffer.from(CancelPaymentRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): CancelPaymentRequest =>
+      CancelPaymentRequest.decode(value),
     responseSerialize: (value: CancelPaymentResponse): Buffer =>
       Buffer.from(CancelPaymentResponse.encode(value).finish()),
-    responseDeserialize: (value: Buffer): CancelPaymentResponse => CancelPaymentResponse.decode(value),
+    responseDeserialize: (value: Buffer): CancelPaymentResponse =>
+      CancelPaymentResponse.decode(value),
   },
   getPayment: {
-    path: "/payment_service.PaymentService/GetPayment",
+    path: '/payment_service.PaymentService/GetPayment',
     requestStream: false,
     responseStream: false,
-    requestSerialize: (value: GetPaymentRequest): Buffer => Buffer.from(GetPaymentRequest.encode(value).finish()),
-    requestDeserialize: (value: Buffer): GetPaymentRequest => GetPaymentRequest.decode(value),
-    responseSerialize: (value: GetPaymentResponse): Buffer => Buffer.from(GetPaymentResponse.encode(value).finish()),
-    responseDeserialize: (value: Buffer): GetPaymentResponse => GetPaymentResponse.decode(value),
+    requestSerialize: (value: GetPaymentRequest): Buffer =>
+      Buffer.from(GetPaymentRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): GetPaymentRequest =>
+      GetPaymentRequest.decode(value),
+    responseSerialize: (value: GetPaymentResponse): Buffer =>
+      Buffer.from(GetPaymentResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): GetPaymentResponse =>
+      GetPaymentResponse.decode(value),
   },
   /** Health check endpoint */
   healthCheck: {
-    path: "/payment_service.PaymentService/HealthCheck",
+    path: '/payment_service.PaymentService/HealthCheck',
     requestStream: false,
     responseStream: false,
-    requestSerialize: (value: HealthCheckRequest): Buffer => Buffer.from(HealthCheckRequest.encode(value).finish()),
-    requestDeserialize: (value: Buffer): HealthCheckRequest => HealthCheckRequest.decode(value),
-    responseSerialize: (value: HealthCheckResponse): Buffer => Buffer.from(HealthCheckResponse.encode(value).finish()),
-    responseDeserialize: (value: Buffer): HealthCheckResponse => HealthCheckResponse.decode(value),
+    requestSerialize: (value: HealthCheckRequest): Buffer =>
+      Buffer.from(HealthCheckRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): HealthCheckRequest =>
+      HealthCheckRequest.decode(value),
+    responseSerialize: (value: HealthCheckResponse): Buffer =>
+      Buffer.from(HealthCheckResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): HealthCheckResponse =>
+      HealthCheckResponse.decode(value),
   },
 } as const;
 
 export interface PaymentServiceServer extends UntypedServiceImplementation {
   createPayment: handleUnaryCall<CreatePaymentRequest, CreatePaymentResponse>;
-  resolvePayment: handleUnaryCall<ResolvePaymentRequest, ResolvePaymentResponse>;
+  resolvePayment: handleUnaryCall<
+    ResolvePaymentRequest,
+    ResolvePaymentResponse
+  >;
   cancelPayment: handleUnaryCall<CancelPaymentRequest, CancelPaymentResponse>;
   getPayment: handleUnaryCall<GetPaymentRequest, GetPaymentResponse>;
   /** Health check endpoint */
@@ -1373,10 +1805,10 @@ export interface PaymentServiceServer extends UntypedServiceImplementation {
 function longToNumber(int64: { toString(): string }): number {
   const num = globalThis.Number(int64.toString());
   if (num > globalThis.Number.MAX_SAFE_INTEGER) {
-    throw new globalThis.Error("Value is larger than Number.MAX_SAFE_INTEGER");
+    throw new globalThis.Error('Value is larger than Number.MAX_SAFE_INTEGER');
   }
   if (num < globalThis.Number.MIN_SAFE_INTEGER) {
-    throw new globalThis.Error("Value is smaller than Number.MIN_SAFE_INTEGER");
+    throw new globalThis.Error('Value is smaller than Number.MIN_SAFE_INTEGER');
   }
   return num;
 }
