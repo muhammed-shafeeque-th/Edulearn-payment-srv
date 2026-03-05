@@ -133,7 +133,6 @@ export class StripePaymentStrategy implements PaymentStrategy {
               billing_address_collection: 'auto',
               phone_number_collection: { enabled: false },
               allow_promotion_codes: true,
-              expires_at: Math.floor(Date.now() / 1000) + 3600, // 1 hour expiry
               locale: 'auto',
               submit_type: 'pay',
             },
