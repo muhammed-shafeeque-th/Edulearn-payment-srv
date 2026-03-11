@@ -1,4 +1,3 @@
-import { CreatePaymentRequest } from '@infrastructure/grpc/generated/payment_service';
 import { IsString, IsNotEmpty, IsEnum, IsOptional } from 'class-validator';
 
 /**
@@ -21,7 +20,7 @@ export enum PaymentStatus {
   UNRECOGNIZED = -1,
 }
 
-export class PaymentCreateDto implements CreatePaymentRequest {
+export class PaymentCreateDto {
   @IsString()
   @IsNotEmpty()
   userId!: string;
@@ -30,13 +29,19 @@ export class PaymentCreateDto implements CreatePaymentRequest {
   @IsNotEmpty()
   orderId!: string;
 
-  @IsEnum(Provider)
-  @IsNotEmpty()
-  provider!: Provider;
-
   @IsString()
   @IsNotEmpty()
   idempotencyKey!: string;
+}
+
+export class CreateProviderSessionDto {
+  @IsString()
+  @IsNotEmpty()
+  paymentId!: string;
+
+  @IsEnum(Provider)
+  @IsNotEmpty()
+  provider!: Provider;
 
   @IsOptional()
   @IsString()
