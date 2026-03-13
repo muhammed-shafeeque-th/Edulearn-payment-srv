@@ -3,6 +3,7 @@ import { Payment, PaymentStatus } from '@domain/entities/payments';
 export abstract class IPaymentRepository {
   abstract save(payment: Payment): Promise<void>;
   abstract findById(id: string): Promise<Payment | null>;
+  abstract findByOrderId(orderId: string): Promise<Payment | null>;
   abstract findByProviderOrderId(
     providerOrderId: string,
   ): Promise<Payment | null>;
