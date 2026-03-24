@@ -6,6 +6,7 @@ import { IdempotencyService } from '@infrastructure/services/idempotency.service
 import { DatabaseRepositoryModule } from '@infrastructure/database/database-repository.module';
 import { RedisModule } from '@infrastructure/redis/redis.module';
 import { CreatePaymentUseCase } from '@application/use-cases/payments/create-payment.use-case';
+import { CreateProviderSessionUseCase } from '@application/use-cases/payments/create-provider-session.use-case';
 import { ResolvePaymentUseCase } from '@application/use-cases/payments/resolve-payment.use-case';
 import { CancelPaymentUseCase } from '@application/use-cases/payments/cancel-payment.use-case';
 import { GrpcClientsModule } from '@infrastructure/grpc/clients/grpc-clients.module';
@@ -27,6 +28,7 @@ import { PaymentFailureUseCase } from './payment-failure.use-case';
   ],
   providers: [
     CreatePaymentUseCase,
+    CreateProviderSessionUseCase,
     SuccessPaymentUseCase,
     PaymentFailureUseCase,
     ResolvePaymentUseCase,
@@ -36,6 +38,7 @@ import { PaymentFailureUseCase } from './payment-failure.use-case';
   ],
   exports: [
     CreatePaymentUseCase,
+    CreateProviderSessionUseCase,
     SuccessPaymentUseCase,
     PaymentFailureUseCase,
     ResolvePaymentUseCase,
