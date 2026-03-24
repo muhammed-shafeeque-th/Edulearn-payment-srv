@@ -7,7 +7,8 @@ import { AppConfigService } from '@infrastructure/config/config.service';
 
 @Injectable()
 export class PaymentTimeoutRedisWorker
-  implements OnModuleInit, OnModuleDestroy {
+  implements OnModuleInit, OnModuleDestroy
+{
   private subscriber: Redis | null = null;
   private readonly redisExpiredPattern = '__keyevent@*__:expired';
   private readonly timeoutKeyPrefix = 'payments:timeout';
@@ -17,7 +18,7 @@ export class PaymentTimeoutRedisWorker
     private readonly logger: LoggingService,
     private readonly handlePaymentTimeoutUseCase: HandlePaymentTimeoutUseCase,
     private readonly configService: AppConfigService,
-  ) { }
+  ) {}
 
   async onModuleInit(): Promise<void> {
     // const client = this.redisService.getOrThrow();
@@ -40,7 +41,6 @@ export class PaymentTimeoutRedisWorker
     this.subscriber.on('pmessage', async (_, __, key) => {
       await this.handleExpiredKey(key);
     });
-
 
     await this.subscriber.psubscribe(this.redisExpiredPattern);
     this.logger.debug(
