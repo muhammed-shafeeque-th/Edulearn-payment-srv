@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Money } from '@domain/value-objects/money';
 import { IdempotencyKey } from '@domain/value-objects/idempotency-key';
 import { IPaymentRepository } from '@domain/repositories/payment-repository.interface';
@@ -11,6 +11,7 @@ import { PaymentCreateDto } from 'src/presentation/grpc/dtos/create-payment.dto'
 import { IdempotencyService } from '@infrastructure/services/idempotency.service';
 import { OrderClient } from '@infrastructure/grpc/clients/order/order.client';
 import { timeoutPromise } from 'src/shared/utils/_promise-timeout';
+import { BadRequestException } from 'src/shared/exceptions/infra.exceptions';
 // import { ICacheService } from '@application/adaptors/redis.interface';
 
 @Injectable()

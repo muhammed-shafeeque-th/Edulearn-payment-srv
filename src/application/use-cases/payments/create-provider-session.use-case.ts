@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { IPaymentRepository } from '@domain/repositories/payment-repository.interface';
 import { LoggingService } from '@infrastructure/observability/logging/logging.service';
 import { TracingService } from '@infrastructure/observability/tracing/trace.service';
@@ -19,6 +19,7 @@ import { PaymentProvider } from '@domain/entities/payments';
 import { KafkaTopics } from 'src/shared/event-topics';
 import { OrderPaymentInitiateEvent } from '@domain/events/order-payment.events';
 import { IKafkaProducer } from '@application/adaptors/kafka-producer.interface';
+import { PaymentNotFoundException } from '@domain/exceptions/domain.exceptions';
 
 export interface CreateProviderSessionDto {
   paymentId: string;
@@ -54,7 +55,7 @@ export class CreateProviderSessionUseCase {
 
         const payment = await this.paymentRepository.findById(dto.paymentId);
         if (!payment) {
-          throw new NotFoundException(
+          throw new PaymentNotFoundException(
             `Payment with id ${dto.paymentId} not found`,
           );
         }
