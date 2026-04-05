@@ -1,4 +1,4 @@
-import { TimeoutException } from '@domain/exceptions/domain.exceptions';
+import { TimeoutException } from "../exceptions/infra.exceptions";
 
 export async function timeoutPromise<T>(
   callback: () => Promise<T>,
