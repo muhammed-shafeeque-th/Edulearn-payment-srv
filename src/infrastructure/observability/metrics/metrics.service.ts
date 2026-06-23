@@ -53,7 +53,7 @@ export class MetricsService {
   incPaymentCounter(labels: {
     method: string;
     status: string;
-    gateway: string;
+    gateway?: string;
   }): void {
     this.paymentCounter.inc(labels);
   }

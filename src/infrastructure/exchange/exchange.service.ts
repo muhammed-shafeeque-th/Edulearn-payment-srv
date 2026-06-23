@@ -18,7 +18,7 @@ type FrankfurterExchangeResponse = {
 
 @Injectable()
 export class FrankfurterExchangeRateService implements IExchangeRateService {
-  private readonly ttlSeconds = 60; // short TTL for near real-time
+  private readonly ttlSeconds = 60;
   private readonly apiBase = 'https://api.frankfurter.app';
 
   constructor(
@@ -38,9 +38,6 @@ export class FrankfurterExchangeRateService implements IExchangeRateService {
 
     const redisKey = `fx:${base}:${target}`;
 
-    // -------------------------------------------------------------
-    // 1) CHECK REDIS (cache-first for performance)
-    // -------------------------------------------------------------
     const cached = await this.redis.get(redisKey);
     if (cached) {
       try {
@@ -51,14 +48,8 @@ export class FrankfurterExchangeRateService implements IExchangeRateService {
       } catch {}
     }
 
-    // -------------------------------------------------------------
-    // 2) FETCH FROM PROVIDER (Frankfurter)
-    // -------------------------------------------------------------
     const rate = await this.fetchRate(base, target);
 
-    // -------------------------------------------------------------
-    // 3) WRITE TO REDIS WITH TTL
-    // -------------------------------------------------------------
     try {
       await this.redis.set(
         redisKey,
@@ -84,9 +75,8 @@ export class FrankfurterExchangeRateService implements IExchangeRateService {
 
     let response;
     try {
-      // Use AbortController to specify a timeout for fetch
       const controller = new AbortController();
-      const timeout = 15000; // 7 seconds timeout (customize as needed)
+      const timeout = 15000;
       const timeoutId = setTimeout(() => controller.abort(), timeout);
 
       try {
@@ -124,10 +114,6 @@ export class FrankfurterExchangeRateService implements IExchangeRateService {
     };
   }
 
-  /**
-   * Uses stale Redis value if the provider failed.
-   * This is critical for payment reliability.
-   */
   private async useStaleFallback(
     base: string,
     target: string,

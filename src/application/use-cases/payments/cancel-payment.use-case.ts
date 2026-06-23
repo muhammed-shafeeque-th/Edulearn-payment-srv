@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { IdempotencyKey } from '@domain/value-objects/idempotency-key';
 import { IPaymentRepository } from '@domain/repositories/payment-repository.interface';
 import { IKafkaProducer } from '@application/adaptors/kafka-producer.interface';
@@ -16,6 +16,7 @@ import { ProviderSessionStatus } from '@domain/entities/payment-provider-sesssio
 import { KafkaTopics } from 'src/shared/event-topics';
 import { OrderPaymentFailedEvent } from '@domain/events/order-payment.events';
 import { v4 as uuidV4 } from 'uuid';
+import { BadRequestException } from 'src/shared/exceptions/infra.exceptions';
 
 @Injectable()
 export class CancelPaymentUseCase {

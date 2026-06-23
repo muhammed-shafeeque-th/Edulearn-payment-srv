@@ -1,0 +1,49 @@
+name: Microservices Trigger CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  # -------------------------------
+  # Job 1: Detect changed services
+  # -------------------------------
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - run: yarn install --frozen-lockfile
+      - run: yarn lint
+      - run: yarn run test
+
+  # --------------------------------------------------
+  # Job 2: Call reusable workflow (matrix per service)
+  # --------------------------------------------------
+  build-and-push:
+    needs: test
+    # if: needs.detect-changes.outputs.services != '[]'
+
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [payment]
+        # service: ${{ fromJson(needs.detect-changes.outputs.services) }}
+
+    # 🚨 IMPORTANT:
+    # Reusable workflows are called at JOB level
+    uses: ./.github/workflows/ci-workflow.yaml
+
+    with:
+      service: ${{ matrix.service }}

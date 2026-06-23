@@ -88,7 +88,7 @@ export class LoggingService implements LoggerService {
     for (const line of stackLines) {
       if (
         line &&
-        !line.includes('logging.service.ts') &&
+        !line.includes('logging.service') &&
         (line.startsWith('at ') || line.match(/\(([^)]+)\)/))
       ) {
         // Extract file path and line number

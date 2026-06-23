@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import Stripe from 'stripe';
 import {
   PaymentStrategy,
@@ -6,36 +6,48 @@ import {
   PaymentStatus,
   PaymentRequest,
   RefundRequest,
-} from '@domain/strategies/payment-strategy.interface';
+  ResolvePaymentRequest,
+  PaymentSessionResult,
+  ResolvePaymentResponse,
+  StripeResolveRequest,
+  PaymentFailureResult,
+  RefundResult,
+} from '@application/adaptors/payment-strategy.interface';
 import { AppConfigService } from '@infrastructure/config/config.service';
 import { LoggingService } from '@infrastructure/observability/logging/logging.service';
 import { MetricsService } from '@infrastructure/observability/metrics/metrics.service';
 import { TracingService } from '@infrastructure/observability/tracing/trace.service';
-import { PaymentGateway } from '@domain/entities/payments';
-import { OrderNotFoundException } from '@domain/exceptions/domain.exceptions';
+import {
+  NotFoundException,
+  OrderNotFoundException,
+} from '@domain/exceptions/domain.exceptions';
+import { PaymentProvider } from '@domain/entities/payments';
+// import { IExchangeRateService } from '@domain/interfaces/exchange-rate.service';
 
 @Injectable()
 export class StripePaymentStrategy implements PaymentStrategy {
-  readonly gateway = 'stripe';
+  readonly gateway = PaymentProvider.STRIPE;
   private readonly stripe: Stripe;
-  private readonly supportedCurrencies = [
-    'usd',
-    'eur',
-    'gbp',
-    'cad',
-    'aud',
-    'jpy',
+  private readonly supportedCurrencies: string[] = [
+    'USD',
+    'EUR',
+    'GBP',
+    'CAD',
+    'AUD',
+    'INR',
+    'JPY',
   ];
 
   constructor(
     private readonly configService: AppConfigService,
+    // private readonly exchangeRateService: IExchangeRateService,
     private readonly logger: LoggingService,
     private readonly metrics: MetricsService,
     private readonly tracer: TracingService,
   ) {
     this.stripe = new Stripe(this.configService.stripeSecretKey, {
       apiVersion: '2025-08-27.basil',
-      timeout: 15000, // Increased timeout
+      timeout: 15000,
       maxNetworkRetries: 3,
       telemetry: false,
       typescript: true,
@@ -46,8 +58,8 @@ export class StripePaymentStrategy implements PaymentStrategy {
     });
   }
 
-  async createPayment<T = any>(request: PaymentRequest): Promise<T> {
-    return await this.tracer.startActiveSpan(
+  async createPayment(request: PaymentRequest): Promise<PaymentSessionResult> {
+    return this.tracer.startActiveSpan(
       'StripePaymentStrategy.createPayment',
       async (span) => {
         span.setAttributes({
@@ -61,108 +73,82 @@ export class StripePaymentStrategy implements PaymentStrategy {
         const startTime = Date.now();
 
         try {
-          // Validate currency support
-          if (
-            !this.supportedCurrencies.includes(
-              request.amount.getCurrency().toLowerCase(),
-            )
-          ) {
-            // throw new Error(
-            //   `Currency ${request.amount.getCurrency()} not supported by Stripe`,
-            // );
-            this.logger.info(
-              `Currency ${request.amount.getCurrency()} not supported by Stripe, converting to USD...`,
+          const currency = request.amount.getCurrency().toLowerCase();
+
+          if (!Array.isArray(request.items) || request.items.length === 0) {
+            throw new BadRequestException(
+              'No items provided for Stripe payment session.',
             );
-            request.amount.setCurrency('USD');
           }
+          const line_items = request.items.map((item) => ({
+            price_data: {
+              currency,
+              product_data: {
+                name: item.name,
+                ...(item.imageUrl ? { images: [item.imageUrl] } : {}),
+              },
+              unit_amount: Number(item.unitAmount.value ?? 0),
+            },
+            quantity: Number(item.quantity),
+          }));
+
+          if (!request.customerEmail) {
+            this.logger.warn(
+              'No customer email provided in the payment request',
+              {
+                ctx: 'StripePaymentStrategy',
+                userId: request.userId,
+              },
+            );
+          }
+
+          // Use clear fallback to supported cancel/success URLs
+          /* The above code is attempting to access the `cancelUrl` property from the `request` object
+          in TypeScript. However, the code snippet is incomplete and the actual functionality or
+          purpose of this code is not clear without additional context. */
+          // const cancelUrl = request.cancelUrl;
+          // ||
+          // this.configService.stripePaymentCancelUrl ||
+          // this.configService.paypalPaymentCancelUrl;
+          // const successUrl = request.successUrl;
+          //  ||
+          // this.configService.stripePaymentSuccessUrl ||
+          // this.configService.paypalPaymentCancelUrl;
 
           const session = await this.stripe.checkout.sessions.create(
             {
-              // Payment configuration
-              mode: 'payment', // 'payment' | 'subscription' | 'setup'
-              payment_method_types: ['card', 'link'], // Add more as needed
-
-              // Line items
-
-              currency: request.amount.getCurrency().toLowerCase(),
-
-              line_items: request.items?.map((item) => ({
-                price_data: {
-                  currency: request.amount.getCurrency().toLowerCase(),
-                  product_data: {
-                    name: item.name,
-                    // description: item.description,
-                    images: [item.imageUrl!], // Optional
-                  },
-                  unit_amount: parseInt(item.unitAmount.value || '0'),
-                },
-                quantity: parseInt(item.quantity),
-              })),
-
-              // Customer information
+              mode: 'payment',
+              payment_method_types: ['card', 'link'],
+              currency,
+              line_items,
               customer_email: request.customerEmail,
-              // customer: validatedData.customerId, // If existing Stripe customer
-
-              // Redirect URLs
-              success_url:
-                request.successUrl ||
-                `${this.configService.paypalPaymentCancelUrl}`,
-              cancel_url:
-                request.cancelUrl ||
-                `${this.configService.paypalPaymentCancelUrl}`,
-
-              // Metadata (searchable in Stripe Dashboard)
+              success_url: `${request.successUrl}?session_id={CHECKOUT_SESSION_ID}`,
+              cancel_url: `${request.cancelUrl}?orderId=${request.orderId}`,
               metadata: {
+                orderId: request.orderId ?? null,
                 userId: request.userId,
-                ...request.metadata,
-                environment: this.configService.nodeEnv!,
+                ...(request.metadata ?? {}),
+                environment: this.configService.nodeEnv ?? 'unknown',
               },
-
-              // Additional settings
               billing_address_collection: 'auto',
-              phone_number_collection: {
-                enabled: false,
-              },
-
-              // Allow promotion codes
+              phone_number_collection: { enabled: false },
               allow_promotion_codes: true,
-
-              // Shipping (if physical products)
-              // shipping_address_collection: {
-              //   allowed_countries: ['US', 'CA', 'GB'],
-              // },
-
-              // Tax calculation (if enabled)
-              // automatic_tax: {
-              //   enabled: true,
-              // },
-
-              // Session expiration (default 24 hours)
-              expires_at: Math.floor(Date.now() / 1000) + 3600, // 1 hour
-
-              // Locale
               locale: 'auto',
-
-              // Submit type
               submit_type: 'pay',
-
-              // Custom fields (collect additional info)
-              // custom_fields: [
-              //   {
-              //     key: 'orderNotes',
-              //     label: { type: 'custom', custom: 'Order Notes' },
-              //     type: 'text',
-              //     optional: true,
-              //   },
-              // ],
             },
             {
               idempotencyKey: request.idempotencyKey,
             },
           );
-          const status = this.mapStripeStatus(session.status!);
+          if (!session) {
+            throw new BadRequestException(
+              'Failed to create Stripe checkout session',
+            );
+          }
 
-          this.logger.log(`Stripe payment processed successfully`, {
+          const status = this.mapStripeStatus(session.status || '');
+
+          this.logger.debug('Stripe payment processed successfully', {
             ctx: 'StripePaymentStrategy',
             sessionId: session.id,
             status,
@@ -177,20 +163,22 @@ export class StripePaymentStrategy implements PaymentStrategy {
 
           return {
             providerOrderId: session.id,
-            providerStatus: session.status,
-            status,
-            gateway: this.gateway,
-            clientSecret: session.client_secret,
-            metadata: {
-              amountReceived: session.amount_total,
-            },
-          } as T;
+            providerAmount: session.amount_total!,
+            providerCurrency: session.currency!,
+            metadata: session,
+            provider: PaymentProvider.STRIPE,
+            sessionId: session.id,
+            publicKey: this.configService.stripePublishableKey,
+            sessionStatus: status,
+            clientSecret: session.client_secret ?? '',
+            url: session.url ?? '',
+          };
         } catch (error: any) {
-          this.logger.error(`Stripe payment failed`, {
-            error: error.message,
+          this.logger.error('Stripe payment failed', {
+            error: error?.message,
             ctx: 'StripePaymentStrategy',
             userId: request.userId,
-            stripeErrorCode: error.code,
+            stripeErrorCode: error?.code,
           });
 
           this.recordMetrics('process_payment', startTime, false);
@@ -199,6 +187,12 @@ export class StripePaymentStrategy implements PaymentStrategy {
         }
       },
     );
+  }
+  isCurrencySupported(currencyCode: string): boolean {
+    if (this.supportedCurrencies.includes(currencyCode.toUpperCase())) {
+      return true;
+    }
+    return false;
   }
   // async createPayment<T = any>(request: PaymentRequest): Promise<T> {
   //   return await this.tracer.startActiveSpan(
@@ -255,7 +249,7 @@ export class StripePaymentStrategy implements PaymentStrategy {
 
   //         const status = this.mapStripeStatus(paymentIntent.status);
 
-  //         this.logger.log(`Stripe payment processed successfully`, {
+  //         this.logger.debug(`Stripe payment processed successfully`, {
   //           ctx: 'StripePaymentStrategy',
   //           transactionId: paymentIntent.id,
   //           status,
@@ -294,36 +288,51 @@ export class StripePaymentStrategy implements PaymentStrategy {
   //   );
   // }
 
-  async createRefund(request: RefundRequest): Promise<PaymentResult> {
-    return await this.tracer.startActiveSpan(
+  async refundPayment(request: RefundRequest): Promise<RefundResult> {
+    return this.tracer.startActiveSpan(
       'StripePaymentStrategy.processRefund',
       async (span) => {
         span.setAttributes({
-          'transaction.id': request.transactionId,
-          'refund.amount': request.amount.getAmount(),
+          'transaction.id': request.providerPaymentId,
+          'refund.amount': request.amount,
+          'refund.currency': request.currency,
           gateway: this.gateway,
         });
 
         const startTime = Date.now();
 
         try {
+          // Validate transactionId and amount
+          if (!request.providerPaymentId) {
+            throw new BadRequestException('Missing transactionId for refund');
+          }
+          if (!request.amount || !request.currency) {
+            throw new Error('Invalid refund amount');
+          }
+
           const refund = await this.stripe.refunds.create({
-            payment_intent: request.transactionId,
-            amount: request.amount.getAmount(),
+            payment_intent: request.providerPaymentId,
+            amount: request.amount,
+            currency: request.currency,
             reason: 'requested_by_customer',
             metadata: {
-              reason: request.reason,
-              ...request.metadata,
+              reason: request.reason || '',
             },
           });
 
+          if (!refund) {
+            throw new NotFoundException(
+              'Stripe refund not found for the given transaction ID',
+            );
+          }
+
           const status = this.mapStripeRefundStatus(refund.status);
 
-          this.logger.log(`Stripe refund processed successfully`, {
+          this.logger.debug('Stripe refund processed successfully', {
             ctx: 'StripePaymentStrategy',
             transactionId: refund.id,
             status,
-            originalTransactionId: request.transactionId,
+            originalTransactionId: request.providerPaymentId,
           });
 
           this.recordMetrics(
@@ -333,40 +342,34 @@ export class StripePaymentStrategy implements PaymentStrategy {
           );
 
           return {
-            transactionId: refund.id,
-            status,
-            gateway: this.gateway,
+            refundId: refund.id,
+            currency: refund.currency,
+            amount: refund.amount,
+            status: 'pending',
             metadata: {
               stripeStatus: refund.status,
               amount: refund.amount,
             },
           };
         } catch (error: any) {
-          this.logger.error(`Stripe refund failed`, {
-            error: error.message,
+          this.logger.error('Stripe refund failed', {
+            error: error?.message,
             ctx: 'StripePaymentStrategy',
-            transactionId: request.transactionId,
-            stripeErrorCode: error.code,
+            transactionId: request.providerPaymentId,
+            stripeErrorCode: error?.code,
           });
 
           this.recordMetrics('process_refund', startTime, false);
 
           throw error;
-          // return {
-          //   transactionId: '',
-          //   status: PaymentStatus.FAILED,
-          //   gateway: this.gateway,
-          //   errorCode: error.code || 'UNKNOWN_ERROR',
-          //   errorMessage: error.message,
-          // };
         }
       },
     );
   }
 
   async getPaymentStatus(transactionId: string): Promise<PaymentResult> {
-    return await this.tracer.startActiveSpan(
-      'StripePaymentStrategy.verifyPayment',
+    return this.tracer.startActiveSpan(
+      'StripePaymentStrategy.resolvePayment',
       async (span) => {
         span.setAttributes({
           'transaction.id': transactionId,
@@ -374,10 +377,15 @@ export class StripePaymentStrategy implements PaymentStrategy {
         });
 
         try {
+          if (!transactionId) {
+            throw new BadRequestException(
+              'Transaction id is required to get payment status',
+            );
+          }
           const paymentIntent =
             await this.stripe.paymentIntents.retrieve(transactionId);
 
-          const status = this.mapStripeStatus(paymentIntent.status);
+          const status = this.mapStripeStatus(paymentIntent.status || '');
 
           return {
             transactionId: paymentIntent.id,
@@ -390,8 +398,8 @@ export class StripePaymentStrategy implements PaymentStrategy {
             },
           };
         } catch (error: any) {
-          this.logger.error(`Failed to verify Stripe payment`, {
-            error: error.message,
+          this.logger.error('Failed to verify Stripe payment', {
+            error: error?.message,
             ctx: 'StripePaymentStrategy',
             transactionId,
           });
@@ -400,50 +408,76 @@ export class StripePaymentStrategy implements PaymentStrategy {
             transactionId,
             status: PaymentStatus.FAILED,
             gateway: this.gateway,
-            errorCode: error.code || 'VERIFICATION_FAILED',
-            errorMessage: error.message,
+            errorCode: error?.code || 'VERIFICATION_FAILED',
+            errorMessage: error?.message,
           };
         }
       },
     );
   }
-  async verifyPayment(sessionId: string): Promise<{
-    paymentStatus: Stripe.Checkout.Session.PaymentStatus;
-    providerOrderStatus: Stripe.Checkout.Session.Status;
-    providerOrderId: string;
-    provider: PaymentGateway;
-  }> {
-    return await this.tracer.startActiveSpan(
-      'StripePaymentStrategy.verifyPayment',
+
+  async resolvePayment(
+    request: ResolvePaymentRequest,
+  ): Promise<ResolvePaymentResponse> {
+    return this.tracer.startActiveSpan(
+      'StripePaymentStrategy.resolvePayment',
       async (span) => {
+        // Type guard for StripeResolveRequest
+        function isStripeResolveRequest(req: any): req is StripeResolveRequest {
+          return req && typeof req.sessionId === 'string';
+        }
+
+        if (!isStripeResolveRequest(request)) {
+          throw new BadRequestException(
+            'Invalid request to verify Stripe payment',
+          );
+        }
+        if (!request.sessionId) {
+          throw new BadRequestException(
+            'sessionId required to verify stripe payment',
+          );
+        }
+
         span.setAttributes({
-          'session.id': sessionId,
+          'session.id': request.sessionId,
           gateway: this.gateway,
         });
 
         try {
           const session = await this.stripe.checkout.sessions.retrieve(
-            sessionId,
+            request.sessionId,
             {
               expand: ['payment_intent', 'customer', 'line_items'],
             },
           );
-
           if (!session) {
             throw new OrderNotFoundException(
-              `Invalid order session Id ${sessionId}`,
+              `Invalid order session Id ${request.sessionId}`,
+            );
+          }
+
+          let paymentIntent;
+          if (typeof session.payment_intent === 'string') {
+            paymentIntent = await this.stripe.paymentIntents.retrieve(
+              session.payment_intent,
+            );
+          } else if (session.payment_intent) {
+            paymentIntent = session.payment_intent;
+          } else {
+            throw new NotFoundException(
+              'Stripe payment Intent not for order Id ' + session.id,
             );
           }
 
           return {
-            paymentStatus: session.payment_status!,
-            providerOrderStatus: session.status!,
-            providerOrderId: session.id,
-            provider: PaymentGateway.STRIPE,
+            paymentIntentId: paymentIntent.id,
+            providerStatus: session.payment_status,
+            // Payment considered successful if session.payment_status === 'paid'
+            isVerified: session.payment_status === 'paid',
           };
         } catch (error: any) {
-          this.logger.error(`Failed to verify Stripe payment`, {
-            error: error.message,
+          this.logger.error('Failed to verify Stripe payment', {
+            error: error?.message,
             ctx: 'StripePaymentStrategy',
           });
 
@@ -453,8 +487,149 @@ export class StripePaymentStrategy implements PaymentStrategy {
     );
   }
 
+  /**
+   * Mark a payment as failed/cancelled through Stripe and update internal tracking/log/metrics.
+   * Handles Stripe PaymentIntents and Checkout Sessions robustly.
+   * @param transactionId Stripe PaymentIntent id or Checkout session id
+   * @param reason Optional reason for failing the payment
+   * @returns Promise<PaymentResult>
+   */
+  async cancelPayment(
+    transactionId: string,
+    reason?: string,
+  ): Promise<PaymentFailureResult> {
+    return this.tracer.startActiveSpan(
+      'StripePaymentStrategy.cancelPayment',
+      async (span) => {
+        span.setAttributes({
+          'transaction.id': transactionId,
+          'fail.reason': reason,
+          gateway: this.gateway,
+        });
+
+        const startTime = Date.now();
+
+        try {
+          if (!transactionId || typeof transactionId !== 'string') {
+            throw new BadRequestException(
+              'Invalid or missing transactionId for cancelling payment',
+            );
+          }
+
+          let paymentIntent: Stripe.PaymentIntent | null = null;
+          let isSession = false;
+
+          try {
+            paymentIntent =
+              await this.stripe.paymentIntents.retrieve(transactionId);
+          } catch (e: any) {
+            // If not found, it may be a checkout session ID
+            if (e.code === 'resource_missing' || e.statusCode === 404) {
+              isSession = true;
+            } else {
+              throw e;
+            }
+          }
+
+          if (isSession) {
+            // Try as session id
+            const session = await this.stripe.checkout.sessions.retrieve(
+              transactionId,
+              { expand: ['payment_intent'] },
+            );
+            if (
+              session?.payment_intent &&
+              typeof session.payment_intent === 'string'
+            ) {
+              paymentIntent = await this.stripe.paymentIntents.retrieve(
+                session.payment_intent,
+              );
+            } else if (
+              typeof (session?.payment_intent as any)?.id === 'string'
+            ) {
+              // Expanded paymentIntent object
+              paymentIntent = session.payment_intent as any;
+            } else {
+              throw new NotFoundException(
+                `Stripe payment does not exist for id: ${transactionId}`,
+              );
+            }
+          }
+
+          if (!paymentIntent) {
+            throw new NotFoundException(
+              `Stripe payment intent not found for id: ${transactionId}`,
+            );
+          }
+
+          // If already canceled, don't attempt again.
+          if (paymentIntent.status === 'canceled') {
+            this.logger.warn(
+              `Stripe PaymentIntent ${paymentIntent.id} already cancelled.`,
+              {
+                ctx: 'StripePaymentStrategy',
+                transactionId: paymentIntent.id,
+              },
+            );
+            this.recordMetrics('fail_payment', startTime, true);
+            return {
+              transactionId: paymentIntent.id,
+              status: PaymentStatus.CANCELLED,
+              success: true,
+            };
+          }
+          const cancellationReason: Stripe.PaymentIntentCancelParams.CancellationReason =
+            (reason as Stripe.PaymentIntentCancelParams.CancellationReason) ||
+            'requested_by_customer';
+
+          // Cancel the PaymentIntent
+          const canceledIntent = await this.stripe.paymentIntents.cancel(
+            paymentIntent.id,
+            reason
+              ? {
+                  cancellation_reason: cancellationReason,
+                }
+              : undefined,
+          );
+
+          const status = this.mapStripeStatus(canceledIntent.status);
+
+          this.logger.debug('Stripe payment intent cancelled (cancelPayment)', {
+            ctx: 'StripePaymentStrategy',
+            transactionId: canceledIntent.id,
+            status,
+            originalStatus: paymentIntent.status,
+            reason,
+          });
+
+          this.recordMetrics(
+            'fail_payment',
+            startTime,
+            status === PaymentStatus.CANCELLED,
+          );
+
+          return {
+            transactionId: canceledIntent.id,
+            status,
+            success: true,
+          };
+        } catch (error: any) {
+          this.logger.error('Stripe cancelPayment failed', {
+            error: error?.message,
+            ctx: 'StripePaymentStrategy',
+            transactionId,
+            reason,
+            stripeErrorCode: error?.code,
+          });
+          this.recordMetrics('fail_payment', startTime, false);
+          throw error;
+        }
+      },
+    );
+  }
+
   getSupportedCurrencies(): string[] {
-    return this.supportedCurrencies;
+    return [...this.supportedCurrencies];
   }
 
   async isAvailable(): Promise<boolean> {
@@ -463,7 +638,7 @@ export class StripePaymentStrategy implements PaymentStrategy {
       return true;
     } catch (error: any) {
       this.logger.warn('Stripe service unavailable', {
-        error: error.message,
+        error: error?.message,
         ctx: 'StripePaymentStrategy',
       });
       return false;
@@ -485,6 +660,41 @@ export class StripePaymentStrategy implements PaymentStrategy {
         return PaymentStatus.FAILED;
     }
   }
+
+  /**
+   * Helper: Ensures the requested currency is accepted.
+   * If currency=INR, converts amount in-place on the request object (modifies the object).
+   * Throws on unsupported currency.
+   */
+  // private async ensureSupportedOrConvertCurrency(
+  //   request: PaymentRequest,
+  // ): Promise<void> {
+  //   const currency = request.amount.getCurrency().toUpperCase();
+  //   if (this.supportedCurrencies.includes(currency.toLowerCase())) {
+  //     return;
+  //   }
+  //   this.logger.info(
+  //     `Currency ${currency} not supported by Stripe, converting to USD...`,
+  //   );
+  //   try {
+  //     const rate = await this.exchangeRateService.getRate(currency, 'USD');
+
+  //     if (typeof rate !== 'number' || isNaN(rate)) {
+  //       throw new Error('USD rate not found');
+  //     }
+  //     const inrAmount = request.amount.getAmount();
+  //     const usdAmount = Math.round(inrAmount * rate);
+
+  //     request.amount.setAmount(usdAmount);
+  //     request.amount.setCurrency('USD');
+  //     return;
+  //   } catch (error) {
+  //     this.logger.error(
+  //       'Could not convert currency to USD: ' + (error as Error)?.message,
+  //     );
+  //     throw new Error('Currency conversion failed');
+  //   }
+  // }
 
   private mapStripeRefundStatus(stripeStatus: string | null): PaymentStatus {
     switch (stripeStatus) {

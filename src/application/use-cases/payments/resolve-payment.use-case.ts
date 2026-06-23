@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { IdempotencyKey } from '@domain/value-objects/idempotency-key';
 import { IPaymentRepository } from '@domain/repositories/payment-repository.interface';
 // import { IKafkaProducer } from '@application/adaptors/kafka-producer.interface';
@@ -13,6 +13,7 @@ import { ResolvePaymentDto } from 'src/presentation/grpc/dtos/resolve-payment.dt
 import { mapProviderToPaymentProvider } from 'src/shared/utils/mapProviderToDomain';
 import { ResolvePaymentRequest } from '@application/adaptors/payment-strategy.interface';
 import { ProviderSessionStatus } from '@domain/entities/payment-provider-sesssion.entity';
+import { PaymentNotFoundException } from '@domain/exceptions/domain.exceptions';
 // import { KafkaTopics } from 'src/shared/event-topics';
 // import { OrderPaymentSuccessEvent } from '@domain/events/domain-events';
 // import { v4 as uuidV4 } from 'uuid';
@@ -62,7 +63,7 @@ export class ResolvePaymentUseCase {
               this.logger.warn(
                 `Payment not found with providerOrderId=${providerOrderId}.`,
               );
-              throw new NotFoundException(
+              throw new PaymentNotFoundException(
                 'Payment not found with Id ' + providerOrderId,
               );
             }

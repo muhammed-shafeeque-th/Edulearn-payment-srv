@@ -1,5 +1,5 @@
 export class Money {
-  private readonly amount: number;
+  private amount: number;
   // private readonly currency: string;
   private currency: string;
   private static readonly VALID_CURRENCIES = ['USD', 'EUR', 'GBP', 'INR'];
@@ -29,6 +29,10 @@ export class Money {
   setCurrency(currency: string): void {
     this.validate(this.amount, currency);
     this.currency = currency;
+  }
+  setAmount(amount: number): void {
+    this.validate(amount, this.currency);
+    this.amount = amount;
   }
 
   equals(other: Money): boolean {

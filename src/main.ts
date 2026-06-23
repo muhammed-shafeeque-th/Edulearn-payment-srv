@@ -3,13 +3,13 @@ import { AppModule } from './app.module';
 import { AppConfigService } from '@infrastructure/config/config.service';
 import { Transport } from '@nestjs/microservices';
 import { LoggingService } from '@infrastructure/observability/logging/logging.service';
-import { GrpcExceptionFilter } from '@infrastructure/filters/grpc-exception.filter';
 import path from 'path';
+import bodyParser from 'body-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {});
 
-  const configService = app.get(AppConfigService);
+  const config = app.get(AppConfigService);
 
   const logger = app.get(LoggingService);
 
@@ -17,23 +17,15 @@ async function bootstrap() {
   app.useLogger(logger);
 
   // Setup global exception filter for gRPC
-  app.useGlobalFilters(new GrpcExceptionFilter(logger));
+  // app.useGlobalFilters(new GrpcExceptionFilter(logger));
 
-  // Start gRPC server
+  // Start gRPC microservice server
   app.connectMicroservice({
     transport: Transport.GRPC,
     options: {
-      url: `0.0.0.0:${configService.grpcPort}`,
+      url: `0.0.0.0:${config.grpcPort}`,
       package: 'payment_service',
-      protoPath: path.join(
-        __dirname,
-        '..',
-        'src',
-        'infrastructure',
-        'grpc',
-        'protos',
-        'payment_service.proto',
-      ),
+      protoPath: path.join(process.cwd(), 'proto', 'payment_service.proto'),
       maxSendMessageLength: 10 * 1024 * 1024, // 10MB
       maxReceiveMessageLength: 10 * 1024 * 1024, // 10MB
       keepalive: {
@@ -44,11 +36,41 @@ async function bootstrap() {
     },
   });
 
-  // Start HTTP server for webhooks
+  // Start Kafka microservice/consumer
+  app.connectMicroservice({
+    transport: Transport.KAFKA,
+    options: {
+      client: {
+        clientId: config.kafkaClientId || 'payment-service',
+        brokers: config.kafkaBrokers,
+      },
+      consumer: {
+        groupId: config.kafkaConsumerGroup || 'payment-consumer-group',
+        sessionTimeout: 30000,
+        heartbeatInterval: 3000,
+        maxBytesPerPartition: config.kafkaFetchMaxBytes || 1048576,
+        retry: {
+          retries: 5,
+        },
+      },
+    },
+  });
+
+  app.use('/api/webhooks/stripe', bodyParser.raw({ type: 'application/json' }));
+  app.use(
+    '/api/webhooks/razorpay',
+    bodyParser.raw({ type: 'application/json' }),
+  );
+
+  // Safe for everything else
+  app.use(bodyParser.json());
+
+  // Start all registered microservices (gRPC, Kafka)
   await app.startAllMicroservices();
-  await app.listen(configService.apiPort);
+  // Start HTTP server for webhooks
+  await app.listen(config.apiPort);
   console.log(
-    `Payment Service running on port ${configService.apiPort} (HTTP) and ${configService.grpcPort} (gRPC)`,
+    `Payment Service running on port ${config.apiPort} (HTTP) and ${config.grpcPort} (gRPC)`,
   );
 }
 bootstrap();

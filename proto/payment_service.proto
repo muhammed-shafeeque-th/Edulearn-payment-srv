@@ -11,6 +11,7 @@ import "payment/types/paypal.proto";
 
 service PaymentService {
   rpc CreatePayment (CreatePaymentRequest) returns (CreatePaymentResponse);
+  rpc CreateProviderSession (CreateProviderSessionRequest) returns (CreateProviderSessionResponse);
   rpc ResolvePayment (ResolvePaymentRequest) returns (ResolvePaymentResponse);
   rpc CancelPayment (CancelPaymentRequest) returns (CancelPaymentResponse);
   rpc GetPayment (GetPaymentRequest) returns (GetPaymentResponse);
@@ -35,12 +36,9 @@ message ErrorDetail {
 
 
 message CreatePaymentRequest {
-  payment.common.Provider provider = 1;
-  string user_id = 2;
-  string order_id = 3;
-  string idempotency_key = 5; // For ensuring idempotency
-  optional string success_url = 7;
-  optional string cancel_url = 8;
+  string user_id = 1;
+  string order_id = 2;
+  string idempotency_key = 3; 
 }
 
 message CreatePaymentResponse {
@@ -51,15 +49,32 @@ message CreatePaymentResponse {
 }
 
 message CreatePaymentSuccess {
-  payment.common.Provider provider = 1;
-  string payment_id = 10;
-  string status = 11;
-  string order_id = 12; 
+  string payment_id = 1;
+  string status = 2;
+  string order_id = 3; 
+}
 
+message CreateProviderSessionRequest {
+  string payment_id = 1;
+  payment.common.Provider provider = 2;
+  optional string success_url = 3;
+  optional string cancel_url = 4;
+}
+
+message CreateProviderSessionResponse {
+  oneof result {
+    CreateProviderSessionSuccess success = 1;
+    Error error = 2;
+  }
+}
+
+message CreateProviderSessionSuccess {
+  string payment_id = 1;
+  payment.common.Provider provider = 2;
   oneof session {
-    payment.stripe.StripePaymentSession stripe = 2;
-    payment.razorpay.RazorpayPaymentSession razorpay = 3;
-    payment.paypal.PayPalPaymentSession paypal = 4;
+    payment.stripe.StripePaymentSession stripe = 3;
+    payment.razorpay.RazorpayPaymentSession razorpay = 4;
+    payment.paypal.PayPalPaymentSession paypal = 5;
   }
 }
 

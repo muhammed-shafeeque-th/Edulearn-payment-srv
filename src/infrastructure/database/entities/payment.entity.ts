@@ -10,6 +10,7 @@ import {
 import { PaymentProviderSessionEntity } from './payment-provider-session.entity';
 
 @Entity('payments')
+@Index('idx_payment_order', ['orderId'])
 @Index('idx_payments_idempotency_key', ['idempotencyKey'])
 export class PaymentEntity {
   @PrimaryColumn('uuid')

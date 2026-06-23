@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { IPaymentRepository } from '@domain/repositories/payment-repository.interface';
 import { IKafkaProducer } from '@application/adaptors/kafka-producer.interface';
 import { LoggingService } from '@infrastructure/observability/logging/logging.service';
@@ -9,6 +9,7 @@ import { KafkaTopics } from 'src/shared/event-topics';
 import { v4 as uuidV4 } from 'uuid';
 import { OrderNotFoundException } from '@domain/exceptions/domain.exceptions';
 import { OrderPaymentSuccessEvent } from '@domain/events/order-payment.events';
+import { BadRequestException } from 'src/shared/exceptions/infra.exceptions';
 
 @Injectable()
 export class SuccessPaymentUseCase {

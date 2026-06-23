@@ -6,7 +6,7 @@
 
 /* eslint-disable */
 
-export const protobufPackage = "payment.common";
+export const protobufPackage = 'payment.common';
 
 export enum Provider {
   PROVIDER_UNSPECIFIED = 0,
@@ -25,4 +25,4 @@ export enum PaymentStatus {
   UNRECOGNIZED = -1,
 }
 
-export const PAYMENT_COMMON_PACKAGE_NAME = "payment.common";
+export const PAYMENT_COMMON_PACKAGE_NAME = 'payment.common';

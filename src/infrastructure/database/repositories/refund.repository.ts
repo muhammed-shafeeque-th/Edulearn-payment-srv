@@ -1,43 +1,44 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Refund, RefundStatus } from '@domain/entities/refund';
-import { IRefundRepository } from '@domain/interfaces/refund-repository.interface';
-import { Money } from '@domain/value-objects/money';
-import { IdempotencyKey } from '@domain/value-objects/idempotency-key';
-import { RefundEntity } from '@infrastructure/database/entities/refund.entity';
-import { IRedisClient } from '@domain/interfaces/redis.interface';
+import { IRefundRepository } from '@domain/repositories/refund-repository.interface';
+import { ICacheService } from '@application/adaptors/redis.interface';
 import { TracingService } from '@infrastructure/observability/tracing/trace.service';
 import { LoggingService } from '@infrastructure/observability/logging/logging.service';
+import { PaymentProviderRefundEntity } from '../entities/payment_provider_refund.entity';
+import {
+  PaymentProviderRefund,
+  ProviderRefundStatus,
+} from '@domain/entities/refund-provider.entity';
 
 @Injectable()
 export class RefundTypeOrmRepository implements IRefundRepository {
   private readonly CACHE_TTL = 3600; // 1 hour
 
   constructor(
-    @InjectRepository(RefundEntity)
-    private readonly repo: Repository<RefundEntity>,
-    private readonly redis: IRedisClient,
+    @InjectRepository(PaymentProviderRefundEntity)
+    private readonly repo: Repository<PaymentProviderRefundEntity>,
+    private readonly redis: ICacheService,
     private readonly logger: LoggingService,
     private readonly tracer: TracingService,
   ) {}
 
-  async save(refund: Refund): Promise<void> {
+  async save(refund: PaymentProviderRefund): Promise<void> {
     return await this.tracer.startActiveSpan(
       'RefundRepository.save',
       async (span) => {
         span.setAttributes({
-          'refund.id': refund.getId(),
-          'refund.transaction.id': refund.getTransactionId(),
+          'refund.id': refund.id,
+          'refund.transaction.id': refund.providerSessionId,
         });
         try {
           const entity = this.toEntity(refund);
           await this.repo.save(entity);
-          this.logger.log(`Saved refund with ID ${refund.getId()}`, {
+          this.logger.debug(`Saved refund with ID ${refund.id}`, {
             ctx: 'RefundRepository',
           });
 
-          const cacheKey = `cache:refund:${refund.getId()}`;
+          const cacheKey = `cache:refund:${refund.id}`;
           await this.redis.set(
             cacheKey,
             JSON.stringify(entity),
@@ -54,7 +55,7 @@ export class RefundTypeOrmRepository implements IRefundRepository {
     );
   }
 
-  async findById(id: string): Promise<Refund | null> {
+  async findById(id: string): Promise<PaymentProviderRefund | null> {
     return await this.tracer.startActiveSpan(
       'RefundRepository.findById',
       async (span) => {
@@ -63,7 +64,7 @@ export class RefundTypeOrmRepository implements IRefundRepository {
           const cacheKey = `cache:refund:${id}`;
           const cached = await this.redis.get(cacheKey);
           if (cached) {
-            this.logger.log(`Cache hit for refund ${id}`, {
+            this.logger.debug(`Cache hit for refund ${id}`, {
               ctx: 'RefundRepository',
             });
             const entity = JSON.parse(cached);
@@ -90,7 +91,9 @@ export class RefundTypeOrmRepository implements IRefundRepository {
     );
   }
 
-  async findByIdempotencyKey(idempotencyKey: string): Promise<Refund | null> {
+  async findByIdempotencyKey(
+    idempotencyKey: string,
+  ): Promise<PaymentProviderRefund | null> {
     return await this.tracer.startActiveSpan(
       'RefundRepository.findByIdempotencyKey',
       async (span) => {
@@ -99,7 +102,7 @@ export class RefundTypeOrmRepository implements IRefundRepository {
           const cacheKey = `cache:refund:idempotency:${idempotencyKey}`;
           const cached = await this.redis.get(cacheKey);
           if (cached) {
-            this.logger.log(
+            this.logger.debug(
               `Cache hit for refund idempotency ${idempotencyKey}`,
               { ctx: 'RefundRepository' },
             );
@@ -127,29 +130,29 @@ export class RefundTypeOrmRepository implements IRefundRepository {
     );
   }
 
-  async update(refund: Refund): Promise<void> {
+  async update(refund: PaymentProviderRefund): Promise<void> {
     return await this.tracer.startActiveSpan(
       'RefundRepository.update',
       async (span) => {
         span.setAttributes({
-          'refund.id': refund.getId(),
-          'refund.transaction.id': refund.getTransactionId(),
+          'refund.id': refund.id,
+          'refund.transaction.id': refund.providerSessionId,
         });
         try {
           const entity = this.toEntity(refund);
-          await this.repo.update({ id: refund.getId() }, entity);
-          this.logger.log(`Updated refund with ID ${refund.getId()}`, {
+          await this.repo.update({ id: refund.id }, entity);
+          this.logger.debug(`Updated refund with ID ${refund.id}`, {
             ctx: 'RefundRepository',
           });
 
-          const cacheKey = `cache:refund:${refund.getId()}`;
+          const cacheKey = `cache:refund:${refund.id}`;
           await this.redis.set(
             cacheKey,
             JSON.stringify(entity),
             this.CACHE_TTL,
           );
 
-          const idempotencyCacheKey = `cache:refund:idempotency:${refund.getIdempotencyKey().getValue()}`;
+          const idempotencyCacheKey = `cache:refund:idempotency:${refund.idempotencyKey}`;
           await this.redis.set(
             idempotencyCacheKey,
             JSON.stringify(entity),
@@ -168,41 +171,40 @@ export class RefundTypeOrmRepository implements IRefundRepository {
 
   async invalidateCache(key: string): Promise<void> {
     await this.redis.del(key);
-    this.logger.log(`Invalidated cache for key ${key}`, {
+    this.logger.debug(`Invalidated cache for key ${key}`, {
       ctx: 'RefundRepository',
     });
   }
 
-  private toEntity(refund: Refund): RefundEntity {
-    const entity = new RefundEntity();
-    entity.id = refund.getId();
-    entity.paymentId = refund.getPaymentId();
-    entity.userId = refund.getUserId();
-    const amount = refund.getAmount();
-    entity.amount = amount.getAmount();
-    entity.currency = amount.getCurrency();
-    entity.status = refund.getStatus();
-    entity.idempotencyKey = refund.getIdempotencyKey().getValue();
-    entity.reason = refund.getReason();
-    entity.transactionId = refund.getTransactionId();
-    entity.createdAt = refund.getCreatedAt();
-    entity.updatedAt = refund.getUpdatedAt();
+  private toEntity(refund: PaymentProviderRefund): PaymentProviderRefundEntity {
+    const entity = new PaymentProviderRefundEntity();
+    entity.id = refund.id;
+    entity.createdAt = refund.createdAt;
+    entity.idempotencyKey = refund.idempotencyKey;
+    entity.paymentId = refund.paymentId;
+    entity.providerFee = refund.providerFee;
+    entity.providerRefundId = refund.providerRefundId;
+    entity.providerSessionId = refund.providerSessionId;
+    entity.requestedAmount = refund.requestedAmount;
+    entity.requestedCurrency = refund.requestedCurrency;
+    entity.status = refund.status;
+    entity.metadata = refund.metadata;
+    entity.updatedAt = refund.updatedAt;
     return entity;
   }
 
-  private toDomain(entity: RefundEntity): Refund {
-    const money = new Money(entity.amount, entity.currency);
-    const idempotencyKey = new IdempotencyKey(entity.idempotencyKey);
-    const refund = Refund.create(
-      entity.paymentId,
-      entity.userId,
-      money,
-      idempotencyKey,
-      entity.reason,
-    );
-    refund.setId(entity.id);
-    refund.setStatus(entity.status as RefundStatus);
-    refund.setTransactionId(entity.transactionId!);
+  private toDomain(entity: PaymentProviderRefundEntity): PaymentProviderRefund {
+    const refund = new PaymentProviderRefund({
+      id: entity.id,
+      idempotencyKey: entity.idempotencyKey,
+      paymentId: entity.paymentId,
+      providerSessionId: entity.providerSessionId,
+      requestedAmount: entity.requestedAmount,
+      requestedCurrency: entity.requestedCurrency,
+      metadata: entity.metadata,
+      providerRefundId: entity.providerRefundId,
+      status: entity.status as ProviderRefundStatus,
+    });
     refund.setCreatedAt(entity.createdAt);
     refund.setUpdatedAt(entity.updatedAt);
     return refund;

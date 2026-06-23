@@ -171,7 +171,7 @@ export class Payment {
     // }
   }
 
-  // Check states whether belongs to: SUCCESS, FAILED, CANCELLED, EXPIRED
+  /** Check states whether belongs to: SUCCESS, FAILED, CANCELLED, EXPIRED */
   isTerminalState(): boolean {
     return (
       this._status === PaymentStatus.SUCCESS ||
@@ -179,6 +179,16 @@ export class Payment {
       this._status === PaymentStatus.CANCELLED ||
       this._status === PaymentStatus.EXPIRED
     );
+  }
+
+  restorePayment() {
+    if (!this.isTerminalState()) {
+      throw new BadRequestException(
+        'Payment can only be restore state from terminal states',
+      );
+    }
+    this._status = PaymentStatus.PENDING;
+    this._updatedAt = new Date();
   }
 
   markFailed(): void {

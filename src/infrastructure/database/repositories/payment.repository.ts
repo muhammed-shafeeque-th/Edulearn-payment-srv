@@ -5,7 +5,6 @@ import { IPaymentRepository } from '@domain/repositories/payment-repository.inte
 import { Money } from '@domain/value-objects/money';
 import { IdempotencyKey } from '@domain/value-objects/idempotency-key';
 import { PaymentEntity } from '@infrastructure/database/entities/payment.entity';
-import { ICacheService } from '@application/adaptors/redis.interface';
 import { TracingService } from '@infrastructure/observability/tracing/trace.service';
 import { LoggingService } from '@infrastructure/observability/logging/logging.service';
 import {
@@ -27,8 +26,6 @@ import {
 
 @Injectable()
 export class PaymentTypeOrmRepository implements IPaymentRepository {
-  private readonly CACHE_TTL = 3600;
-
   constructor(
     @InjectRepository(PaymentEntity)
     private readonly paymentRepo: Repository<PaymentEntity>,
@@ -39,7 +36,6 @@ export class PaymentTypeOrmRepository implements IPaymentRepository {
     // @InjectRepository(PaymentProviderRefundEntity)
     // private readonly refundRepo: Repository<PaymentProviderRefundEntity>,
 
-    private readonly cache: ICacheService,
     private readonly logger: LoggingService,
     private readonly tracer: TracingService,
     private readonly metrics: MetricsService,
@@ -62,13 +58,6 @@ export class PaymentTypeOrmRepository implements IPaymentRepository {
           for (const session of payment.getProviderSessions()) {
             await this.sessionRepo.save(this.toSessionEntity(session));
           }
-
-          const cacheKey = this.getPaymentCacheKey(payment.id);
-          await this.cache.set(
-            cacheKey,
-            JSON.stringify(entity),
-            this.CACHE_TTL,
-          );
         } catch (error: any) {
           this.logger.error(`Failed to save payment: ${error.message}`, {
             error,
@@ -87,20 +76,6 @@ export class PaymentTypeOrmRepository implements IPaymentRepository {
         span.setAttribute('payment.id', id);
 
         try {
-          const cacheKey = this.getPaymentCacheKey(id);
-          const cached = await this.cache.get(cacheKey);
-          if (cached) {
-            this.metrics.redisCacheHit({
-              operation: 'findById',
-              status: 'hit',
-            });
-            this.logger.debug(`Cache hit for payment ${id}`, {
-              ctx: 'PaymentTypeOrmRepository',
-            });
-            const parsed = JSON.parse(cached);
-            return this.toDomain(parsed);
-          }
-          this.metrics.redisCacheHit({ operation: 'findById', status: 'miss' });
           const end = this.metrics.observeDatabaseQueryLatency({
             operation: 'findById',
           });
@@ -110,11 +85,6 @@ export class PaymentTypeOrmRepository implements IPaymentRepository {
           });
           end();
           if (!entity) return null;
-          await this.cache.set(
-            cacheKey,
-            JSON.stringify(entity),
-            this.CACHE_TTL,
-          );
           return this.toDomain(entity);
         } catch (error: any) {
           this.logger.error(
@@ -175,27 +145,6 @@ export class PaymentTypeOrmRepository implements IPaymentRepository {
         span.setAttribute('provider.orderId', providerOrderId);
 
         try {
-          const cacheKey = this.getProviderOrderCacheKey(providerOrderId);
-          const cached = await this.cache.get(cacheKey);
-          if (cached) {
-            this.metrics.redisCacheHit({
-              operation: 'findByProviderOrderId',
-              status: 'hit',
-            });
-            this.logger.debug(
-              `Cache hit for provider order ${providerOrderId}`,
-              {
-                ctx: 'PaymentTypeOrmRepository',
-              },
-            );
-            const parsed = JSON.parse(cached);
-            return this.toDomain(parsed);
-          }
-          this.metrics.redisCacheHit({
-            operation: 'findByProviderOrderId',
-            status: 'miss',
-          });
-
           const end = this.metrics.observeDatabaseQueryLatency({
             operation: 'findByProviderOrderId',
           });
@@ -205,11 +154,6 @@ export class PaymentTypeOrmRepository implements IPaymentRepository {
           });
           end();
           if (!entity) return null;
-          await this.cache.set(
-            cacheKey,
-            JSON.stringify(entity),
-            this.CACHE_TTL,
-          );
           return this.toDomain(entity);
         } catch (error: any) {
           this.logger.error(
@@ -221,21 +165,41 @@ export class PaymentTypeOrmRepository implements IPaymentRepository {
       },
     );
   }
+  async findByOrderId(orderId: string): Promise<Payment | null> {
+    return await this.tracer.startActiveSpan(
+      'PaymentTypeOrmRepository.findByProviderOrderId',
+      async (span) => {
+        span.setAttribute('provider.orderId', orderId);
+
+        try {
+          const end = this.metrics.observeDatabaseQueryLatency({
+            operation: 'findByOrderId',
+          });
+          const entity = await this.paymentRepo.findOne({
+            where: { orderId },
+            relations: ['providerSessions', 'providerSessions.refund'],
+          });
+          end();
+          if (!entity) return null;
+          return this.toDomain(entity);
+        } catch (error: any) {
+          this.logger.error(
+            `Failed to find payment by provider order id ${orderId}: ${error.message}`,
+            { error, ctx: 'PaymentTypeOrmRepository' },
+          );
+          throw error;
+        }
+      },
+    );
+  }
 
   async findPaymentWithSessions(paymentId: string): Promise<Payment | null> {
     try {
-      const cacheKey = this.getPaymentCacheKey(paymentId);
-      const cached = await this.cache.get(cacheKey);
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        return this.toDomain(parsed);
-      }
       const entity = await this.paymentRepo.findOne({
         where: { id: paymentId },
         relations: ['providerSessions', 'providerSessions.refund'],
       });
       if (!entity) return null;
-      await this.cache.set(cacheKey, JSON.stringify(entity), this.CACHE_TTL);
       return this.toDomain(entity);
     } catch (error: any) {
       this.logger.error(
@@ -252,25 +216,6 @@ export class PaymentTypeOrmRepository implements IPaymentRepository {
       async (span) => {
         span.setAttribute('idempotency.key', idempotencyKey);
         try {
-          const cacheKey = this.getIdempotencyCacheKey(idempotencyKey);
-          const cached = await this.cache.get(cacheKey);
-          if (cached) {
-            this.metrics.redisCacheHit({
-              operation: 'findByIdempotencyKey',
-              status: 'hit',
-            });
-            this.logger.debug(
-              `Cache hit for payment idempotency key ${idempotencyKey}`,
-              { ctx: 'PaymentTypeOrmRepository' },
-            );
-            const parsed = JSON.parse(cached);
-            return this.toDomain(parsed);
-          }
-          this.metrics.redisCacheHit({
-            operation: 'findByIdempotencyKey',
-            status: 'miss',
-          });
-
           const end = this.metrics.observeDatabaseQueryLatency({
             operation: 'findByIdempotencyKey',
           });
@@ -280,11 +225,6 @@ export class PaymentTypeOrmRepository implements IPaymentRepository {
           });
           end();
           if (!entity) return null;
-          await this.cache.set(
-            cacheKey,
-            JSON.stringify(entity),
-            this.CACHE_TTL,
-          );
           return this.toDomain(entity);
         } catch (error: any) {
           this.logger.error(
@@ -309,24 +249,6 @@ export class PaymentTypeOrmRepository implements IPaymentRepository {
           this.logger.debug(`Updated payment with ID ${payment.id}`, {
             ctx: 'PaymentTypeOrmRepository',
           });
-
-          const cacheKey = this.getPaymentCacheKey(payment.id);
-          await this.cache.set(
-            cacheKey,
-            JSON.stringify(entity),
-            this.CACHE_TTL,
-          );
-
-          if (payment.idempotencyKey && payment.idempotencyKey.getValue()) {
-            const idempotencyKey = payment.idempotencyKey.getValue();
-            const idempotencyCacheKey =
-              this.getIdempotencyCacheKey(idempotencyKey);
-            await this.cache.set(
-              idempotencyCacheKey,
-              JSON.stringify(entity),
-              this.CACHE_TTL,
-            );
-          }
         } catch (error: any) {
           this.logger.error(`Failed to update payment: ${error.message}`, {
             error,
@@ -376,19 +298,8 @@ export class PaymentTypeOrmRepository implements IPaymentRepository {
     }
   }
 
-  async invalidateCache(key: string): Promise<void> {
-    try {
-      await this.cache.del(key);
-      this.logger.debug(`Invalidated cache for key ${key}`, {
-        ctx: 'PaymentTypeOrmRepository',
-      });
-    } catch (error: any) {
-      this.logger.error(`Failed to invalidate cache: ${error.message}`, {
-        error,
-        ctx: 'PaymentTypeOrmRepository',
-      });
-      throw error;
-    }
+  async invalidateCache(): Promise<void> {
+    // No-op
   }
 
   async deleteById(id: string): Promise<void> {
@@ -398,8 +309,6 @@ export class PaymentTypeOrmRepository implements IPaymentRepository {
         span.setAttribute('payment.id', id);
         try {
           await this.paymentRepo.delete({ id });
-          const cacheKey = this.getPaymentCacheKey(id);
-          await this.cache.del(cacheKey);
           this.logger.debug(`Deleted payment with ID ${id}`, {
             ctx: 'PaymentTypeOrmRepository',
           });
@@ -412,16 +321,6 @@ export class PaymentTypeOrmRepository implements IPaymentRepository {
         }
       },
     );
-  }
-
-  private getPaymentCacheKey(id: string): string {
-    return `cache:payment:${id}`;
-  }
-  private getIdempotencyCacheKey(key: string): string {
-    return `cache:payment:idempotency:${key}`;
-  }
-  private getProviderOrderCacheKey(orderId: string): string {
-    return `cache:payment:provider_order_id:${orderId}`;
   }
 
   private toEntity(payment: Payment): PaymentEntity {
