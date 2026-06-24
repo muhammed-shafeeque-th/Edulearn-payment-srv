@@ -1,14 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { IPaymentRepository } from '@domain/repositories/payment-repository.interface';
-import { LoggingService } from '@infrastructure/observability/logging/logging.service';
-import { TracingService } from '@infrastructure/observability/tracing/trace.service';
-import { MetricsService } from '@infrastructure/observability/metrics/metrics.service';
 import { StrategyContext } from '@infrastructure/strategies/strategy.context';
 import { StrategyFactory } from '@infrastructure/strategies/strategy.factory';
 import { PaymentProviderSession } from '@domain/entities/payment-provider-sesssion.entity';
 import { v4 as uuidV4 } from 'uuid';
-import { OrderClient } from '@infrastructure/grpc/clients/order/order.client';
-import { CourseClient } from '@infrastructure/grpc/clients/course/course.client';
 import { IExchangeRateService } from '@application/adaptors/exchange-rate.service';
 import { Money } from '@domain/value-objects/money';
 import { normalizeAndConvertCurrency } from 'src/shared/utils/convert-currency';
@@ -20,6 +15,11 @@ import { KafkaTopics } from 'src/shared/event-topics';
 import { OrderPaymentInitiateEvent } from '@domain/events/order-payment.events';
 import { IKafkaProducer } from '@application/adaptors/kafka-producer.interface';
 import { PaymentNotFoundException } from '@domain/exceptions/domain.exceptions';
+import { ILoggerService } from '@application/adaptors/logger.service';
+import { ITraceService } from '@application/adaptors/trace.service';
+import { IMetricService } from '@application/adaptors/metric.service';
+import { IOrderClient } from '@application/adaptors/order-client.interface';
+import { ICourseClient } from '@application/adaptors/course-client.interface';
 
 export interface CreateProviderSessionDto {
   paymentId: string;
@@ -29,22 +29,24 @@ export interface CreateProviderSessionDto {
 }
 
 @Injectable()
-export class CreateProviderSessionUseCase {
+export class CreateProviderSessionUseCase
+  implements CreateProviderSessionUseCase
+{
   constructor(
-    private readonly paymentRepository: IPaymentRepository,
-    private readonly orderServiceClient: OrderClient,
-    private readonly courseServiceClient: CourseClient,
-    private readonly strategyContext: StrategyContext,
-    private readonly strategyFactory: StrategyFactory,
-    private readonly exchangeRateService: IExchangeRateService,
-    private readonly kafkaProducer: IKafkaProducer,
-    private readonly logger: LoggingService,
-    private readonly tracer: TracingService,
-    private readonly metrics: MetricsService,
+    private readonly _paymentRepository: IPaymentRepository,
+    private readonly _orderServiceClient: IOrderClient,
+    private readonly _courseServiceClient: ICourseClient,
+    private readonly _strategyContext: StrategyContext,
+    private readonly _strategyFactory: StrategyFactory,
+    private readonly _exchangeRateService: IExchangeRateService,
+    private readonly _kafkaProducer: IKafkaProducer,
+    private readonly _logger: ILoggerService,
+    private readonly _tracer: ITraceService,
+    private readonly _metrics: IMetricService,
   ) {}
 
   async execute(dto: CreateProviderSessionDto) {
-    return await this.tracer.startActiveSpan(
+    return await this._tracer.startActiveSpan(
       'CreateProviderSessionUseCase.execute',
       async (span) => {
         const provider = mapProviderToPaymentProvider(dto.provider);
@@ -53,7 +55,7 @@ export class CreateProviderSessionUseCase {
           provider: provider,
         });
 
-        const payment = await this.paymentRepository.findById(dto.paymentId);
+        const payment = await this._paymentRepository.findById(dto.paymentId);
         if (!payment) {
           throw new PaymentNotFoundException(
             `Payment with id ${dto.paymentId} not found`,
@@ -62,7 +64,7 @@ export class CreateProviderSessionUseCase {
 
         if (payment.isTerminalState()) {
           payment.restorePayment();
-          this.logger.debug(`Restoring payment from ${payment.status}`);
+          this._logger.debug(`Restoring payment from ${payment.status}`);
           // throw new BadRequestException(
           //   `Payment is already in a terminal state: ${payment.status}`,
           // );
@@ -72,7 +74,7 @@ export class CreateProviderSessionUseCase {
           () =>
             retry(
               () =>
-                this.orderServiceClient.getOrder(
+                this._orderServiceClient.getOrder(
                   payment.orderId,
                   payment.userId,
                 ),
@@ -88,7 +90,7 @@ export class CreateProviderSessionUseCase {
         const courseDetails = await timeoutPromise(
           () =>
             retry(
-              () => this.courseServiceClient.getCourseItems(orderedCourseIds),
+              () => this._courseServiceClient.getCourseItems(orderedCourseIds),
               { retries: 2, delay: 1000, backoff: 'EXPONENTIAL' },
             ),
           `Timeout while fetching course details for courseIds: [${orderedCourseIds.join(', ')}]`,
@@ -98,22 +100,22 @@ export class CreateProviderSessionUseCase {
 
         const requestedCurrency = providerCurrencyMoney.getCurrency();
 
-        this.strategyContext.setStrategy(
-          this.strategyFactory.getStrategy(provider as PaymentProvider),
+        this._strategyContext.setStrategy(
+          this._strategyFactory.getStrategy(provider as PaymentProvider),
         );
 
         const isCurrencySupported =
-          this.strategyContext.isCurrencySupported(requestedCurrency);
+          this._strategyContext.isCurrencySupported(requestedCurrency);
         let fxRate: number = 1;
         let fxTimestamp: Date | undefined;
 
         if (!isCurrencySupported) {
-          this.logger.debug(
+          this._logger.debug(
             `Currency ${requestedCurrency} not supported by provider ${provider}, converting to USD...`,
           );
           try {
             const { rate, timestampDate } =
-              await this.exchangeRateService.getRate(requestedCurrency, 'USD');
+              await this._exchangeRateService.getRate(requestedCurrency, 'USD');
             fxRate = rate;
             fxTimestamp = timestampDate;
             if (typeof fxRate !== 'number' || isNaN(fxRate)) {
@@ -128,7 +130,7 @@ export class CreateProviderSessionUseCase {
             providerCurrencyMoney.setAmount(convertedAmount);
             providerCurrencyMoney.setCurrency('USD');
           } catch (err: any) {
-            this.logger.error(
+            this._logger.error(
               `Could not convert ${requestedCurrency} to USD: ${err?.message}`,
               { ctx: 'CreateProviderSessionUseCase' },
             );
@@ -153,7 +155,7 @@ export class CreateProviderSessionUseCase {
 
         const paymentResponse = await retry(
           () =>
-            this.strategyContext.createPayment({
+            this._strategyContext.createPayment({
               userId: payment.userId,
               amount: providerCurrencyMoney,
               orderId: order.id,
@@ -182,9 +184,9 @@ export class CreateProviderSessionUseCase {
         payment.addProviderSession(providerSession);
         payment.setProviderOrderId(paymentResponse.providerOrderId);
 
-        await this.paymentRepository.save(payment);
+        await this._paymentRepository.save(payment);
 
-        await this.kafkaProducer.produce<OrderPaymentInitiateEvent>(
+        await this._kafkaProducer.produce<OrderPaymentInitiateEvent>(
           KafkaTopics.PaymentOrderInitiated,
           {
             key: payment.userId,
@@ -205,7 +207,7 @@ export class CreateProviderSessionUseCase {
           },
         );
 
-        this.metrics.incPaymentCounter({
+        this._metrics.incPaymentCounter({
           method: 'create_provider_session',
           status: payment.status,
           gateway: provider as PaymentProvider,

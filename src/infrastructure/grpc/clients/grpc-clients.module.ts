@@ -9,6 +9,9 @@ import { OrderClient } from './order/order.client';
 import { GRPC_COURSE_CLIENT_TOKEN } from './course/constants';
 import { CourseClient } from './course/course.client';
 import { RedisModule } from '@infrastructure/redis/redis.module';
+import { IOrderClient } from './order/order-client.interface';
+import { IUserClient } from './user/user-client.interface';
+import { ICourseClient } from './course/course-client.interface';
 
 @Module({
   imports: [
@@ -59,7 +62,11 @@ import { RedisModule } from '@infrastructure/redis/redis.module';
       ],
     }),
   ],
-  providers: [UserClient, OrderClient, CourseClient],
-  exports: [UserClient, OrderClient, CourseClient],
+  providers: [
+    { provide: IUserClient, useClass: UserClient },
+    { provide: IOrderClient, useClass: OrderClient },
+    { provide: ICourseClient, useClass: CourseClient },
+  ],
+  exports: [IUserClient, IOrderClient, ICourseClient],
 })
 export class GrpcClientsModule {}

@@ -3,33 +3,34 @@ import { Money } from '@domain/value-objects/money';
 import { IdempotencyKey } from '@domain/value-objects/idempotency-key';
 import { IPaymentRepository } from '@domain/repositories/payment-repository.interface';
 import { retry } from 'ts-retry-promise';
-import { LoggingService } from '@infrastructure/observability/logging/logging.service';
-import { TracingService } from '@infrastructure/observability/tracing/trace.service';
-import { MetricsService } from '@infrastructure/observability/metrics/metrics.service';
 import { Payment } from '@domain/entities/payments';
 import { PaymentCreateDto } from 'src/presentation/grpc/dtos/create-payment.dto';
-import { IdempotencyService } from '@infrastructure/services/idempotency.service';
-import { OrderClient } from '@infrastructure/grpc/clients/order/order.client';
 import { timeoutPromise } from 'src/shared/utils/_promise-timeout';
 import { BadRequestException } from 'src/shared/exceptions/infra.exceptions';
+import { ILoggerService } from '@application/adaptors/logger.service';
+import { ITraceService } from '@application/adaptors/trace.service';
+import { IMetricService } from '@application/adaptors/metric.service';
+import { ICreatePaymentUseCase } from '../interfaces/create-payment.interface';
+import { IIdempotencyService } from '@application/adaptors/idempotency.service';
+import { IOrderClient } from '@application/adaptors/order-client.interface';
 // import { ICacheService } from '@application/adaptors/redis.interface';
 
 @Injectable()
-export class CreatePaymentUseCase {
+export class CreatePaymentUseCase implements ICreatePaymentUseCase {
   private readonly PAYMENT_TIMEOUT_MS = 3 * 24 * 60 * 60 * 1000; // 3 days;
 
   constructor(
-    private readonly paymentRepository: IPaymentRepository,
-    private readonly idempotencyService: IdempotencyService,
-    private readonly orderServiceClient: OrderClient,
-    // private readonly cacheService: ICacheService,
-    private readonly logger: LoggingService,
-    private readonly tracer: TracingService,
-    private readonly metrics: MetricsService,
+    private readonly _paymentRepository: IPaymentRepository,
+    private readonly _idempotencyService: IIdempotencyService,
+    private readonly _orderServiceClient: IOrderClient,
+    // private readonly _cache: ICacheService,
+    private readonly _logger: ILoggerService,
+    private readonly _tracer: ITraceService,
+    private readonly _metrics: IMetricService,
   ) {}
 
   async execute(dto: PaymentCreateDto) {
-    return await this.tracer.startActiveSpan(
+    return await this._tracer.startActiveSpan(
       'createPaymentUseCase.execute',
       async (span) => {
         span.setAttributes({
@@ -38,7 +39,7 @@ export class CreatePaymentUseCase {
           'idempotency.key': dto.idempotencyKey,
         });
 
-        const paymentExist = await this.paymentRepository.findByOrderId(
+        const paymentExist = await this._paymentRepository.findByOrderId(
           dto.orderId,
         );
         if (paymentExist) {
@@ -52,18 +53,21 @@ export class CreatePaymentUseCase {
         const idempotencyKey = new IdempotencyKey(dto.idempotencyKey);
 
         try {
-          this.logger.debug(
+          this._logger.debug(
             `Executing CreatePaymentUseCase for user ${dto.userId} [orderId=${dto.orderId}]`,
           );
 
-          return await this.idempotencyService.check(
+          return await this._idempotencyService.check(
             idempotencyKey,
             async () => {
               const order = await timeoutPromise(
                 () =>
                   retry(
                     () =>
-                      this.orderServiceClient.getOrder(dto.orderId, dto.userId),
+                      this._orderServiceClient.getOrder(
+                        dto.orderId,
+                        dto.userId,
+                      ),
                     { retries: 2, delay: 1000, backoff: 'EXPONENTIAL' },
                   ),
                 `Timeout while fetching order details for id ${dto.orderId}`,
@@ -79,7 +83,7 @@ export class CreatePaymentUseCase {
               ];
 
               if (!allowedStatuses.includes(order.status)) {
-                this.logger.warn(
+                this._logger.warn(
                   `Order [id=${dto.orderId}] in invalid status (${orderStatus}), refusing to process payment`,
                   { ctx: 'createPaymentUseCase', orderStatus: orderStatus },
                 );
@@ -89,7 +93,7 @@ export class CreatePaymentUseCase {
               }
 
               let payment: Payment | null =
-                await this.paymentRepository.findByIdempotencyKey(
+                await this._paymentRepository.findByIdempotencyKey(
                   idempotencyKey.getValue(),
                 );
 
@@ -107,13 +111,13 @@ export class CreatePaymentUseCase {
                   new Date(Date.now() + this.PAYMENT_TIMEOUT_MS),
                 );
 
-                this.logger.debug(`Payment created: ${payment.id}`, {
+                this._logger.debug(`Payment created: ${payment.id}`, {
                   ctx: 'createPaymentUseCase',
                 });
 
-                await this.paymentRepository.save(payment);
+                await this._paymentRepository.save(payment);
 
-                this.logger.debug(
+                this._logger.debug(
                   `Payment saved: ${payment.id} with status ${payment.status}`,
                   { ctx: 'createPaymentUseCase' },
                 );
@@ -121,7 +125,7 @@ export class CreatePaymentUseCase {
                 // await this.schedulePaymentTimeout(payment);
               }
 
-              this.metrics.incPaymentCounter({
+              this._metrics.incPaymentCounter({
                 method: 'create_payment_domain',
                 status: payment.status,
                 gateway: 'none',
@@ -135,11 +139,11 @@ export class CreatePaymentUseCase {
             },
           );
         } catch (error: any) {
-          this.logger.error(`Failed to create payment: ${error.message}`, {
+          this._logger.error(`Failed to create payment: ${error.message}`, {
             error,
             ctx: 'createPaymentUseCase',
           });
-          this.metrics.incPaymentCounter({
+          this._metrics.incPaymentCounter({
             method: 'create_payment_domain',
             status: 'FAILED',
             gateway: 'none',
@@ -156,7 +160,7 @@ export class CreatePaymentUseCase {
 
   // private async schedulePaymentTimeout(payment: Payment) {
   //   if (!payment.expiresAt) {
-  //     this.logger.warn(
+  //     this._logger.warn(
   //       `Payment ${payment.id} does not have expiresAt set. Skipping timeout scheduling.`,
   //     );
   //     return;
@@ -165,7 +169,7 @@ export class CreatePaymentUseCase {
   //   const ttlMs = payment.expiresAt.getTime() - Date.now();
 
   //   if (ttlMs <= 0) {
-  //     this.logger.warn(
+  //     this._logger.warn(
   //       `Payment ${payment.id} already expired or expires immediately. Skipping timeout scheduling.`,
   //     );
   //     return;
@@ -181,8 +185,8 @@ export class CreatePaymentUseCase {
   //     userId: payment.userId,
   //   });
 
-  //   await this.cacheService.set(key, payload, ttlSeconds);
-  //   this.logger.debug(
+  //   await this._cache.set(key, payload, ttlSeconds);
+  //   this._logger.debug(
   //     `Scheduled payment timeout in Redis for payment ${payment.id} with TTL ${ttlSeconds}s`,
   //     {
   //       ctx: 'createPaymentUseCase',

@@ -1,7 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { LoggingService } from '@infrastructure/observability/logging/logging.service';
-import { MetricsService } from '@infrastructure/observability/metrics/metrics.service';
-import { TracingService } from '@infrastructure/observability/tracing/trace.service';
 import { IPaymentRepository } from '@domain/repositories/payment-repository.interface';
 import { IKafkaProducer } from '@application/adaptors/kafka-producer.interface';
 import { PaymentStatus } from '@domain/entities/payments';
@@ -10,20 +7,26 @@ import { OrderPaymentTimeoutEvent } from '@domain/events/order-payment.events';
 import { v4 as uuidV4 } from 'uuid';
 import { ICacheService } from '@application/adaptors/redis.interface';
 import { ProviderSessionStatus } from '@domain/entities/payment-provider-sesssion.entity';
+import { ITraceService } from '@application/adaptors/trace.service';
+import { IMetricService } from '@application/adaptors/metric.service';
+import { ILoggerService } from '@application/adaptors/logger.service';
+import { IHandlePaymentTimeoutUseCase } from '../interfaces/handle-payment-timeout.inteface';
 
 @Injectable()
-export class HandlePaymentTimeoutUseCase {
+export class HandlePaymentTimeoutUseCase
+  implements IHandlePaymentTimeoutUseCase
+{
   private readonly TIMEOUT_KEY_PREFIX = 'payments:timeout';
   private readonly LOCK_KEY_PREFIX = 'payments:timeout-lock';
   private readonly LOCK_TTL_MS = 30_000;
 
   constructor(
-    private readonly paymentRepository: IPaymentRepository,
-    private readonly kafkaProducer: IKafkaProducer,
-    private readonly logger: LoggingService,
-    private readonly metrics: MetricsService,
-    private readonly tracer: TracingService,
-    private readonly cacheService: ICacheService,
+    private readonly _paymentRepository: IPaymentRepository,
+    private readonly _kafkaProducer: IKafkaProducer,
+    private readonly _logger: ILoggerService,
+    private readonly _tracer: ITraceService,
+    private readonly _metrics: IMetricService,
+    private readonly _cache: ICacheService,
   ) {}
 
   public async execute({
@@ -33,52 +36,52 @@ export class HandlePaymentTimeoutUseCase {
     paymentId: string;
     expiresAt?: string;
   }) {
-    return this.tracer.startActiveSpan(
+    return this._tracer.startActiveSpan(
       'HandlePaymentTimeoutUseCase.execute',
       async (span) => {
         span.setAttributes({ paymentId, expiresAt });
         try {
-          this.logger.debug(
+          this._logger.debug(
             `Timeout check for payment ${paymentId} (expiresAt=${expiresAt ?? 'unknown'})`,
           );
 
           const timeoutKey = this.timeoutKey(paymentId);
-          const ttlSeconds = await this.cacheService.getTTL(timeoutKey);
+          const ttlSeconds = await this._cache.getTTL(timeoutKey);
 
           if (ttlSeconds > 0) {
-            this.logger.debug(
+            this._logger.debug(
               `Payment ${paymentId} TTL ${ttlSeconds}s, not expiring.`,
             );
             return;
           } else if (ttlSeconds === -1) {
-            this.logger.warn(
+            this._logger.warn(
               `Payment ${paymentId} timeout key exists without TTL, expiring to avoid dangling session.`,
             );
           }
 
           const lockKey = this.lockKey(paymentId);
-          if (!(await this.cacheService.lock(lockKey, this.LOCK_TTL_MS))) {
-            this.logger.warn(
+          if (!(await this._cache.lock(lockKey, this.LOCK_TTL_MS))) {
+            this._logger.warn(
               `Timeout for payment ${paymentId} already handled by another worker.`,
             );
             return;
           }
           try {
             // Might have been rescheduled seconds earlier (race condition)
-            if (await this.cacheService.exists(timeoutKey)) {
-              this.logger.debug(
+            if (await this._cache.exists(timeoutKey)) {
+              this._logger.debug(
                 `Payment ${paymentId} was rescheduled. Skipping expiration.`,
               );
               return;
             }
             if (await this.finalizeTimeout(paymentId)) {
-              await this.cacheService.del(timeoutKey);
+              await this._cache.del(timeoutKey);
             }
           } finally {
-            await this.cacheService.unlock(lockKey);
+            await this._cache.unlock(lockKey);
           }
         } catch (error) {
-          this.logger.warn(
+          this._logger.warn(
             'Error while executing HandlePaymentTimeoutUseCase',
             { error, ctx: HandlePaymentTimeoutUseCase.name },
           );
@@ -88,29 +91,29 @@ export class HandlePaymentTimeoutUseCase {
   }
 
   private async finalizeTimeout(paymentId: string): Promise<boolean> {
-    return this.tracer.startActiveSpan(
+    return this._tracer.startActiveSpan(
       'HandlePaymentTimeoutUseCase.finalizeTimeout',
       async (span) => {
         span.setAttribute('payment.id', paymentId);
 
-        this.logger.debug(`Evaluating timeout for payment ${paymentId}`);
-        const payment = await this.paymentRepository.findById(paymentId);
+        this._logger.debug(`Evaluating timeout for payment ${paymentId}`);
+        const payment = await this._paymentRepository.findById(paymentId);
         if (!payment) {
-          this.logger.error(`Payment ${paymentId} not found`);
+          this._logger.error(`Payment ${paymentId} not found`);
           return false;
         }
         if (payment.status !== PaymentStatus.PENDING) {
-          this.logger.debug(
+          this._logger.debug(
             `Payment ${paymentId} already finalized: ${payment.status}`,
           );
           return false;
         }
         if (!payment.expiresAt) {
-          this.logger.warn(`Payment ${paymentId} has no expiresAt. Skipping.`);
+          this._logger.warn(`Payment ${paymentId} has no expiresAt. Skipping.`);
           return false;
         }
         if (payment.expiresAt > new Date()) {
-          this.logger.debug(
+          this._logger.debug(
             `Payment ${paymentId} not expired yet. Re-scheduling.`,
           );
           await this.rescheduleTimeout(payment);
@@ -118,15 +121,15 @@ export class HandlePaymentTimeoutUseCase {
         }
 
         payment.markExpired();
-        await this.paymentRepository.save(payment);
-        this.logger.warn(`Payment ${paymentId} EXPIRED`);
+        await this._paymentRepository.save(payment);
+        this._logger.warn(`Payment ${paymentId} EXPIRED`);
 
         const providerSession = payment.getSessionByProviderSessionId(
           payment.providerOrderId!,
         );
         providerSession?.updateStatus(ProviderSessionStatus.FAILED);
 
-        await this.kafkaProducer.produce<OrderPaymentTimeoutEvent>(
+        await this._kafkaProducer.produce<OrderPaymentTimeoutEvent>(
           KafkaTopics.PaymentOrderTimeout,
           {
             key: payment.userId,
@@ -147,7 +150,7 @@ export class HandlePaymentTimeoutUseCase {
           },
         );
 
-        this.metrics.incPaymentCounter({
+        this._metrics.incPaymentCounter({
           method: 'payment_timeout',
           status: 'EXPIRED',
         });
@@ -172,20 +175,20 @@ export class HandlePaymentTimeoutUseCase {
     userId: string;
   }) {
     if (!payment.expiresAt) {
-      this.logger.warn(
+      this._logger.warn(
         `Cannot reschedule timeout for payment ${payment.id}: expiresAt missing.`,
       );
       return;
     }
     const ttl = payment.expiresAt.getTime() - Date.now();
     if (ttl <= 0) {
-      this.logger.warn(
+      this._logger.warn(
         `Payment ${payment.id} already expired, not re-scheduling.`,
       );
       return;
     }
     const timeoutKey = this.timeoutKey(payment.id);
-    await this.cacheService.set(
+    await this._cache.set(
       timeoutKey,
       JSON.stringify({
         paymentId: payment.id,
@@ -195,7 +198,7 @@ export class HandlePaymentTimeoutUseCase {
       }),
       Math.ceil(ttl / 1000),
     );
-    this.logger.debug(
+    this._logger.debug(
       `Rescheduled timeout for payment ${payment.id}; TTL=${Math.ceil(ttl / 1000)}s.`,
     );
   }

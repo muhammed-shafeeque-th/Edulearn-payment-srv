@@ -1,8 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { IPaymentRepository } from '@domain/repositories/payment-repository.interface';
 import { IKafkaProducer } from '@application/adaptors/kafka-producer.interface';
-import { LoggingService } from '@infrastructure/observability/logging/logging.service';
-import { TracingService } from '@infrastructure/observability/tracing/trace.service';
 import { PaymentProvider, PaymentStatus } from '@domain/entities/payments';
 import { ProviderSessionStatus } from '@domain/entities/payment-provider-sesssion.entity';
 import { KafkaTopics } from 'src/shared/event-topics';
@@ -10,14 +8,17 @@ import { v4 as uuidV4 } from 'uuid';
 import { OrderNotFoundException } from '@domain/exceptions/domain.exceptions';
 import { OrderPaymentSuccessEvent } from '@domain/events/order-payment.events';
 import { BadRequestException } from 'src/shared/exceptions/infra.exceptions';
+import { ILoggerService } from '@application/adaptors/logger.service';
+import { ITraceService } from '@application/adaptors/trace.service';
+import { ISuccessPaymentUseCase } from '../interfaces/success-payment.interface';
 
 @Injectable()
-export class SuccessPaymentUseCase {
+export class SuccessPaymentUseCase implements ISuccessPaymentUseCase {
   constructor(
-    private readonly paymentRepository: IPaymentRepository,
-    private readonly kafkaProducer: IKafkaProducer,
-    private readonly logger: LoggingService,
-    private readonly tracer: TracingService,
+    private readonly _paymentRepository: IPaymentRepository,
+    private readonly _kafkaProducer: IKafkaProducer,
+    private readonly _logger: ILoggerService,
+    private readonly _tracer: ITraceService,
   ) {}
 
   /**
@@ -27,11 +28,11 @@ export class SuccessPaymentUseCase {
    * @param providerOrderId The unique provider order/payment ID.
    */
   async execute(provider: PaymentProvider, providerOrderId: string) {
-    return await this.tracer.startActiveSpan(
+    return await this._tracer.startActiveSpan(
       'SuccessPaymentUseCase.execute',
       async (span) => {
         try {
-          this.logger.debug(`Handling payment success use-case`, {
+          this._logger.debug(`Handling payment success use-case`, {
             ctx: 'SuccessPaymentUseCase',
           });
 
@@ -41,7 +42,9 @@ export class SuccessPaymentUseCase {
           });
 
           const payment =
-            await this.paymentRepository.findByProviderOrderId(providerOrderId);
+            await this._paymentRepository.findByProviderOrderId(
+              providerOrderId,
+            );
 
           if (!payment) {
             throw new OrderNotFoundException(
@@ -53,7 +56,7 @@ export class SuccessPaymentUseCase {
             payment.status !== PaymentStatus.RESOLVED &&
             payment.status !== PaymentStatus.PENDING
           ) {
-            this.logger.warn(
+            this._logger.warn(
               `Payment with transaction Id ${providerOrderId} cannot be marked as success because it is already marked as ${payment.status.toUpperCase()}. Only PENDING/RESOLVED payments can be marked as success.`,
               { ctx: SuccessPaymentUseCase.name },
             );
@@ -69,9 +72,9 @@ export class SuccessPaymentUseCase {
 
           payment.markSucceed();
 
-          await this.paymentRepository.update(payment);
+          await this._paymentRepository.update(payment);
 
-          await this.kafkaProducer.produce<OrderPaymentSuccessEvent>(
+          await this._kafkaProducer.produce<OrderPaymentSuccessEvent>(
             KafkaTopics.PaymentOrderSucceeded,
             {
               key: payment.userId,
@@ -92,7 +95,7 @@ export class SuccessPaymentUseCase {
             },
           );
 
-          this.logger.debug(
+          this._logger.debug(
             `Payment Succeed: ${payment.id} with status ${payment.status}`,
             { ctx: 'SuccessPaymentUseCase' },
           );
@@ -100,7 +103,7 @@ export class SuccessPaymentUseCase {
           return true;
         } catch (error: unknown) {
           const errMsg = error instanceof Error ? error.message : String(error);
-          this.logger.error(`Failed to process payment: ${errMsg}`, {
+          this._logger.error(`Failed to process payment: ${errMsg}`, {
             error,
             ctx: 'SuccessPaymentUseCase',
           });

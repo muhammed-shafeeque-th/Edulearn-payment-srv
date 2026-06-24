@@ -3,35 +3,36 @@ import { IdempotencyKey } from '@domain/value-objects/idempotency-key';
 import { IPaymentRepository } from '@domain/repositories/payment-repository.interface';
 // import { IKafkaProducer } from '@application/adaptors/kafka-producer.interface';
 import { retry } from 'ts-retry-promise';
-import { LoggingService } from '@infrastructure/observability/logging/logging.service';
-import { TracingService } from '@infrastructure/observability/tracing/trace.service';
-import { MetricsService } from '@infrastructure/observability/metrics/metrics.service';
 import { PaymentProvider } from '@domain/entities/payments';
 import { StrategyFactory } from '@infrastructure/strategies/strategy.factory';
-import { IdempotencyService } from '@infrastructure/services/idempotency.service';
 import { ResolvePaymentDto } from 'src/presentation/grpc/dtos/resolve-payment.dto';
 import { mapProviderToPaymentProvider } from 'src/shared/utils/mapProviderToDomain';
 import { ResolvePaymentRequest } from '@application/adaptors/payment-strategy.interface';
 import { ProviderSessionStatus } from '@domain/entities/payment-provider-sesssion.entity';
 import { PaymentNotFoundException } from '@domain/exceptions/domain.exceptions';
+import { ILoggerService } from '@application/adaptors/logger.service';
+import { ITraceService } from '@application/adaptors/trace.service';
+import { IMetricService } from '@application/adaptors/metric.service';
+import { IResolvePaymentUseCase } from '../interfaces/resolve-payment.inteface';
+import { IIdempotencyService } from '@application/adaptors/idempotency.service';
 // import { KafkaTopics } from 'src/shared/event-topics';
 // import { OrderPaymentSuccessEvent } from '@domain/events/domain-events';
 // import { v4 as uuidV4 } from 'uuid';
 
 @Injectable()
-export class ResolvePaymentUseCase {
+export class ResolvePaymentUseCase implements IResolvePaymentUseCase {
   constructor(
-    private readonly paymentRepository: IPaymentRepository,
+    private readonly _paymentRepository: IPaymentRepository,
     //
-    private readonly idempotencyService: IdempotencyService,
-    private readonly strategyFactory: StrategyFactory,
-    private readonly logger: LoggingService,
-    private readonly tracer: TracingService,
-    private readonly metrics: MetricsService,
+    private readonly _idempotencyService: IIdempotencyService,
+    private readonly _strategyFactory: StrategyFactory,
+    private readonly _logger: ILoggerService,
+    private readonly _tracer: ITraceService,
+    private readonly _metrics: IMetricService,
   ) {}
 
   async execute(dto: ResolvePaymentDto, idempotencyKey: string) {
-    return await this.tracer.startActiveSpan(
+    return await this._tracer.startActiveSpan(
       'ResolvePaymentUseCase.execute',
       async (span) => {
         try {
@@ -47,20 +48,20 @@ export class ResolvePaymentUseCase {
             provider,
           });
 
-          this.logger.debug(
+          this._logger.debug(
             `Executing ResolvePaymentUseCase  provider=${provider}]`,
           );
 
           const idempotency_Key = new IdempotencyKey(idempotencyKey);
-          return this.idempotencyService.check(idempotency_Key, async () => {
-            const paypalStrategy = this.strategyFactory.getStrategy(provider);
+          return this._idempotencyService.check(idempotency_Key, async () => {
+            const paypalStrategy = this._strategyFactory.getStrategy(provider);
 
-            const payment = await this.paymentRepository.findByProviderOrderId(
+            const payment = await this._paymentRepository.findByProviderOrderId(
               providerOrderId!,
             );
 
             if (!payment) {
-              this.logger.warn(
+              this._logger.warn(
                 `Payment not found with providerOrderId=${providerOrderId}.`,
               );
               throw new PaymentNotFoundException(
@@ -100,13 +101,13 @@ export class ResolvePaymentUseCase {
               payment.markResolved();
             }
 
-            await this.paymentRepository.update(payment);
-            this.logger.debug(
+            await this._paymentRepository.update(payment);
+            this._logger.debug(
               `Payment updated: ${payment.id} with status ${payment.status}`,
               { ctx: 'ResolvePaymentUseCase' },
             );
 
-            // await this.kafkaProducer.produce<OrderPaymentSuccessEvent>(
+            // await this._kafkaProducer.produce<OrderPaymentSuccessEvent>(
             //   KafkaTopics.PaymentOrderSucceeded,
             //   {
             //     eventId: uuidV4(),
@@ -121,7 +122,7 @@ export class ResolvePaymentUseCase {
             //   },
             // );
 
-            this.metrics.incPaymentCounter({
+            this._metrics.incPaymentCounter({
               method: 'payment_capture',
               status: payment.status,
               gateway: provider,
@@ -136,11 +137,11 @@ export class ResolvePaymentUseCase {
             };
           });
         } catch (error: any) {
-          this.logger.error(`Failed to process payment: ${error.message}`, {
+          this._logger.error(`Failed to process payment: ${error.message}`, {
             error,
             ctx: 'ResolvePaymentUseCase',
           });
-          this.metrics.incPaymentCounter({
+          this._metrics.incPaymentCounter({
             method: 'payment_capture',
             status: 'FAILED',
             gateway: PaymentProvider.PAYPAL,
