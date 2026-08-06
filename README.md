@@ -1,319 +1,576 @@
-# Payment Service 
+# Payment Service
 
-## Purpose
+> Payment orchestration and transaction processing service for the EduLearn platform.
 
-The Payment Service is responsible for payment processing, payment provider integrations (Stripe, PayPal, Razorpay), refund management, and payment lifecycle management in the EduLearn platform. It serves as the central service for all payment-related operations, ensuring secure, reliable, and idempotent payment processing.
+![Payment Service Banner](docs/images/banner.png)
 
-## Scope & Responsibilities
+## Overview
 
-### Core Responsibilities
+The Payment Service manages payment processing across the EduLearn platform. It acts as the central payment orchestration layer responsible for initiating, validating, processing, and tracking payments made for courses, subscriptions, and future platform offerings.
 
-1. **Payment Processing**
-   - Create payment sessions for multiple providers
-   - Handle payment resolution and verification
-   - Process payment cancellations
-   - Manage payment status transitions
-   - Support multiple payment providers simultaneously
+The service follows Clean Architecture principles and uses a provider-agnostic payment abstraction powered by the Strategy Pattern, enabling seamless integration with multiple payment gateways while keeping business logic isolated from provider-specific implementations.
 
-2. **Multi-Provider Integration**
-   - **Stripe**: Credit cards, digital wallets, SEPA, iDEAL
-   - **PayPal**: PayPal accounts, credit cards
-   - **Razorpay**: Cards, UPI, Net Banking, Wallets (India-focused)
-   - Strategy pattern for provider abstraction
-   - Unified API across all providers
+The Payment Service is designed for reliability, security, observability, and idempotent payment execution within a distributed microservices environment.
 
-3. **Payment Lifecycle Management**
-   - Payment state machine with valid transitions
-   - Payment timeout handling (10-minute default)
-   - Automatic expiration of pending payments
-   - Scheduled sweeper for expired payments
+---
 
-4. **Webhook Processing**
-   - Secure webhook signature verification
-   - Normalized webhook event handling
-   - Idempotent webhook processing
-   - Provider-specific webhook mappings
+## Responsibilities
 
-5. **Refund Processing**
-   - Initiate refunds for successful payments
-   - Track refund status
-   - Handle partial and full refunds
-   - Provider-specific refund handling
+### Payment Processing
 
-6. **Currency & Exchange**
-   - Multi-currency support (USD, EUR, GBP, INR)
-   - Exchange rate fetching and caching
-   - Currency conversion for cross-border payments
-   - Provider currency mapping
+* Payment initialization
+* Payment verification
+* Payment confirmation
+* Payment failure handling
+* Refund processing
+* Payment reconciliation
 
-7. **Idempotency Management**
-   - Idempotent payment creation
-   - Redis-based idempotency key storage
-   - Duplicate request prevention
-   - Idempotent webhook processing
+### Provider Management
 
-8. **Event Publishing**
-   - Publishes payment lifecycle events to Kafka
-   - Events: PaymentInitiated, PaymentSucceeded, PaymentFailed, PaymentTimeout, PaymentCancelled
-   - Event-driven integration with Order Service
+* Stripe integration
+* Razorpay integration
+* Provider abstraction layer
+* Strategy-based provider selection
 
-### Out of Scope
+### Transaction Management
 
-- Order management (handled by Order Service)
-- User management (handled by User Service)
-- Course management (handled by Course Service)
-- Invoice generation (handled by Order/Invoice Service)
-- Tax calculation (handled by Order Service)
+* Transaction lifecycle management
+* Transaction status tracking
+* Audit trail maintenance
+* Retry handling
 
-## Folder Structure 
-```
-payment/
-├── src/                          # Source code
-│   ├── app.module.ts            # NestJS root module
-│   ├── main.ts                  # Application entry point
-│   ├── application/             # Application layer
-│   │   ├── adaptors/            # Interface adapters
-│   │   │   ├── exchange-rate.service.ts    # Currency exchange service
-│   │   │   ├── kafka-producer.interface.ts # Kafka producer interface
-│   │   │   ├── payment-strategy.interface.ts # Payment strategy interface
-│   │   │   └── redis.interface.ts           # Redis interface
-│   │   ├── consumers/           # Kafka consumers
-│   │   │   ├── event-consumer.module.ts    # Consumer module
-│   │   │   └── payment-event.consumer.ts   # Payment event consumer
-│   │   ├── dtos/                # Data Transfer Objects
-│   │   │   ├── cancel-payment.dto.ts       # Payment cancellation DTO
-│   │   │   ├── create-payment.dto.ts       # Payment creation DTO
-│   │   │   ├── payment-failure.dto.ts      # Payment failure DTO
-│   │   │   └── resolve-payment.dto.ts      # Payment resolution DTO
-│   │   ├── schedulers/          # Scheduled tasks
-│   │   │   ├── payment-schedule.module.ts  # Scheduler module
-│   │   │   └── payment-timeout-sweeper.ts  # Timeout sweeper
-│   │   └── use-cases/           # Business use cases
-│   │       ├── payments/        # Payment use cases
-│   │       │   ├── cancel-payment.use-case.ts     # Payment cancellation
-│   │       │   ├── create-payment.use-case.ts     # Payment creation
-│   │       │   ├── handle-payment-timeout.use-case.ts # Timeout handling
-│   │       │   ├── payment-failure.use-case.ts    # Payment failure
-│   │       │   ├── resolve-payment.use-case.ts    # Payment resolution
-│   │       │   └── success-payment.use-case.ts    # Payment success
-│   ├── domain/                  # Domain layer
-│   │   ├── entities/            # Domain entities
-│   │   │   ├── payment-provider-session.entity.ts # Provider session
-│   │   │   ├── payments.ts      # Payment aggregate
-│   │   │   ├── refund-provider.entity.ts # Refund provider
-│   │   │   ├── refund.ts        # Refund entity
-│   │   │   └── transaction.ts   # Transaction entity
-│   │   ├── events/              # Domain events
-│   │   │   └── domain-events.ts # Payment domain events
-│   │   ├── exceptions/          # Domain exceptions
-│   │   │   └── domain.exceptions.ts # Payment exceptions
-│   │   ├── repositories/        # Repository interfaces
-│   │   │   └── payment-repository.interface.ts # Payment repository
-│   │   └── value-objects/       # Value objects
-│   │       ├── idempotency-key.ts # Idempotency key
-│   │       └── money.ts         # Money value object
-│   ├── infrastructure/          # Infrastructure layer
-│   │   ├── auth/                # Authentication
-│   │   │   └── jwt.strategy.ts  # JWT authentication strategy
-│   │   ├── config/              # Configuration
-│   │   │   ├── app.config.ts    # Application configuration
-│   │   │   ├── database.config.ts # Database configuration
-│   │   │   └── kafka.config.ts  # Kafka configuration
-│   │   ├── database/            # Database implementation
-│   │   │   ├── entities/        # TypeORM entities
-│   │   │   ├── mappers/         # Data mappers
-│   │   │   └── repositories/    # Repository implementations
-│   │   ├── exchange/            # Currency exchange
-│   │   │   └── exchange-rate.service.ts # Exchange rate service
-│   │   ├── filters/             # Exception filters
-│   │   │   └── grpc-exception.filter.ts # gRPC exception handling
-│   │   ├── grpc/                # gRPC clients
-│   │   │   ├── clients/         # gRPC client implementations
-│   │   │   └── interceptors/    # gRPC interceptors
-│   │   ├── kafka/               # Kafka event handling
-│   │   │   ├── producer.ts      # Event producer
-│   │   │   └── topics.ts        # Topic definitions
-│   │   ├── observability/       # Monitoring
-│   │   │   ├── logging/         # Logging setup
-│   │   │   ├── metrics/         # Metrics collection
-│   │   │   └── tracing/         # Distributed tracing
-│   │   ├── pipe/                # Validation pipes
-│   │   │   └── grpc-validation.pipe.ts # gRPC validation pipe
-│   │   ├── redis/               # Redis implementation
-│   │   │   ├── redis.service.ts # Redis service
-│   │   │   └── cache.service.ts # Caching service
-│   │   ├── services/            # Infrastructure services
-│   │   │   └── idempotency.service.ts # Idempotency service
-│   │   ├── strategies/          # Payment strategies
-│   │   │   ├── paypal-payment.strategy.ts # PayPal strategy
-│   │   │   ├── razorpay-strategy.ts       # Razorpay strategy
-│   │   │   ├── stripe-payment.strategy.ts # Stripe strategy
-│   │   │   └── strategy.factory.ts        # Strategy factory
-│   │   └── workers/             # Background workers
-│   │       └── payment-timeout-worker.module.ts # Worker module
-│   ├── presentation/            # Presentation layer
-│   │   ├── grpc/                # gRPC controllers
-│   │   │   └── payment.controller.ts # Payment gRPC endpoints
-│   │   ├── http/                # HTTP controllers
-│   │   │   └── webhook.controller.ts # Webhook endpoints
-│   │   └── kafka/               # Kafka event handlers
-│   │       └── kafka.controller.ts # Kafka event processing
-│   └── shared/                  # Shared utilities
-│       ├── event-topics/        # Event topic definitions
-│       │   └── index.ts         # Topic constants
-│       └── utils/               # Utility functions
-│           ├── get-metadata.ts  # Metadata extraction
-│           └── mapProviderToDomain.ts # Provider mapping
-├── test/                        # Test files
-│   ├── app.e2e-spec.ts          # End-to-end tests
-│   ├── e2e/                     # E2E test specs
-│   │   ├── payment.controller.e2e.spec.ts # Controller E2E tests
-│   │   │   └── webhook.controller.e2e.spec.ts # Webhook E2E tests
-│   ├── jest-e2e.json            # E2E test configuration
-│   ├── setup.ts                 # Test setup
-│   └── unit/                    # Unit tests
-│       ├── application/         # Application layer tests
-│       ├── domain/              # Domain layer tests
-│       └── infrastructure/      # Infrastructure layer tests
-├── proto/                       # Protocol buffer definitions
-│   ├── payment_service.proto    # Payment service API
-│   ├── payment/                 # Payment-related protobufs
-│   │   ├── common.proto         # Shared types
-│   │   └── types/               # Payment-specific types
-│   ├── course_service.proto     # Course service protobuf
-│   ├── order_service.proto      # Order service protobuf
-│   └── user_service.proto       # User service protobuf
-├── dist/                        # Compiled output
-├── logs/                        # Application logs
-├── node_modules/                # Dependencies
-├── coverage/                    # Test coverage reports
-├── Dockerfile                   # Docker configuration
-├── docker-compose.yaml          # Docker compose for development
-├── nest-cli.json                # NestJS CLI configuration
-├── package.json                 # Node.js dependencies
-├── tsconfig.json                # TypeScript configuration
-├── tsconfig.build.json          # Build TypeScript config
-├── env.example                  # Environment variables template
-├── prometheus.yaml              # Prometheus configuration
-├── LICENSE                      # License
-└── README.md                    # Service documentation
-```
+### Event-Driven Processing
 
-## Key Features
+* Payment events publishing
+* Payment events consumption
+* Order workflow integration
+* Notification triggering
 
-### Payment Provider Support
+### Reliability
 
-- **Stripe**: Full checkout session support, payment intents
-- **PayPal**: Order creation, capture, and approval flows
-- **Razorpay**: Order creation, payment capture, signature verification
+* Redis-backed idempotency
+* Duplicate payment prevention
+* Retry-safe operations
+* Distributed transaction support
 
-### Payment Lifecycle
-
-**Status Flow**:
-```
-PENDING → RESOLVED → SUCCESS/FAILED
-PENDING → CANCELLED
-PENDING → EXPIRED
-```
-
-### Idempotency
-
-- All payment operations support idempotency keys
-- Duplicate requests return existing payment without side effects
-- Webhook events are deduplicated using provider event IDs
-
-### Timeout Management
-
-- Default payment timeout: 10 minutes
-- Automatic expiration via Redis TTL
-- Scheduled sweeper as safety net (runs every minute)
-- Payment timeout triggers order cancellation events
-
-### Security
-
-- Webhook signature verification for all providers
-- JWT authentication for gRPC endpoints
-- Role-based authorization
-- Secure API key storage (environment variables)
+---
 
 ## Service Boundaries
 
-### Owns Data For
+### Owns
 
-- **Payments**: Payment records with lifecycle state
-- **PaymentProviderSession**: Provider-specific session data
-- **PaymentProviderRefund**: Provider refund records
-- **Refunds**: Refund aggregate records
-- **Transaction**: Transaction history (if needed)
+* Payments
+* Transactions
+* Payment attempts
+* Provider references
+* Refund records
+* Payment audit logs
 
 ### Depends On
 
-- **Order Service** (via gRPC): 
-  - Order validation before payment creation
-  - Order status updates after payment
-- **Course Service** (via gRPC): 
-  - Course validation for order items
-- **Payment Providers**: 
-  - Stripe API
-  - PayPal API
-  - Razorpay API
-- **Database**: PostgreSQL for persistence
-- **Redis**: 
-  - Idempotency keys
-  - Payment timeout tracking
-  - Exchange rate caching
-- **Kafka**: Event publishing and consumption
+| Service              | Purpose                          |
+| -------------------- | -------------------------------- |
+| Order Service        | Order validation and fulfillment |
+| User Service         | User validation                  |
+| Notification Service | Payment notifications            |
+| Kafka                | Event communication              |
+| Redis                | Idempotency and caching          |
+| PostgreSQL           | Persistent storage               |
 
-## Technical Stack
+---
 
-- **Framework**: NestJS 11.x
-- **Language**: TypeScript 5.x
-- **Database**: PostgreSQL 15+ with TypeORM
-- **Cache**: Redis 7+ with ioredis
-- **Messaging**: Kafka 3+ with Avro schemas
-- **RPC**: gRPC with Protocol Buffers
-- **Payment SDKs**: 
-  - Stripe Node.js SDK
-  - PayPal Server SDK
-  - Razorpay Node.js SDK
-- **Observability**: 
-  - Prometheus for metrics
-  - OpenTelemetry for tracing
-  - Winston for logging
+## Architecture
 
-## Key Entities
+### Architectural Style
 
-### Domain Entities
+* Clean Architecture
+* Domain-Driven Design
+* Event-Driven Architecture
+* Strategy Pattern
+* Repository Pattern
+* Dependency Injection
 
-- **Payment**: Aggregate root for payment operations
-- **PaymentProviderSession**: Provider-specific payment session
-- **Refund**: Refund aggregate root
-- **PaymentProviderRefund**: Provider-specific refund data
-- **Transaction**: Transaction history (optional)
+### Layers
 
-### Value Objects
+```text
+Presentation Layer
+        │
+        ▼
+Application Layer
+        │
+        ▼
+Domain Layer
+        │
+        ▼
+Infrastructure Layer
+```
 
-- **Money**: Amount and currency with validation
-- **IdempotencyKey**: UUID-based idempotency key
+---
 
-## Performance Characteristics
+## Technology Stack
 
-- **Write-Heavy Workload**: Payment creation and status updates
-- **Read Patterns**: Payment status checks, webhook processing
-- **Caching Strategy**: 
-  - Payment data cached for fast retrieval
-  - Exchange rates cached with TTL
-  - Idempotency keys cached in Redis
-- **Timeout Handling**: 
-  - Redis-based TTL for automatic expiration
-  - Scheduled sweeper for safety net
-  - Distributed locking to prevent race conditions
+| Category         | Technology    |
+| ---------------- | ------------- |
+| Language         | TypeScript    |
+| Framework        | NestJS        |
+| Runtime          | Node.js       |
+| Communication    | gRPC          |
+| Messaging        | Kafka         |
+| Cache            | Redis         |
+| Database         | PostgreSQL    |
+| ORM              | TypeORM       |
+| Payments         | Stripe        |
+| Payments         | Razorpay      |
+| Logging          | Winston       |
+| Metrics          | Prometheus    |
+| Tracing          | OpenTelemetry |
+| Containerization | Docker        |
+| Orchestration    | Kubernetes    |
 
-## Security Considerations
+---
 
-- **Webhook Security**: Signature verification for all providers
-- **API Key Management**: Environment-based configuration
-- **Idempotency**: Prevents duplicate payments
-- **Audit Trail**: All payment operations logged
-- **PCI Compliance**: No card data stored (handled by providers)
+## Payment Architecture
 
+### Strategy Pattern
+
+The service uses the Strategy Pattern to support multiple payment providers.
+
+```text
+Payment Strategy
+│
+├── Stripe Strategy
+│
+└── Razorpay Strategy
+```
+
+This enables:
+
+* Easy addition of new providers
+* Provider isolation
+* Consistent payment APIs
+* Simplified testing
+
+---
+
+## Core Domain Models
+
+### Payment
+
+Represents a payment transaction initiated by a user.
+
+### PaymentAttempt
+
+Tracks provider-specific payment attempts.
+
+### Refund
+
+Represents refunded transactions.
+
+### Transaction
+
+Captures the lifecycle of a payment event.
+
+### PaymentProvider
+
+Provider-specific metadata and references.
+
+---
+
+## Communication
+
+### gRPC
+
+The service exposes internal APIs through gRPC.
+
+Examples:
+
+* CreatePayment
+* VerifyPayment
+* RefundPayment
+* GetPaymentStatus
+* GetTransactionHistory
+
+---
+
+### Kafka Events
+
+#### Published Events
+
+```text
+payment.created.v1
+payment.processing.v1
+payment.succeeded.v1
+payment.failed.v1
+payment.refunded.v1
+payment.cancelled.v1
+```
+
+#### Consumed Events
+
+```text
+order.created.v1
+order.cancelled.v1
+order.expired.v1
+```
+
+---
+
+## Payment Flow
+
+### Successful Payment
+
+```text
+User
+ │
+ ▼
+Client
+ │
+ ▼
+API Gateway
+ │
+ ▼
+Order Service
+ │
+ ▼
+Payment Service
+ │
+ ▼
+Payment Provider
+ │
+ ▼
+Payment Success
+ │
+ ▼
+Kafka Event
+ │
+ ▼
+Order Service
+ │
+ ▼
+Order Completed
+```
+
+---
+
+## Idempotency
+
+To prevent duplicate charges, the service uses Redis-backed idempotency keys.
+
+Features:
+
+* Duplicate request detection
+* Safe retries
+* Payment replay protection
+* Transaction consistency
+
+---
+
+## Database
+
+### PostgreSQL
+
+Used for:
+
+* Payments
+* Transactions
+* Refunds
+* Audit records
+* Provider references
+
+### TypeORM
+
+Responsibilities:
+
+* Entity mapping
+* Repository implementation
+* Query abstraction
+* Migration management
+
+---
+
+## Redis
+
+Used for:
+
+* Idempotency keys
+* Request deduplication
+* Payment session caching
+* Distributed locking
+
+---
+
+## Observability
+
+The Payment Service integrates with the platform-wide observability stack.
+
+### Logging
+
+Implemented using Winston.
+
+Features:
+
+* Structured JSON logs
+* Correlation IDs
+* Trace context propagation
+* Centralized log aggregation
+
+Pipeline:
+
+```text
+Application
+    │
+    ▼
+Winston
+    │
+    ▼
+OTEL Collector
+    │
+    ▼
+Loki
+    │
+    ▼
+Grafana
+```
+
+---
+
+### Metrics
+
+Prometheus metrics include:
+
+* Payment success rate
+* Payment failure rate
+* Refund count
+* Provider latency
+* Transaction volume
+* Kafka processing metrics
+
+Pipeline:
+
+```text
+Application
+    │
+    ▼
+Prometheus
+    │
+    ▼
+Grafana
+```
+
+---
+
+### Distributed Tracing
+
+Implemented using OpenTelemetry.
+
+Tracked operations:
+
+* Payment initialization
+* Provider requests
+* Kafka publishing
+* Database transactions
+* Redis operations
+
+Pipeline:
+
+```text
+Application
+    │
+    ▼
+OTEL Collector
+    │
+    ▼
+Tempo
+    │
+    ▼
+Grafana
+```
+
+---
+
+## Security
+
+### Payment Security
+
+* Secure payment verification
+* Webhook validation
+* Signature verification
+* Request integrity checks
+
+### Application Security
+
+* Non-root containers
+* Read-only runtime filesystem
+* Secret Manager integration
+* Secure service-to-service communication
+
+### Infrastructure Security
+
+* Private EKS cluster
+* Pod Identity Agent
+* Least privilege IAM
+* No static cloud credentials
+
+---
+
+## Deployment
+
+The service is deployed on Amazon EKS through GitOps workflows.
+
+### Deployment Components
+
+* Helm Chart
+* ArgoCD
+* ArgoCD Image Updater
+* External Secrets
+* AWS Load Balancer Controller
+
+---
+
+## CI/CD
+
+### Continuous Integration
+
+```text
+GitHub Push
+     │
+     ▼
+GitHub Actions
+     │
+     ├── Lint
+     ├── Test
+     ├── Build
+     ├── Security Scan
+     └── Container Build
+     │
+     ▼
+GHCR
+```
+
+### Continuous Deployment
+
+```text
+GHCR
+ │
+ ▼
+ArgoCD Image Updater
+ │
+ ▼
+Git Repository Update
+ │
+ ▼
+ArgoCD Sync
+ │
+ ▼
+Amazon EKS
+```
+
+---
+
+## Container Optimization
+
+The service uses optimized multi-stage Docker builds.
+
+Optimizations include:
+
+* Build/runtime separation
+* Dependency pruning
+* Minimal runtime image
+* Non-root execution
+* Layer caching
+
+Benefits:
+
+* Faster deployments
+* Reduced attack surface
+* Lower registry storage
+* Faster startup times
+
+---
+
+## Local Development
+
+### Install Dependencies
+
+```bash
+yarn install
+```
+
+### Run Development Server
+
+```bash
+yarn dev
+```
+
+### Run Tests
+
+```bash
+yarn test
+```
+
+### Build
+
+```bash
+yarn build
+```
+
+---
+
+## Environment Variables
+
+```env
+DATABASE_URL=
+REDIS_URL=
+
+KAFKA_BROKERS=
+
+STRIPE_SECRET_KEY=
+STRIPE_WEBHOOK_SECRET=
+
+RAZORPAY_KEY_ID=
+RAZORPAY_KEY_SECRET=
+
+OTEL_EXPORTER_OTLP_ENDPOINT=
+
+JWT_SECRET=
+```
+
+---
+
+# Related Repositories
+
+| Repository                    | Description                                                   |
+| ----------------------------- | ------------------------------------------------------------- |
+| [edulearn-platform](https://github.com/muhammed-shafeeque-th/edulearn-platform)             | Platform orchestration repository                             |
+| [edulearn-api-gateway](https://github.com/muhammed-shafeeque-th/edulearn-api-gateawy)          | API Gateway                                                   |
+| [edulearn-user-service](https://github.com/muhammed-shafeeque-th/edulearn-user-srv)         | User profile service                                          |
+| [edulearn-course-service](https://github.com/muhammed-shafeeque-th/edulearn-course-srv)       | Course management service                                     |
+| [edulearn-auth-service](https://github.com/muhammed-shafeeque-th/edulearn-auth-srv)      | Authentication service                                    |
+| [edulearn-order-service](https://github.com/muhammed-shafeeque-th/edulearn-order-srv)        | Order management service                                      |
+| [edulearn-notification-service](https://github.com/muhammed-shafeeque-th/edulearn-notification-srv) | Notification service                                          |
+| [edulearn-auth-service](https://github.com/muhammed-shafeeque-th/edulearn-auth-srv)         | Authentication service                                        |
+| [@edulearn/core](https://github.com/muhammed-shafeeque-th/edulearn-core)                | Shared logging, metrics, tracing, Redis, Kafka, health checks |
+| [@edulearn/nest](https://github.com/muhammed-shafeeque-th/edulearn-nest)                | Shared NestJS infrastructure package                          |
+
+---
+
+## Documentation
+
+Additional documentation is available under:
+
+```text
+docs/
+├── architecture.md
+├── payment-flow.md
+├── provider-integration.md
+├── deployment.md
+├── observability.md
+├── security.md
+└── api-reference.md
+```
+
+---
+
+## License
+
+Licensed under the MIT License.
