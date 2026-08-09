@@ -3,12 +3,9 @@ import { IdempotencyKey } from '@domain/value-objects/idempotency-key';
 import { IPaymentRepository } from '@domain/repositories/payment-repository.interface';
 import { IKafkaProducer } from '@application/adaptors/kafka-producer.interface';
 import { retry } from 'ts-retry-promise';
-import { LoggingService } from '@infrastructure/observability/logging/logging.service';
-import { TracingService } from '@infrastructure/observability/tracing/trace.service';
 import { PaymentStatus } from '@domain/entities/payments';
 import { StrategyFactory } from '@infrastructure/strategies/strategy.factory';
 import { CancelPaymentDto } from 'src/presentation/grpc/dtos/cancel-payment.dto';
-import { IdempotencyService } from '@infrastructure/services/idempotency.service';
 import { OrderNotFoundException } from '@domain/exceptions/domain.exceptions';
 import { RpcException } from '@nestjs/microservices';
 import { mapProviderToPaymentProvider } from 'src/shared/utils/mapProviderToDomain';
@@ -17,16 +14,20 @@ import { KafkaTopics } from 'src/shared/event-topics';
 import { OrderPaymentFailedEvent } from '@domain/events/order-payment.events';
 import { v4 as uuidV4 } from 'uuid';
 import { BadRequestException } from 'src/shared/exceptions/infra.exceptions';
+import { ILoggerService } from '@application/adaptors/logger.service';
+import { ITraceService } from '@application/adaptors/trace.service';
+import { ICancelPaymentUseCase } from '../interfaces/cancel-payment.interface';
+import { IIdempotencyService } from '@application/adaptors/idempotency.service';
 
 @Injectable()
-export class CancelPaymentUseCase {
+export class CancelPaymentUseCase implements ICancelPaymentUseCase {
   constructor(
-    private readonly paymentRepository: IPaymentRepository,
-    private readonly kafkaProducer: IKafkaProducer,
-    private readonly idempotencyService: IdempotencyService,
-    private readonly strategyFactory: StrategyFactory,
-    private readonly logger: LoggingService,
-    private readonly tracer: TracingService,
+    private readonly _paymentRepository: IPaymentRepository,
+    private readonly _kafkaProducer: IKafkaProducer,
+    private readonly _idempotencyService: IIdempotencyService,
+    private readonly _strategyFactory: StrategyFactory,
+    private readonly _logger: ILoggerService,
+    private readonly _tracer: ITraceService,
   ) {}
 
   /**
@@ -35,11 +36,11 @@ export class CancelPaymentUseCase {
    * @param idempotencyKeyString The idempotency key as string.
    */
   async execute(dto: CancelPaymentDto, idempotencyKeyString: string) {
-    return await this.tracer.startActiveSpan(
+    return await this._tracer.startActiveSpan(
       'CancelPaymentUseCase.execute',
       async (span) => {
         try {
-          this.logger.debug(`Handling payment cancellation`, {
+          this._logger.debug(`Handling payment cancellation`, {
             ctx: 'CancelPaymentUseCase',
           });
 
@@ -52,11 +53,11 @@ export class CancelPaymentUseCase {
 
           const idempotencyKey = new IdempotencyKey(idempotencyKeyString);
 
-          return await this.idempotencyService.check(
+          return await this._idempotencyService.check(
             idempotencyKey,
             async () => {
               const payment =
-                await this.paymentRepository.findByProviderOrderId(
+                await this._paymentRepository.findByProviderOrderId(
                   dto.providerOrderId,
                 );
 
@@ -67,7 +68,7 @@ export class CancelPaymentUseCase {
               }
 
               if (payment.status !== PaymentStatus.PENDING) {
-                this.logger.warn(
+                this._logger.warn(
                   `Payment with transaction Id ${dto.providerOrderId} cannot be cancelled because it is already marked as ${payment.status.toUpperCase()}. Only PENDING payments can be cancelled.`,
                   { ctx: CancelPaymentUseCase.name },
                 );
@@ -77,7 +78,7 @@ export class CancelPaymentUseCase {
               }
 
               const paymentProvider =
-                this.strategyFactory.getStrategy(provider);
+                this._strategyFactory.getStrategy(provider);
 
               const response = await retry(
                 () =>
@@ -103,9 +104,9 @@ export class CancelPaymentUseCase {
 
               payment.markCancel(dto.providerOrderId);
 
-              await this.paymentRepository.update(payment);
+              await this._paymentRepository.update(payment);
 
-              await this.kafkaProducer.produce<OrderPaymentFailedEvent>(
+              await this._kafkaProducer.produce<OrderPaymentFailedEvent>(
                 KafkaTopics.PaymentOrderFailed,
                 {
                   key: payment.userId,
@@ -125,21 +126,21 @@ export class CancelPaymentUseCase {
                 },
               );
 
-              this.logger.debug(
+              this._logger.debug(
                 `Payment Cancelled: ${payment.id} with status ${payment.status}`,
                 { ctx: 'CancelPaymentUseCase' },
               );
 
               return {
                 paymentId: payment.id,
-                providerOrderId: payment.providerOrderId,
+                providerOrderId: payment.providerOrderId!,
                 status: payment.status,
               };
             },
           );
         } catch (error: unknown) {
           const errMsg = error instanceof Error ? error.message : String(error);
-          this.logger.error(`Failed to process payment: ${errMsg}`, {
+          this._logger.error(`Failed to process payment: ${errMsg}`, {
             error,
             ctx: 'CancelPaymentUseCase',
           });

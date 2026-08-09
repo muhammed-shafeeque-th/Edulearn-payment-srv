@@ -5,7 +5,6 @@ import {
   OnModuleInit,
 } from '@nestjs/common';
 import { ClientGrpc } from '@nestjs/microservices';
-import { LoggingService } from 'src/infrastructure/observability/logging/logging.service';
 import { GRPC_COURSE_CLIENT_TOKEN } from './constants';
 import { CourseServiceClient } from '@infrastructure/grpc/generated/course_service';
 
@@ -15,25 +14,29 @@ import {
   CoursesListData,
   GetCoursesByIdsResponse,
 } from '@infrastructure/grpc/generated/course/types/course';
+import { ILoggerService } from '@application/adaptors/logger.service';
+import { ICourseClient } from '@application/adaptors/course-client.interface';
 
 @Injectable()
-export class CourseClient implements OnModuleDestroy, OnModuleInit {
+export class CourseClient
+  implements ICourseClient, OnModuleDestroy, OnModuleInit
+{
   private orderService!: CourseServiceClient;
 
   constructor(
     @Inject(GRPC_COURSE_CLIENT_TOKEN) private client: ClientGrpc,
-    private readonly logger: LoggingService,
-    private readonly redisClient: ICacheService,
+    private readonly _logger: ILoggerService,
+    private readonly _redisClient: ICacheService,
   ) {}
 
   onModuleInit() {
     this.orderService =
       this.client.getService<CourseServiceClient>('CourseService');
-    this.logger.info('Course gRPC client initialized');
+    this._logger.info('Course gRPC client initialized');
   }
 
   onModuleDestroy() {
-    this.logger.info('Course gRPC client destroyed');
+    this._logger.info('Course gRPC client destroyed');
   }
 
   async getCourseItems(courseIds: string[]): Promise<
@@ -50,7 +53,7 @@ export class CourseClient implements OnModuleDestroy, OnModuleInit {
     const CACHE_TTL = 10 * 60;
     const cacheKey = `course_prices:${courseIds.sort().join(',')}`;
 
-    const cacheResult = await this.redisClient.get(cacheKey);
+    const cacheResult = await this._redisClient.get(cacheKey);
     if (cacheResult) {
       const parsed = JSON.parse(cacheResult);
 
@@ -74,11 +77,11 @@ export class CourseClient implements OnModuleDestroy, OnModuleInit {
                   ),
                 );
               }
-              this.logger.debug(`Fetched courses for ${courseIds} via gRPC`);
+              this._logger.debug(`Fetched courses for ${courseIds} via gRPC`);
               resolve(response.success.courses);
             },
             error: (error: any) => {
-              this.logger.error(
+              this._logger.error(
                 `Failed to fetch courses by ids: ${error.message}`,
                 { error },
               );
@@ -103,7 +106,7 @@ export class CourseClient implements OnModuleDestroy, OnModuleInit {
         });
       });
 
-      await this.redisClient.set(
+      await this._redisClient.set(
         cacheKey,
         JSON.stringify(Array.from(courseMap.entries())),
         CACHE_TTL,
@@ -111,7 +114,7 @@ export class CourseClient implements OnModuleDestroy, OnModuleInit {
 
       return courseMap;
     } catch (err) {
-      this.logger.error('Error fetching courses GRPC', { err });
+      this._logger.error('Error fetching courses GRPC', { err });
       throw err;
     }
   }

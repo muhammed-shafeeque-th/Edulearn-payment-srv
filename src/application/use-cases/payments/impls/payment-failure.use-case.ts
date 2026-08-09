@@ -1,8 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { IPaymentRepository } from '@domain/repositories/payment-repository.interface';
 import { IKafkaProducer } from '@application/adaptors/kafka-producer.interface';
-import { LoggingService } from '@infrastructure/observability/logging/logging.service';
-import { TracingService } from '@infrastructure/observability/tracing/trace.service';
 import { PaymentProvider, PaymentStatus } from '@domain/entities/payments';
 import { ProviderSessionStatus } from '@domain/entities/payment-provider-sesssion.entity';
 import { KafkaTopics } from 'src/shared/event-topics';
@@ -10,14 +8,17 @@ import { v4 as uuidV4 } from 'uuid';
 import { OrderNotFoundException } from '@domain/exceptions/domain.exceptions';
 import { OrderPaymentFailedEvent } from '@domain/events/order-payment.events';
 import { BadRequestException } from 'src/shared/exceptions/infra.exceptions';
+import { ILoggerService } from '@application/adaptors/logger.service';
+import { ITraceService } from '@application/adaptors/trace.service';
+import { IPaymentFailureUseCase } from '../interfaces/payment-failure.interface';
 
 @Injectable()
-export class PaymentFailureUseCase {
+export class PaymentFailureUseCase implements IPaymentFailureUseCase {
   constructor(
-    private readonly paymentRepository: IPaymentRepository,
-    private readonly kafkaProducer: IKafkaProducer,
-    private readonly logger: LoggingService,
-    private readonly tracer: TracingService,
+    private readonly _paymentRepository: IPaymentRepository,
+    private readonly _kafkaProducer: IKafkaProducer,
+    private readonly _logger: ILoggerService,
+    private readonly _tracer: ITraceService,
   ) {}
 
   /**
@@ -30,11 +31,11 @@ export class PaymentFailureUseCase {
     provider: PaymentProvider,
     providerOrderId: string,
   ): Promise<boolean> {
-    return await this.tracer.startActiveSpan(
+    return await this._tracer.startActiveSpan(
       'PaymentFailureUseCase.execute',
       async (span) => {
         try {
-          this.logger.debug(`Marking payment as failed`, {
+          this._logger.debug(`Marking payment as failed`, {
             ctx: 'PaymentFailureUseCase',
           });
 
@@ -44,10 +45,10 @@ export class PaymentFailureUseCase {
           });
 
           const payment =
-            await this.paymentRepository.findByProviderOrderId(providerOrderId);
+            await this._paymentRepository.findByProviderOrderId(providerOrderId);
 
           if (!payment) {
-            this.logger.error(
+            this._logger.error(
               `Payment not found for providerOrderId: ${providerOrderId}`,
               {
                 ctx: 'PaymentFailureUseCase',
@@ -59,7 +60,7 @@ export class PaymentFailureUseCase {
           }
 
           if (payment.status === PaymentStatus.FAILED) {
-            this.logger.debug(
+            this._logger.debug(
               `Payment with order ID ${providerOrderId} already marked as FAILED.`,
               { ctx: 'PaymentFailureUseCase' },
             );
@@ -67,7 +68,7 @@ export class PaymentFailureUseCase {
           }
 
           if (payment.status !== PaymentStatus.PENDING) {
-            this.logger.error(
+            this._logger.error(
               `Cannot mark payment ${providerOrderId} as failed because status is ${payment.status}. Only PENDING or RESOLVED payments can be failed.`,
               { ctx: 'PaymentFailureUseCase' },
             );
@@ -83,9 +84,9 @@ export class PaymentFailureUseCase {
 
           payment.markFailed();
 
-          await this.paymentRepository.update(payment);
+          await this._paymentRepository.update(payment);
 
-          await this.kafkaProducer.produce<OrderPaymentFailedEvent>(
+          await this._kafkaProducer.produce<OrderPaymentFailedEvent>(
             KafkaTopics.PaymentOrderFailed,
             {
               key: payment.userId,
@@ -106,7 +107,7 @@ export class PaymentFailureUseCase {
             },
           );
 
-          this.logger.debug(
+          this._logger.debug(
             `Payment marked failed: ${payment.id} status=${payment.status}`,
             { ctx: 'PaymentFailureUseCase' },
           );
@@ -114,7 +115,7 @@ export class PaymentFailureUseCase {
           return true;
         } catch (error: unknown) {
           const errMsg = error instanceof Error ? error.message : String(error);
-          this.logger.error(`Failed to mark payment as failed: ${errMsg}`, {
+          this._logger.error(`Failed to mark payment as failed: ${errMsg}`, {
             error,
             ctx: 'PaymentFailureUseCase',
           });
