@@ -1,6 +1,6 @@
 import { IKafkaProducer } from '@application/adaptors/kafka-producer.interface';
+import { ILoggerService } from '@application/adaptors/logger.service';
 import { PaymentProviderEvent } from '@domain/events/payment-provider.event';
-import { LoggingService } from '@infrastructure/observability/logging/logging.service';
 import { Injectable } from '@nestjs/common';
 import { KafkaTopics } from 'src/shared/event-topics';
 
@@ -8,7 +8,7 @@ import { KafkaTopics } from 'src/shared/event-topics';
 export class WebhookService {
   constructor(
     private readonly kafka: IKafkaProducer,
-    private readonly logger: LoggingService,
+    private readonly _logger: ILoggerService,
   ) {}
 
   async publish(event: PaymentProviderEvent): Promise<void> {
@@ -22,7 +22,7 @@ export class WebhookService {
       },
     });
 
-    this.logger.debug(`Webhook event published ${event.providerEventType}`, {
+    this._logger.debug(`Webhook event published ${event.providerEventType}`, {
       provider: event.provider,
       eventId: event.providerEventId,
     });

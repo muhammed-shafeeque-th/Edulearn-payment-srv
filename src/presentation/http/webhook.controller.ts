@@ -19,14 +19,14 @@ import { TracingInterceptor } from '@infrastructure/grpc/interceptors/tracing.in
 import Stripe from 'stripe';
 import * as crypto from 'crypto';
 import axios from 'axios';
-import { MetricsService } from '@infrastructure/observability/metrics/metrics.service';
-import { TracingService } from '@infrastructure/observability/tracing/trace.service';
-import { LoggingService } from '@infrastructure/observability/logging/logging.service';
 
 import { PaymentProvider } from '@domain/entities/payments';
 import { PaymentProviderEvent } from '@domain/events/payment-provider.event';
 import { ICacheService } from '@application/adaptors/redis.interface';
 import { BaseExceptionFilter } from '@nestjs/core';
+import { ILoggerService } from '@application/adaptors/logger.service';
+import { ITraceService } from '@application/adaptors/trace.service';
+import { IMetricService } from '@application/adaptors/metric.service';
 
 @Controller('api/webhooks')
 @UseFilters(BaseExceptionFilter)
@@ -51,10 +51,10 @@ export class WebhookController implements OnModuleDestroy {
   constructor(
     private readonly webhookService: WebhookService,
     private readonly configService: AppConfigService,
-    private readonly cacheService: ICacheService,
-    private readonly logger: LoggingService,
-    private readonly metrics: MetricsService,
-    private readonly tracer: TracingService,
+    private readonly _cache: ICacheService,
+    private readonly _logger: ILoggerService,
+    private readonly _tracer: ITraceService,
+    private readonly _metrics: IMetricService,
   ) {
     this.stripe = new Stripe(this.configService.stripeSecretKey, {
       apiVersion: '2025-08-27.basil',
@@ -68,7 +68,7 @@ export class WebhookController implements OnModuleDestroy {
     @Headers('stripe-signature') signature: string,
     @Req() req: Request,
   ): Promise<void> {
-    return await this.tracer.startActiveSpan(
+    return await this._tracer.startActiveSpan(
       'WebhookController.handleStripeWebhook',
       async () => {
         try {
@@ -77,7 +77,7 @@ export class WebhookController implements OnModuleDestroy {
           // const rawBody = (req as any).rawBody;
           const rawBody = req.body as Buffer;
           if (!rawBody) {
-            this.logger.warn('Failing fast rawBody not found in request', {
+            this._logger.warn('Failing fast rawBody not found in request', {
               ctx: WebhookController.name,
             });
             return;
@@ -91,24 +91,24 @@ export class WebhookController implements OnModuleDestroy {
               webhookSecret,
             );
           } catch (error: any) {
-            this.metrics.incWebhookEvents({
+            this._metrics.incWebhookEvents({
               event_type: 'stripe.signature_error',
               status: 'FAILED',
             });
-            this.logger.error(`Invalid Stripe signature: ${error.message}`, {
+            this._logger.error(`Invalid Stripe signature: ${error.message}`, {
               error,
               ctx: 'WebhookController',
             });
             return;
           }
 
-          this.logger.debug(`Received Stripe webhook event: ${event.type}`, {
+          this._logger.debug(`Received Stripe webhook event: ${event.type}`, {
             ctx: 'WebhookController',
             eventId: event.id,
           });
 
           if (!this.STRIPE_ALLOWED_EVENTS.has(event.type)) {
-            this.logger.warn(`Stripe event type not allowed: ${event.type}`, {
+            this._logger.warn(`Stripe event type not allowed: ${event.type}`, {
               ctx: 'WebhookController',
             });
             return;
@@ -126,16 +126,16 @@ export class WebhookController implements OnModuleDestroy {
           };
 
           await this.webhookService.publish(normalized);
-          this.metrics.incWebhookEvents({
+          this._metrics.incWebhookEvents({
             event_type: event.type,
             status: 'SUCCESS',
           });
         } catch (error: any) {
-          this.logger.error(
+          this._logger.error(
             `Failed to handle Stripe webhook: ${error.message}`,
             { error, ctx: 'WebhookController' },
           );
-          this.metrics.incWebhookEvents({
+          this._metrics.incWebhookEvents({
             event_type: 'stripe.unknown',
             status: 'FAILED',
           });
@@ -157,7 +157,7 @@ export class WebhookController implements OnModuleDestroy {
     @Headers('paypal-transmission-sig') transmissionSig: string,
     @Headers('paypal-transmission-time') transmissionTime: string,
   ): Promise<void> {
-    return await this.tracer.startActiveSpan(
+    return await this._tracer.startActiveSpan(
       'WebhookController.handlePayPalWebhook',
       async () => {
         try {
@@ -172,11 +172,11 @@ export class WebhookController implements OnModuleDestroy {
             body,
           );
           if (!isValid) {
-            this.metrics.incWebhookEvents({
+            this._metrics.incWebhookEvents({
               event_type: (body && body.event_type) || 'paypal.invalid_sig',
               status: 'FAILED',
             });
-            this.logger.warn(
+            this._logger.warn(
               `Invalid PayPal webhook signature for event: ${
                 body?.event_type || 'unknown'
               }`,
@@ -185,7 +185,7 @@ export class WebhookController implements OnModuleDestroy {
             return;
           }
 
-          this.logger.debug(
+          this._logger.debug(
             `Received PayPal webhook event: ${body.event_type}`,
             {
               ctx: 'WebhookController',
@@ -205,16 +205,16 @@ export class WebhookController implements OnModuleDestroy {
           };
 
           await this.webhookService.publish(normalized);
-          this.metrics.incWebhookEvents({
+          this._metrics.incWebhookEvents({
             event_type: body?.event_type || 'paypal.unknown',
             status: 'SUCCESS',
           });
         } catch (error: any) {
-          this.logger.error(
+          this._logger.error(
             `Failed to handle PayPal webhook: ${error.message}`,
             { error, ctx: 'WebhookController' },
           );
-          this.metrics.incWebhookEvents({
+          this._metrics.incWebhookEvents({
             event_type: body?.event_type || 'paypal.unknown',
             status: 'FAILED',
           });
@@ -234,7 +234,7 @@ export class WebhookController implements OnModuleDestroy {
     @Headers('x-razorpay-event-id') eventId: string,
     @Req() req: Request,
   ): Promise<void> {
-    return await this.tracer.startActiveSpan(
+    return await this._tracer.startActiveSpan(
       'WebhookController.handleRazorpayWebhook',
       async () => {
         let eventType = 'razorpay.unknown';
@@ -242,7 +242,7 @@ export class WebhookController implements OnModuleDestroy {
         try {
           const razorpaySecret = this.configService.razorpayWebhookSecret;
           if (!razorpaySecret) {
-            this.logger.error('Razorpay webhook secret is not configured', {
+            this._logger.error('Razorpay webhook secret is not configured', {
               ctx: 'WebhookController',
             });
             throw new HttpException(
@@ -254,7 +254,7 @@ export class WebhookController implements OnModuleDestroy {
           // const rawBody = (req as any).rawBody;
           const rawBody = req.body as Buffer;
           if (!rawBody) {
-            this.logger.warn('Failing fast rawBody not found in request', {
+            this._logger.warn('Failing fast rawBody not found in request', {
               ctx: WebhookController.name,
             });
             return;
@@ -266,11 +266,11 @@ export class WebhookController implements OnModuleDestroy {
             .digest('hex');
 
           if (signature !== expectedSignature) {
-            this.metrics.incWebhookEvents({
+            this._metrics.incWebhookEvents({
               event_type: 'unknown',
               status: 'FAILED',
             });
-            this.logger.warn(
+            this._logger.warn(
               `Invalid Razorpay webhook signature for razorpay webhook event`,
               { ctx: 'WebhookController' },
             );
@@ -281,7 +281,7 @@ export class WebhookController implements OnModuleDestroy {
           try {
             parsedBody = JSON.parse(rawBody.toString('utf8'));
           } catch (err) {
-            this.logger.warn('Could not parse Razorpay webhook body as JSON', {
+            this._logger.warn('Could not parse Razorpay webhook body as JSON', {
               ctx: WebhookController.name,
               rawLength: rawBody.length || undefined,
               err,
@@ -291,7 +291,7 @@ export class WebhookController implements OnModuleDestroy {
 
           eventType = parsedBody?.event;
 
-          this.logger.debug(`Received Razorpay webhook event: ${eventType}`, {
+          this._logger.debug(`Received Razorpay webhook event: ${eventType}`, {
             ctx: 'WebhookController',
             eventId:
               eventId ??
@@ -300,7 +300,7 @@ export class WebhookController implements OnModuleDestroy {
           });
 
           if (!this.RAZORPAY_ALLOWED_EVENTS.has(eventType)) {
-            this.logger.warn(`Razorpay event type not allowed: ${eventType}`, {
+            this._logger.warn(`Razorpay event type not allowed: ${eventType}`, {
               ctx: 'WebhookController',
             });
             return;
@@ -328,16 +328,16 @@ export class WebhookController implements OnModuleDestroy {
 
           await this.webhookService.publish(normalized);
 
-          this.metrics.incWebhookEvents({
+          this._metrics.incWebhookEvents({
             event_type: eventType,
             status: 'SUCCESS',
           });
         } catch (error: any) {
-          this.logger.error(
+          this._logger.error(
             `Failed to handle Razorpay webhook: ${error.message}`,
             { error, ctx: 'WebhookController' },
           );
-          this.metrics.incWebhookEvents({
+          this._metrics.incWebhookEvents({
             event_type: eventType,
             status: 'FAILED',
           });
@@ -366,7 +366,7 @@ export class WebhookController implements OnModuleDestroy {
         .update(certUrl)
         .digest('hex')}`;
 
-      let cert: string | null = await this.cacheService.get(certCacheKey);
+      let cert: string | null = await this._cache.get(certCacheKey);
 
       if (!cert) {
         // Not found in cache, fetch and store
@@ -374,22 +374,22 @@ export class WebhookController implements OnModuleDestroy {
         cert = response.data;
 
         if (!cert) {
-          this.logger.error(
+          this._logger.error(
             `Fetched empty or invalid cert from PayPal cert_url: ${certUrl}`,
             { ctx: 'WebhookController', url: certUrl },
           );
           return false;
         }
         // Set TTL to 12 hours (43200 seconds)
-        await this.cacheService.set(certCacheKey, cert, 43200);
-        this.logger.debug(
+        await this._cache.set(certCacheKey, cert, 43200);
+        this._logger.debug(
           `Fetched and cached PayPal cert for url: ${certUrl}`,
           {
             ctx: 'WebhookController',
           },
         );
       } else {
-        this.logger.debug(`PayPal cert cache hit for url: ${certUrl}`, {
+        this._logger.debug(`PayPal cert cache hit for url: ${certUrl}`, {
           ctx: 'WebhookController',
         });
       }
@@ -404,22 +404,25 @@ export class WebhookController implements OnModuleDestroy {
 
       const isValid = verifier.verify(cert, transmissionSig, 'base64');
       if (!isValid) {
-        this.logger.warn('PayPal signature verification failed.', {
+        this._logger.warn('PayPal signature verification failed.', {
           ctx: 'WebhookController',
         });
       }
       return isValid;
     } catch (error: any) {
-      this.logger.error(`Failed to verify PayPal signature: ${error.message}`, {
-        error,
-        ctx: 'WebhookController',
-      });
+      this._logger.error(
+        `Failed to verify PayPal signature: ${error.message}`,
+        {
+          error,
+          ctx: 'WebhookController',
+        },
+      );
       return false;
     }
   }
 
   onModuleDestroy(): void {
-    this.logger.debug('WebhookController destroyed', {
+    this._logger.debug('WebhookController destroyed', {
       ctx: 'WebhookController',
     });
   }
