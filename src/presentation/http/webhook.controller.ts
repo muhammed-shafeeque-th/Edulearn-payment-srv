@@ -22,11 +22,11 @@ import axios from 'axios';
 
 import { PaymentProvider } from '@domain/entities/payments';
 import { PaymentProviderEvent } from '@domain/events/payment-provider.event';
-import { ICacheService } from '@application/adaptors/redis.interface';
+import { ICacheService } from '@application/ports/redis.interface';
 import { BaseExceptionFilter } from '@nestjs/core';
-import { ILoggerService } from '@application/adaptors/logger.service';
-import { ITraceService } from '@application/adaptors/trace.service';
-import { IMetricService } from '@application/adaptors/metric.service';
+import { ILoggerService } from '@application/ports/logger.service';
+import { ITraceService } from '@application/ports/trace.service';
+import { IMetricService } from '@application/ports/metric.service';
 
 @Controller('api/webhooks')
 @UseFilters(BaseExceptionFilter)

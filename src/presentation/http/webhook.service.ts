@@ -1,5 +1,5 @@
-import { IKafkaProducer } from '@application/adaptors/kafka-producer.interface';
-import { ILoggerService } from '@application/adaptors/logger.service';
+import { IKafkaProducer } from '@application/ports/kafka-producer.interface';
+import { ILoggerService } from '@application/ports/logger.service';
 import { PaymentProviderEvent } from '@domain/events/payment-provider.event';
 import { Injectable } from '@nestjs/common';
 import { KafkaTopics } from 'src/shared/event-topics';
