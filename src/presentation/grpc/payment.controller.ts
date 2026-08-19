@@ -6,8 +6,6 @@ import {
   UsePipes,
 } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
-import { CreatePaymentUseCase } from '@application/use-cases/payments/create-payment.use-case';
-import { CreateProviderSessionUseCase } from '@application/use-cases/payments/create-provider-session.use-case';
 import { Roles } from '@infrastructure/auth/roles.decorator';
 import {
   CancelPaymentResponse,
@@ -31,16 +29,18 @@ import {
 } from './dtos/create-payment.dto';
 import { getMetadataValues } from 'src/shared/utils/get-metadata';
 import { IdempotencyException } from '@domain/exceptions/domain.exceptions';
-import { ResolvePaymentUseCase } from '@application/use-cases/payments/resolve-payment.use-case';
 import { mapPaymentProviderToProvider } from 'src/shared/utils/mapProviderToDomain';
 import { PaymentProvider } from '@domain/entities/payments';
 import {
   PaypalSession,
   RazorpaySession,
   StripeSession,
-} from '@application/adaptors/payment-strategy.interface';
+} from '@application/ports/payment-gateway-strategy.interface';
 import { CancelPaymentDto } from './dtos/cancel-payment.dto';
-import { CancelPaymentUseCase } from '@application/use-cases/payments/cancel-payment.use-case';
+import { ICreatePaymentUseCase } from '@application/use-cases/payments/interfaces/create-payment.interface';
+import { ICreateProviderSessionUseCase } from '@application/use-cases/payments/interfaces/create-provider-session.interface';
+import { ICancelPaymentUseCase } from '@application/use-cases/payments/interfaces/cancel-payment.interface';
+import { IResolvePaymentUseCase } from '@application/use-cases/payments/interfaces/resolve-payment.inteface';
 
 @Controller()
 @UseFilters(GrpcExceptionFilter)
@@ -48,20 +48,12 @@ import { CancelPaymentUseCase } from '@application/use-cases/payments/cancel-pay
 @UseInterceptors(LoggingInterceptor, MetricsInterceptor, TracingInterceptor)
 export class PaymentController {
   constructor(
-    private readonly createPaymentUseCase: CreatePaymentUseCase,
-    private readonly createProviderSessionUseCase: CreateProviderSessionUseCase,
-    private readonly cancelPaymentUseCase: CancelPaymentUseCase,
-    private readonly resolvePaymentUseCase: ResolvePaymentUseCase,
+    private readonly _createPaymentUseCase: ICreatePaymentUseCase,
+    private readonly _createProviderSessionUseCase: ICreateProviderSessionUseCase,
+    private readonly _cancelPaymentUseCase: ICancelPaymentUseCase,
+    private readonly _resolvePaymentUseCase: IResolvePaymentUseCase,
     // private readonly processRefundUseCase: ProcessRefundUseCase,
   ) {}
-
-  // private createErrorResponse(error: Error): ErrorResponse {
-  //   return {
-  //     code: error.name,
-  //     message: error.message,
-  //     details: [{ message: error.message, field: 'service' }],
-  //   };
-  // }
 
   @GrpcMethod('PaymentService', 'CreatePayment')
   @UsePipes(GrpcValidationPipe)
@@ -69,23 +61,14 @@ export class PaymentController {
   async createPayment(
     request: PaymentCreateDto,
   ): Promise<CreatePaymentResponse> {
-    try {
-      const response = await this.createPaymentUseCase.execute(request);
-      return {
-        success: {
-          paymentId: response.paymentId,
-          status: response.status,
-          orderId: response.orderId,
-        },
-      };
-    } catch (e: any) {
-      // if (e instanceof Error) {
-      //   return {
-      //     error: this.createErrorResponse(e),
-      //   };
-      // }
-      throw e;
-    }
+    const response = await this._createPaymentUseCase.execute(request);
+    return {
+      success: {
+        paymentId: response.paymentId,
+        status: response.status,
+        orderId: response.orderId,
+      },
+    };
   }
   @GrpcMethod('PaymentService', 'CreateProviderSession')
   @UsePipes(GrpcValidationPipe)
@@ -93,23 +76,14 @@ export class PaymentController {
   async createProviderSession(
     request: CreateProviderSessionDto,
   ): Promise<CreateProviderSessionResponse> {
-    try {
-      const response = await this.createProviderSessionUseCase.execute(request);
-      return {
-        success: {
-          paymentId: response.paymentId,
-          provider: mapPaymentProviderToProvider(response.provider),
-          ...this.mapProviderSession(response.provider, response.session),
-        },
-      };
-    } catch (e: any) {
-      // if (e instanceof Error) {
-      //   return {
-      //     error: this.createErrorResponse(e),
-      //   };
-      // }
-      throw e;
-    }
+    const response = await this._createProviderSessionUseCase.execute(request);
+    return {
+      success: {
+        paymentId: response.paymentId,
+        provider: mapPaymentProviderToProvider(response.provider),
+        ...this.mapProviderSession(response.provider, response.session),
+      },
+    };
   }
 
   @GrpcMethod('PaymentService', 'ResolvePayment')
@@ -124,27 +98,18 @@ export class PaymentController {
       throw new IdempotencyException('Idempotency Key is missing');
     }
 
-    try {
-      const response = await this.resolvePaymentUseCase.execute(
-        request,
-        idempotencyKey.toString(),
-      );
-      return {
-        success: {
-          paymentId: response.paymentId,
-          orderId: response.orderId,
-          status: response.providerStatus,
-          isResolved: response.isVerified,
-        },
-      };
-    } catch (e: any) {
-      // if (e instanceof Error) {
-      //   return {
-      //     error: this.createErrorResponse(e),
-      //   };
-      // }
-      throw e;
-    }
+    const response = await this._resolvePaymentUseCase.execute(
+      request,
+      idempotencyKey.toString(),
+    );
+    return {
+      success: {
+        paymentId: response.paymentId,
+        orderId: response.orderId,
+        status: response.providerStatus,
+        isResolved: response.isVerified,
+      },
+    };
   }
 
   @GrpcMethod('PaymentService', 'CancelPayment')
@@ -159,26 +124,17 @@ export class PaymentController {
       throw new IdempotencyException('Idempotency Key is missing');
     }
 
-    try {
-      const response = await this.cancelPaymentUseCase.execute(
-        request,
-        idempotencyKey.toString(),
-      );
-      return {
-        success: {
-          paymentId: response.paymentId,
-          providerOrderId: response.providerOrderId!,
-          status: response.status,
-        },
-      };
-    } catch (e: any) {
-      // if (e instanceof Error) {
-      //   return {
-      //     error: this.createErrorResponse(e),
-      //   };
-      // }
-      throw e;
-    }
+    const response = await this._cancelPaymentUseCase.execute(
+      request,
+      idempotencyKey.toString(),
+    );
+    return {
+      success: {
+        paymentId: response.paymentId,
+        providerOrderId: response.providerOrderId!,
+        status: response.status,
+      },
+    };
   }
 
   @GrpcMethod('PaymentService', 'HealthCheck')
