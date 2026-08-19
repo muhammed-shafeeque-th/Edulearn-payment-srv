@@ -5,20 +5,19 @@ import {
   Ctx,
   KafkaContext,
 } from '@nestjs/microservices';
-import { LoggingService } from '@infrastructure/observability/logging/logging.service';
-// import { MetricsService } from '@infrastructure/observability/metrics/metrics.service';
-import { TracingService } from '@infrastructure/observability/tracing/trace.service';
 import { KafkaTopics } from 'src/shared/event-topics';
 import { PaymentEventConsumer } from '@application/consumers/payment-event.consumer';
 import { PaymentProviderEvent } from '@domain/events/payment-provider.event';
+import { ILoggerService } from '@application/ports/logger.service';
+import { ITraceService } from '@application/ports/trace.service';
 
 @Controller()
 export class KafkaController {
   constructor(
     private readonly paymentWebhookEventConsumer: PaymentEventConsumer,
-    private readonly logger: LoggingService,
-    // private readonly metrics: MetricsService,
-    private readonly tracer: TracingService,
+    private readonly _logger: ILoggerService,
+    // private readonly _metrics: MetricsService,
+    private readonly _tracer: ITraceService,
   ) {}
 
   @EventPattern(KafkaTopics.PaymentProviderEvents)
@@ -26,7 +25,7 @@ export class KafkaController {
     @Payload() payload: PaymentProviderEvent,
     @Ctx() context: KafkaContext,
   ): Promise<void> {
-    await this.tracer.startActiveSpan(
+    await this._tracer.startActiveSpan(
       'KafkaController.handlePaymentProviderEvent',
       async (span) => {
         span.setAttributes({
@@ -34,7 +33,7 @@ export class KafkaController {
           provider: payload.provider,
         });
         try {
-          this.logger.info(
+          this._logger.info(
             `Received Kafka event ${KafkaTopics.PaymentProviderEvents} in handlePaymentProviderEvent`,
             {
               event: payload,
@@ -46,7 +45,7 @@ export class KafkaController {
 
           await this.paymentWebhookEventConsumer.handle(payload);
 
-          this.logger.info(
+          this._logger.info(
             `Kafka event processed successfully for ${KafkaTopics.PaymentProviderEvents} in handlePaymentProviderEvent`,
             {
               event: payload,
@@ -56,7 +55,7 @@ export class KafkaController {
             },
           );
         } catch (error) {
-          this.logger.error(
+          this._logger.error(
             `Error handling Kafka event in handlePaymentProviderEvent`,
             {
               error: (error as Error)?.message,
