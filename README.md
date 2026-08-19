@@ -158,21 +158,15 @@ This enables:
 
 Represents a payment transaction initiated by a user.
 
-### PaymentAttempt
+### PaymentProvider
 
-Tracks provider-specific payment attempts.
+Provider-specific metadata and references.
+
 
 ### Refund
 
 Represents refunded transactions.
 
-### Transaction
-
-Captures the lifecycle of a payment event.
-
-### PaymentProvider
-
-Provider-specific metadata and references.
 
 ---
 
@@ -321,6 +315,9 @@ Application
     │
     ▼
 Winston
+    │
+    ▼
+Fluent bit
     │
     ▼
 OTEL Collector
