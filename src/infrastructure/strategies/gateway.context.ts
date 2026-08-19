@@ -1,24 +1,24 @@
 import { Injectable } from '@nestjs/common';
-import { PaymentStrategy } from '@application/adaptors/payment-strategy.interface';
+import { PaymentGateway } from '@application/ports/payment-gateway-strategy.interface';
 
-type CreatePaymentType = PaymentStrategy['createPayment'];
+type CreatePaymentType = PaymentGateway['createPayment'];
 type PaymentArgs = Parameters<CreatePaymentType>;
 type PaymentReturn = ReturnType<CreatePaymentType>;
 
-type CreateRefundType = PaymentStrategy['refundPayment'];
+type CreateRefundType = PaymentGateway['refundPayment'];
 type RefundArgs = Parameters<CreateRefundType>;
 type RefundReturn = ReturnType<CreateRefundType>;
 
-type ResolvePaymentType = PaymentStrategy['resolvePayment'];
+type ResolvePaymentType = PaymentGateway['resolvePayment'];
 type ResolveArgs = Parameters<ResolvePaymentType>;
 type ResolveReturn = ReturnType<ResolvePaymentType>;
 
 @Injectable()
-export class StrategyContext {
-  private strategy?: PaymentStrategy;
+export class GatewayContext {
+  private strategy?: PaymentGateway;
   constructor() {}
 
-  setStrategy(strategy: PaymentStrategy): void {
+  setGateway(strategy: PaymentGateway): void {
     this.strategy = strategy;
   }
 
