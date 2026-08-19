@@ -5,14 +5,11 @@ import { IPaymentRepository } from '@domain/repositories/payment-repository.inte
 import { Money } from '@domain/value-objects/money';
 import { IdempotencyKey } from '@domain/value-objects/idempotency-key';
 import { PaymentEntity } from '@infrastructure/database/entities/payment.entity';
-import { TracingService } from '@infrastructure/observability/tracing/trace.service';
-import { LoggingService } from '@infrastructure/observability/logging/logging.service';
 import {
   Payment,
   PaymentProvider,
   PaymentStatus,
 } from '@domain/entities/payments';
-import { MetricsService } from '@infrastructure/observability/metrics/metrics.service';
 import { PaymentProviderSessionEntity } from '../entities/payment-provider-session.entity';
 import {
   PaymentProviderSession,
@@ -23,43 +20,46 @@ import {
   PaymentProviderRefund,
   ProviderRefundStatus,
 } from '@domain/entities/refund-provider.entity';
+import { ILoggerService } from '@application/ports/logger.service';
+import { ITraceService } from '@application/ports/trace.service';
+import { IMetricService } from '@application/ports/metric.service';
 
 @Injectable()
 export class PaymentTypeOrmRepository implements IPaymentRepository {
   constructor(
     @InjectRepository(PaymentEntity)
-    private readonly paymentRepo: Repository<PaymentEntity>,
+    private readonly _paymentRepo: Repository<PaymentEntity>,
 
     @InjectRepository(PaymentProviderSessionEntity)
-    private readonly sessionRepo: Repository<PaymentProviderSessionEntity>,
+    private readonly _sessionRepo: Repository<PaymentProviderSessionEntity>,
 
     // @InjectRepository(PaymentProviderRefundEntity)
     // private readonly refundRepo: Repository<PaymentProviderRefundEntity>,
 
-    private readonly logger: LoggingService,
-    private readonly tracer: TracingService,
-    private readonly metrics: MetricsService,
+    private readonly _logger: ILoggerService,
+    private readonly _tracer: ITraceService,
+    private readonly _metrics: IMetricService,
   ) {}
 
   async save(payment: Payment): Promise<void> {
-    return await this.tracer.startActiveSpan(
+    return await this._tracer.startActiveSpan(
       'PaymentTypeOrmRepository.save',
       async (span) => {
         span.setAttribute('payment.id', payment.id);
 
         try {
           const entity = this.toEntity(payment);
-          await this.paymentRepo.save(entity);
+          await this._paymentRepo.save(entity);
 
-          this.logger.debug(`Saved payment with ID ${payment.id}`, {
+          this._logger.debug(`Saved payment with ID ${payment.id}`, {
             ctx: 'PaymentTypeOrmRepository',
           });
 
           for (const session of payment.getProviderSessions()) {
-            await this.sessionRepo.save(this.toSessionEntity(session));
+            await this._sessionRepo.save(this.toSessionEntity(session));
           }
         } catch (error: any) {
-          this.logger.error(`Failed to save payment: ${error.message}`, {
+          this._logger.error(`Failed to save payment: ${error.message}`, {
             error,
             ctx: 'PaymentTypeOrmRepository',
           });
@@ -70,16 +70,16 @@ export class PaymentTypeOrmRepository implements IPaymentRepository {
   }
 
   async findById(id: string): Promise<Payment | null> {
-    return await this.tracer.startActiveSpan(
+    return await this._tracer.startActiveSpan(
       'PaymentTypeOrmRepository.findById',
       async (span) => {
         span.setAttribute('payment.id', id);
 
         try {
-          const end = this.metrics.observeDatabaseQueryLatency({
+          const end = this._metrics.observeDatabaseQueryLatency({
             operation: 'findById',
           });
-          const entity = await this.paymentRepo.findOne({
+          const entity = await this._paymentRepo.findOne({
             where: { id },
             relations: ['providerSessions', 'providerSessions.refund'],
           });
@@ -87,7 +87,7 @@ export class PaymentTypeOrmRepository implements IPaymentRepository {
           if (!entity) return null;
           return this.toDomain(entity);
         } catch (error: any) {
-          this.logger.error(
+          this._logger.error(
             `Failed to find payment by ID ${id}: ${error.message}`,
             { error, ctx: 'PaymentTypeOrmRepository' },
           );
@@ -101,18 +101,18 @@ export class PaymentTypeOrmRepository implements IPaymentRepository {
     now: Date,
     limit: number,
   ): Promise<Payment[]> {
-    return await this.tracer.startActiveSpan(
+    return await this._tracer.startActiveSpan(
       'PaymentTypeOrmRepository.findExpiredPendingPayments',
       async (span) => {
         span.setAttribute('now', now.toISOString());
         span.setAttribute('limit', limit);
 
         try {
-          const end = this.metrics.observeDatabaseQueryLatency({
+          const end = this._metrics.observeDatabaseQueryLatency({
             operation: 'findExpiredPendingPayments',
           });
 
-          const entities = await this.paymentRepo.find({
+          const entities = await this._paymentRepo.find({
             where: {
               status: PaymentStatus.PENDING,
               expiresAt: LessThanOrEqual(now),
@@ -126,7 +126,7 @@ export class PaymentTypeOrmRepository implements IPaymentRepository {
 
           return entities.map((entity) => this.toDomain(entity));
         } catch (error: any) {
-          this.logger.error(
+          this._logger.error(
             `Failed to find expired pending payments: ${error.message}`,
             { error, ctx: 'PaymentTypeOrmRepository' },
           );
@@ -139,16 +139,16 @@ export class PaymentTypeOrmRepository implements IPaymentRepository {
   async findByProviderOrderId(
     providerOrderId: string,
   ): Promise<Payment | null> {
-    return await this.tracer.startActiveSpan(
+    return await this._tracer.startActiveSpan(
       'PaymentTypeOrmRepository.findByProviderOrderId',
       async (span) => {
         span.setAttribute('provider.orderId', providerOrderId);
 
         try {
-          const end = this.metrics.observeDatabaseQueryLatency({
+          const end = this._metrics.observeDatabaseQueryLatency({
             operation: 'findByProviderOrderId',
           });
-          const entity = await this.paymentRepo.findOne({
+          const entity = await this._paymentRepo.findOne({
             where: { providerOrderId },
             relations: ['providerSessions', 'providerSessions.refund'],
           });
@@ -156,7 +156,7 @@ export class PaymentTypeOrmRepository implements IPaymentRepository {
           if (!entity) return null;
           return this.toDomain(entity);
         } catch (error: any) {
-          this.logger.error(
+          this._logger.error(
             `Failed to find payment by provider order id ${providerOrderId}: ${error.message}`,
             { error, ctx: 'PaymentTypeOrmRepository' },
           );
@@ -166,16 +166,16 @@ export class PaymentTypeOrmRepository implements IPaymentRepository {
     );
   }
   async findByOrderId(orderId: string): Promise<Payment | null> {
-    return await this.tracer.startActiveSpan(
+    return await this._tracer.startActiveSpan(
       'PaymentTypeOrmRepository.findByProviderOrderId',
       async (span) => {
         span.setAttribute('provider.orderId', orderId);
 
         try {
-          const end = this.metrics.observeDatabaseQueryLatency({
+          const end = this._metrics.observeDatabaseQueryLatency({
             operation: 'findByOrderId',
           });
-          const entity = await this.paymentRepo.findOne({
+          const entity = await this._paymentRepo.findOne({
             where: { orderId },
             relations: ['providerSessions', 'providerSessions.refund'],
           });
@@ -183,7 +183,7 @@ export class PaymentTypeOrmRepository implements IPaymentRepository {
           if (!entity) return null;
           return this.toDomain(entity);
         } catch (error: any) {
-          this.logger.error(
+          this._logger.error(
             `Failed to find payment by provider order id ${orderId}: ${error.message}`,
             { error, ctx: 'PaymentTypeOrmRepository' },
           );
@@ -195,14 +195,14 @@ export class PaymentTypeOrmRepository implements IPaymentRepository {
 
   async findPaymentWithSessions(paymentId: string): Promise<Payment | null> {
     try {
-      const entity = await this.paymentRepo.findOne({
+      const entity = await this._paymentRepo.findOne({
         where: { id: paymentId },
         relations: ['providerSessions', 'providerSessions.refund'],
       });
       if (!entity) return null;
       return this.toDomain(entity);
     } catch (error: any) {
-      this.logger.error(
+      this._logger.error(
         `Failed to find payment with sessions for ID ${paymentId}: ${error.message}`,
         { error, ctx: 'PaymentTypeOrmRepository' },
       );
@@ -211,15 +211,15 @@ export class PaymentTypeOrmRepository implements IPaymentRepository {
   }
 
   async findByIdempotencyKey(idempotencyKey: string): Promise<Payment | null> {
-    return await this.tracer.startActiveSpan(
+    return await this._tracer.startActiveSpan(
       'PaymentTypeOrmRepository.findByIdempotencyKey',
       async (span) => {
         span.setAttribute('idempotency.key', idempotencyKey);
         try {
-          const end = this.metrics.observeDatabaseQueryLatency({
+          const end = this._metrics.observeDatabaseQueryLatency({
             operation: 'findByIdempotencyKey',
           });
-          const entity = await this.paymentRepo.findOne({
+          const entity = await this._paymentRepo.findOne({
             where: { idempotencyKey },
             relations: ['providerSessions', 'providerSessions.refund'],
           });
@@ -227,7 +227,7 @@ export class PaymentTypeOrmRepository implements IPaymentRepository {
           if (!entity) return null;
           return this.toDomain(entity);
         } catch (error: any) {
-          this.logger.error(
+          this._logger.error(
             `Failed to find payment by idempotency key ${idempotencyKey}: ${error.message}`,
             { error, ctx: 'PaymentTypeOrmRepository' },
           );
@@ -238,19 +238,19 @@ export class PaymentTypeOrmRepository implements IPaymentRepository {
   }
 
   async update(payment: Payment): Promise<void> {
-    return await this.tracer.startActiveSpan(
+    return await this._tracer.startActiveSpan(
       'PaymentTypeOrmRepository.update',
       async (span) => {
         span.setAttribute('payment.id', payment.id);
         try {
           const entity = this.toEntity(payment);
-          await this.paymentRepo.save(entity);
+          await this._paymentRepo.save(entity);
 
-          this.logger.debug(`Updated payment with ID ${payment.id}`, {
+          this._logger.debug(`Updated payment with ID ${payment.id}`, {
             ctx: 'PaymentTypeOrmRepository',
           });
         } catch (error: any) {
-          this.logger.error(`Failed to update payment: ${error.message}`, {
+          this._logger.error(`Failed to update payment: ${error.message}`, {
             error,
             ctx: 'PaymentTypeOrmRepository',
           });
@@ -261,18 +261,18 @@ export class PaymentTypeOrmRepository implements IPaymentRepository {
   }
 
   async findByStatus(status: PaymentStatus): Promise<Payment[]> {
-    return await this.tracer.startActiveSpan(
+    return await this._tracer.startActiveSpan(
       'PaymentTypeOrmRepository.findByStatus',
       async (span) => {
         span.setAttribute('payment.status', status);
         try {
-          const entities = await this.paymentRepo.find({
+          const entities = await this._paymentRepo.find({
             where: { status },
             relations: ['providerSessions', 'providerSessions.refund'],
           });
           return entities.map((entity) => this.toDomain(entity));
         } catch (error: any) {
-          this.logger.error(
+          this._logger.error(
             `Failed to find payments by status ${status}: ${error.message}`,
             { error, ctx: 'PaymentTypeOrmRepository' },
           );
@@ -285,15 +285,18 @@ export class PaymentTypeOrmRepository implements IPaymentRepository {
   async updateProviderSession(session: PaymentProviderSession): Promise<void> {
     try {
       const entity = this.toSessionEntity(session);
-      await this.sessionRepo.update({ id: session.id }, entity);
-      this.logger.debug(`Updated provider session with ID ${session.id}`, {
+      await this._sessionRepo.update({ id: session.id }, entity);
+      this._logger.debug(`Updated provider session with ID ${session.id}`, {
         ctx: 'PaymentTypeOrmRepository',
       });
     } catch (error: any) {
-      this.logger.error(`Failed to update provider session: ${error.message}`, {
-        error,
-        ctx: 'PaymentTypeOrmRepository',
-      });
+      this._logger.error(
+        `Failed to update provider session: ${error.message}`,
+        {
+          error,
+          ctx: 'PaymentTypeOrmRepository',
+        },
+      );
       throw error;
     }
   }
@@ -303,17 +306,17 @@ export class PaymentTypeOrmRepository implements IPaymentRepository {
   }
 
   async deleteById(id: string): Promise<void> {
-    return await this.tracer.startActiveSpan(
+    return await this._tracer.startActiveSpan(
       'PaymentTypeOrmRepository.deleteById',
       async (span) => {
         span.setAttribute('payment.id', id);
         try {
-          await this.paymentRepo.delete({ id });
-          this.logger.debug(`Deleted payment with ID ${id}`, {
+          await this._paymentRepo.delete({ id });
+          this._logger.debug(`Deleted payment with ID ${id}`, {
             ctx: 'PaymentTypeOrmRepository',
           });
         } catch (error: any) {
-          this.logger.error(
+          this._logger.error(
             `Failed to delete payment by ID ${id}: ${error.message}`,
             { error, ctx: 'PaymentTypeOrmRepository' },
           );
