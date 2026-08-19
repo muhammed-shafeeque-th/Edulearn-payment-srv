@@ -20,11 +20,12 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
+    "proto:gen:client": "npx protoc --plugin=protoc-gen-ts_proto=\"D:\\Edulearn\\api-gateway\\node_modules\\.bin\\protoc-gen-ts_proto.cmd\" --ts_proto_out=./src/infrastructure/grpc/generated --ts_proto_opt=outputServices=grpc-js,esModuleInterop=true,nestJs=true -I ./node_modules/@edulearn/core/protos/payment ./node_modules/@edulearn/core/protos/payment/*.proto",
     "proto:gen": "npx protoc --plugin=protoc-gen-ts_proto=\"D:\\Edulearn\\api-gateway\\node_modules\\.bin\\protoc-gen-ts_proto.cmd\" --ts_proto_out=./src/infrastructure/grpc/generated --ts_proto_opt=outputServices=grpc-js,esModuleInterop=true,nestJs=true -I ./node_modules/@edulearn/core/protos/payment ./node_modules/@edulearn/core/protos/payment/*.proto"
   },
   "dependencies": {
     "@bufbuild/protobuf": "^2.12.1",
-    "@edulearn/nest": "1.0.23",
+    "@edulearn/nest": "1.0.24",
     "@grpc/grpc-js": "^1.13.4",
     "@grpc/proto-loader": "^0.8.1",
     "@nestjs/axios": "^4.0.0",
