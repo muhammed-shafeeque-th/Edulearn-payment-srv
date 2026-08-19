@@ -275,9 +275,7 @@ export interface CourseServiceController {
   getSectionsByCourse(
     request: GetSectionsByCourseRequest,
   ):
-    | Promise<SectionsResponse>
-    | Observable<SectionsResponse>
-    | SectionsResponse;
+    Promise<SectionsResponse> | Observable<SectionsResponse> | SectionsResponse;
 
   /** Lesson CRUD */
 
@@ -955,16 +953,12 @@ export interface EnrollmentServiceController {
   createProgress(
     request: CreateProgressRequest,
   ):
-    | Promise<ProgressResponse>
-    | Observable<ProgressResponse>
-    | ProgressResponse;
+    Promise<ProgressResponse> | Observable<ProgressResponse> | ProgressResponse;
 
   getProgress(
     request: GetProgressRequest,
   ):
-    | Promise<ProgressResponse>
-    | Observable<ProgressResponse>
-    | ProgressResponse;
+    Promise<ProgressResponse> | Observable<ProgressResponse> | ProgressResponse;
 
   updateLessonProgress(
     request: UpdateLessonProgressRequest,
