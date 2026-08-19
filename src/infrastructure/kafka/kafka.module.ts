@@ -1,9 +1,10 @@
 import { Module } from '@nestjs/common';
 import { KafkaProducerImpl } from './kafka-producer.service';
-import { IKafkaProducer } from '@application/adaptors/kafka-producer.interface';
+import { IKafkaProducer } from '@application/ports/kafka-producer.interface';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { AppConfigService } from '@infrastructure/config/config.service';
 import { KAFKA_CLIENT } from './constants';
+import { KafkaHealthService } from './kafka-heath.service';
 
 @Module({
   imports: [
@@ -30,7 +31,10 @@ import { KAFKA_CLIENT } from './constants';
       },
     ]),
   ],
-  providers: [{ provide: IKafkaProducer, useClass: KafkaProducerImpl }],
-  exports: [IKafkaProducer, ClientsModule],
+  providers: [
+    { provide: IKafkaProducer, useClass: KafkaProducerImpl },
+    KafkaHealthService,
+  ],
+  exports: [IKafkaProducer, ClientsModule, KafkaHealthService],
 })
 export class KafkaModule {}
