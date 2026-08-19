@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { IPaymentRepository } from '@domain/repositories/payment-repository.interface';
-import { IKafkaProducer } from '@application/adaptors/kafka-producer.interface';
+import { IKafkaProducer } from '@application/ports/kafka-producer.interface';
 import { PaymentProvider, PaymentStatus } from '@domain/entities/payments';
 import { ProviderSessionStatus } from '@domain/entities/payment-provider-sesssion.entity';
 import { KafkaTopics } from 'src/shared/event-topics';
@@ -8,8 +8,8 @@ import { v4 as uuidV4 } from 'uuid';
 import { OrderNotFoundException } from '@domain/exceptions/domain.exceptions';
 import { OrderPaymentFailedEvent } from '@domain/events/order-payment.events';
 import { BadRequestException } from 'src/shared/exceptions/infra.exceptions';
-import { ILoggerService } from '@application/adaptors/logger.service';
-import { ITraceService } from '@application/adaptors/trace.service';
+import { ILoggerService } from '@application/ports/logger.service';
+import { ITraceService } from '@application/ports/trace.service';
 import { IPaymentFailureUseCase } from '../interfaces/payment-failure.interface';
 
 @Injectable()
@@ -45,7 +45,9 @@ export class PaymentFailureUseCase implements IPaymentFailureUseCase {
           });
 
           const payment =
-            await this._paymentRepository.findByProviderOrderId(providerOrderId);
+            await this._paymentRepository.findByProviderOrderId(
+              providerOrderId,
+            );
 
           if (!payment) {
             this._logger.error(

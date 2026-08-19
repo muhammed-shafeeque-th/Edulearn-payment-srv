@@ -8,7 +8,7 @@ import { AppConfigService } from './config.service';
   imports: [
     NestConfigModule.forRoot({
       isGlobal: true,
-      ...(process.env.DOCKER_ENV != 'true'
+      ...(process.env.NODE_ENV === 'development'
         ? { envFilePath: '.env' }
         : { ignoreEnvFile: true }),
       cache: true, // Enable caching for better performance

@@ -1,25 +1,25 @@
 import { Injectable } from '@nestjs/common';
 import { IPaymentRepository } from '@domain/repositories/payment-repository.interface';
-import { StrategyContext } from '@infrastructure/strategies/strategy.context';
-import { StrategyFactory } from '@infrastructure/strategies/strategy.factory';
+import { GatewayContext } from '@infrastructure/strategies/gateway.context';
+import { GatewayFactory } from '@infrastructure/strategies/gateway.factory';
 import { PaymentProviderSession } from '@domain/entities/payment-provider-sesssion.entity';
 import { v4 as uuidV4 } from 'uuid';
-import { IExchangeRateService } from '@application/adaptors/exchange-rate.service';
+import { withRetry } from '@edulearn/core';
+import { IExchangeRateService } from '@application/ports/exchange-rate.service';
 import { Money } from '@domain/value-objects/money';
 import { normalizeAndConvertCurrency } from 'src/shared/utils/convert-currency';
 import { timeoutPromise } from 'src/shared/utils/_promise-timeout';
-import { retry } from 'ts-retry-promise';
 import { mapProviderToPaymentProvider } from 'src/shared/utils/mapProviderToDomain';
 import { PaymentProvider } from '@domain/entities/payments';
 import { KafkaTopics } from 'src/shared/event-topics';
 import { OrderPaymentInitiateEvent } from '@domain/events/order-payment.events';
-import { IKafkaProducer } from '@application/adaptors/kafka-producer.interface';
+import { IKafkaProducer } from '@application/ports/kafka-producer.interface';
 import { PaymentNotFoundException } from '@domain/exceptions/domain.exceptions';
-import { ILoggerService } from '@application/adaptors/logger.service';
-import { ITraceService } from '@application/adaptors/trace.service';
-import { IMetricService } from '@application/adaptors/metric.service';
-import { IOrderClient } from '@application/adaptors/order-client.interface';
-import { ICourseClient } from '@application/adaptors/course-client.interface';
+import { ILoggerService } from '@application/ports/logger.service';
+import { ITraceService } from '@application/ports/trace.service';
+import { IMetricService } from '@application/ports/metric.service';
+import { IOrderClient } from '@application/ports/order-client.interface';
+import { ICourseClient } from '@application/ports/course-client.interface';
 
 export interface CreateProviderSessionDto {
   paymentId: string;
@@ -29,15 +29,13 @@ export interface CreateProviderSessionDto {
 }
 
 @Injectable()
-export class CreateProviderSessionUseCase
-  implements CreateProviderSessionUseCase
-{
+export class CreateProviderSessionUseCase implements CreateProviderSessionUseCase {
   constructor(
     private readonly _paymentRepository: IPaymentRepository,
     private readonly _orderServiceClient: IOrderClient,
     private readonly _courseServiceClient: ICourseClient,
-    private readonly _strategyContext: StrategyContext,
-    private readonly _strategyFactory: StrategyFactory,
+    private readonly _strategyContext: GatewayContext,
+    private readonly _strategyFactory: GatewayFactory,
     private readonly _exchangeRateService: IExchangeRateService,
     private readonly _kafkaProducer: IKafkaProducer,
     private readonly _logger: ILoggerService,
@@ -53,6 +51,9 @@ export class CreateProviderSessionUseCase
         span.setAttributes({
           'payment.id': dto.paymentId,
           provider: provider,
+        });
+        this._logger.debug(`Request reach paymentId: ${dto.paymentId} `, {
+          ctx: CreateProviderSessionUseCase.name,
         });
 
         const payment = await this._paymentRepository.findById(dto.paymentId);
@@ -72,13 +73,13 @@ export class CreateProviderSessionUseCase
 
         const order = await timeoutPromise(
           () =>
-            retry(
+            withRetry(
               () =>
                 this._orderServiceClient.getOrder(
                   payment.orderId,
                   payment.userId,
                 ),
-              { retries: 2, delay: 1000, backoff: 'EXPONENTIAL' },
+              { maxAttempts: 2, initialDelay: 1000 },
             ),
           `Timeout while fetching order details for id ${payment.orderId}`,
         );
@@ -89,9 +90,9 @@ export class CreateProviderSessionUseCase
 
         const courseDetails = await timeoutPromise(
           () =>
-            retry(
+            withRetry(
               () => this._courseServiceClient.getCourseItems(orderedCourseIds),
-              { retries: 2, delay: 1000, backoff: 'EXPONENTIAL' },
+              { maxAttempts: 2, initialDelay: 1000 },
             ),
           `Timeout while fetching course details for courseIds: [${orderedCourseIds.join(', ')}]`,
         );
@@ -100,8 +101,8 @@ export class CreateProviderSessionUseCase
 
         const requestedCurrency = providerCurrencyMoney.getCurrency();
 
-        this._strategyContext.setStrategy(
-          this._strategyFactory.getStrategy(provider as PaymentProvider),
+        this._strategyContext.setGateway(
+          this._strategyFactory.getGateway(provider as PaymentProvider),
         );
 
         const isCurrencySupported =
@@ -153,7 +154,7 @@ export class CreateProviderSessionUseCase
           };
         });
 
-        const paymentResponse = await retry(
+        const paymentResponse = await withRetry(
           () =>
             this._strategyContext.createPayment({
               userId: payment.userId,
@@ -164,7 +165,7 @@ export class CreateProviderSessionUseCase
               successUrl: dto.successUrl,
               cancelUrl: dto.cancelUrl,
             }),
-          { retries: 2, delay: 1000, backoff: 'EXPONENTIAL' },
+          { maxAttempts: 2, initialDelay: 1000 },
         );
 
         const providerOrderId = paymentResponse?.providerOrderId;
@@ -212,6 +213,19 @@ export class CreateProviderSessionUseCase
           status: payment.status,
           gateway: provider as PaymentProvider,
         });
+
+        this._logger.debug(
+          `Request success with : ${JSON.stringify(
+            {
+              paymentId: payment.id,
+              provider: provider,
+              session: paymentResponse,
+            },
+            null,
+            2,
+          )} `,
+          { ctx: CreateProviderSessionUseCase.name },
+        );
 
         return {
           paymentId: payment.id,

@@ -1,21 +1,19 @@
 import { Injectable } from '@nestjs/common';
 import { IPaymentRepository } from '@domain/repositories/payment-repository.interface';
-import { IKafkaProducer } from '@application/adaptors/kafka-producer.interface';
+import { IKafkaProducer } from '@application/ports/kafka-producer.interface';
 import { PaymentStatus } from '@domain/entities/payments';
 import { KafkaTopics } from 'src/shared/event-topics';
 import { OrderPaymentTimeoutEvent } from '@domain/events/order-payment.events';
 import { v4 as uuidV4 } from 'uuid';
-import { ICacheService } from '@application/adaptors/redis.interface';
+import { ICacheService } from '@application/ports/redis.interface';
 import { ProviderSessionStatus } from '@domain/entities/payment-provider-sesssion.entity';
-import { ITraceService } from '@application/adaptors/trace.service';
-import { IMetricService } from '@application/adaptors/metric.service';
-import { ILoggerService } from '@application/adaptors/logger.service';
+import { ITraceService } from '@application/ports/trace.service';
+import { IMetricService } from '@application/ports/metric.service';
+import { ILoggerService } from '@application/ports/logger.service';
 import { IHandlePaymentTimeoutUseCase } from '../interfaces/handle-payment-timeout.inteface';
 
 @Injectable()
-export class HandlePaymentTimeoutUseCase
-  implements IHandlePaymentTimeoutUseCase
-{
+export class HandlePaymentTimeoutUseCase implements IHandlePaymentTimeoutUseCase {
   private readonly TIMEOUT_KEY_PREFIX = 'payments:timeout';
   private readonly LOCK_KEY_PREFIX = 'payments:timeout-lock';
   private readonly LOCK_TTL_MS = 30_000;

@@ -3,7 +3,7 @@ import { KafkaModule } from '@infrastructure/kafka/kafka.module';
 import { Module } from '@nestjs/common';
 import { WebhookController } from './webhook.controller';
 import { WebhookService } from './webhook.service';
-import { PaymentUseCaseModule } from '@application/use-cases/payments/payment-use-case.module';
+import { PaymentUseCaseModule } from '@application/use-cases/payments/impls/payment-use-case.module';
 import { RedisModule } from '@infrastructure/redis/redis.module';
 
 @Module({

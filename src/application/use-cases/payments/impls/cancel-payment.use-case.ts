@@ -1,23 +1,23 @@
 import { Injectable } from '@nestjs/common';
 import { IdempotencyKey } from '@domain/value-objects/idempotency-key';
 import { IPaymentRepository } from '@domain/repositories/payment-repository.interface';
-import { IKafkaProducer } from '@application/adaptors/kafka-producer.interface';
-import { retry } from 'ts-retry-promise';
+import { IKafkaProducer } from '@application/ports/kafka-producer.interface';
 import { PaymentStatus } from '@domain/entities/payments';
-import { StrategyFactory } from '@infrastructure/strategies/strategy.factory';
+import { GatewayFactory } from '@infrastructure/strategies/gateway.factory';
 import { CancelPaymentDto } from 'src/presentation/grpc/dtos/cancel-payment.dto';
 import { OrderNotFoundException } from '@domain/exceptions/domain.exceptions';
 import { RpcException } from '@nestjs/microservices';
+import { withRetry } from '@edulearn/core';
 import { mapProviderToPaymentProvider } from 'src/shared/utils/mapProviderToDomain';
 import { ProviderSessionStatus } from '@domain/entities/payment-provider-sesssion.entity';
 import { KafkaTopics } from 'src/shared/event-topics';
 import { OrderPaymentFailedEvent } from '@domain/events/order-payment.events';
 import { v4 as uuidV4 } from 'uuid';
 import { BadRequestException } from 'src/shared/exceptions/infra.exceptions';
-import { ILoggerService } from '@application/adaptors/logger.service';
-import { ITraceService } from '@application/adaptors/trace.service';
+import { ILoggerService } from '@application/ports/logger.service';
+import { ITraceService } from '@application/ports/trace.service';
 import { ICancelPaymentUseCase } from '../interfaces/cancel-payment.interface';
-import { IIdempotencyService } from '@application/adaptors/idempotency.service';
+import { IIdempotencyService } from '@application/ports/idempotency.service';
 
 @Injectable()
 export class CancelPaymentUseCase implements ICancelPaymentUseCase {
@@ -25,7 +25,7 @@ export class CancelPaymentUseCase implements ICancelPaymentUseCase {
     private readonly _paymentRepository: IPaymentRepository,
     private readonly _kafkaProducer: IKafkaProducer,
     private readonly _idempotencyService: IIdempotencyService,
-    private readonly _strategyFactory: StrategyFactory,
+    private readonly _strategyFactory: GatewayFactory,
     private readonly _logger: ILoggerService,
     private readonly _tracer: ITraceService,
   ) {}
@@ -78,15 +78,15 @@ export class CancelPaymentUseCase implements ICancelPaymentUseCase {
               }
 
               const paymentProvider =
-                this._strategyFactory.getStrategy(provider);
+                this._strategyFactory.getGateway(provider);
 
-              const response = await retry(
+              const response = await withRetry(
                 () =>
                   paymentProvider.cancelPayment(
                     dto.providerOrderId,
                     dto.reason,
                   ),
-                { retries: 3, delay: 1000, backoff: 'EXPONENTIAL' },
+                { maxAttempts: 3, initialDelay: 1000 },
               );
 
               if (!response.success) {

@@ -5,6 +5,7 @@ export abstract class ICacheService {
   abstract exists(key: string): Promise<boolean>;
   abstract lock(key: string, ttl: number): Promise<boolean>;
   abstract unlock(key: string): Promise<void>;
+  abstract ping(): Promise<void>;
   abstract delByPattern(pattern: string): Promise<void>;
 
   /**

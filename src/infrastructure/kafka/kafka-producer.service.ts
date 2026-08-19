@@ -4,15 +4,15 @@ import {
   OnModuleDestroy,
   OnModuleInit,
 } from '@nestjs/common';
-import { LoggingService } from 'src/infrastructure/observability/logging/logging.service';
-import { TracingService } from '../observability/tracing/trace.service';
 import { ClientKafka } from '@nestjs/microservices';
 import { lastValueFrom } from 'rxjs';
 import { KAFKA_CLIENT } from './constants';
 import {
   IKafkaProducer,
   KafkaMessageObject,
-} from '@application/adaptors/kafka-producer.interface';
+} from '@application/ports/kafka-producer.interface';
+import { ILoggerService } from '@application/ports/logger.service';
+import { ITraceService } from '@application/ports/trace.service';
 
 @Injectable()
 export class KafkaProducerImpl
@@ -20,22 +20,22 @@ export class KafkaProducerImpl
 {
   constructor(
     @Inject(KAFKA_CLIENT) private readonly kafkaClient: ClientKafka,
-    private readonly logger: LoggingService,
-    private readonly tracer: TracingService,
+    private readonly _logger: ILoggerService,
+    private readonly _tracer: ITraceService,
   ) {}
 
   async onModuleInit() {
     await this.kafkaClient.connect();
-    this.logger.info(`Kafka client connected ${KafkaProducerImpl.name}`);
+    this._logger.info(`Kafka client connected ${KafkaProducerImpl.name}`);
   }
 
   async onModuleDestroy() {
     await this.kafkaClient.close();
-    this.logger.info(`Kafka client disconnected ${KafkaProducerImpl.name}`);
+    this._logger.info(`Kafka client disconnected ${KafkaProducerImpl.name}`);
   }
 
   async produce<T = any>(topic: string, message: KafkaMessageObject<T>) {
-    return await this.tracer.startActiveSpan(
+    return await this._tracer.startActiveSpan(
       'KafkaProducerImpl.produce',
       async (span) => {
         try {
@@ -44,12 +44,12 @@ export class KafkaProducerImpl
 
           // emit() returns an Observable, so we convert to Promise
           await lastValueFrom(this.kafkaClient.emit(topic, message));
-          // this.logger.info(
+          // this._logger.info(
           //   `Message send to topic ${topic}: ${JSON.stringify(message)}`,
           //   { ctx: KafkaProducerImpl.name },
           // );
         } catch (error: any) {
-          this.logger.error(
+          this._logger.error(
             `Failed to send message to topic ${topic}: ${error.message}`,
             { ctx: KafkaProducerImpl.name, error },
           );

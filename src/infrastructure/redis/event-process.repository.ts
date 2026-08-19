@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { ICacheService } from '@application/adaptors/redis.interface';
-import { TracingService } from '@infrastructure/observability/tracing/trace.service';
-import { LoggingService } from '@infrastructure/observability/logging/logging.service';
+import { ICacheService } from '@application/ports/redis.interface';
 import { IEventProcessRepository } from '@domain/repositories/event-process-repository.interface';
+import { ILoggerService } from '@application/ports/logger.service';
+import { ITraceService } from '@application/ports/trace.service';
 
 @Injectable()
 export class EventProcessRepositoryImpl implements IEventProcessRepository {
@@ -10,12 +10,12 @@ export class EventProcessRepositoryImpl implements IEventProcessRepository {
 
   constructor(
     private readonly redisService: ICacheService,
-    private readonly logger: LoggingService,
-    private readonly tracer: TracingService,
+    private readonly _logger: ILoggerService,
+    private readonly _tracer: ITraceService,
   ) {}
 
   async isProcessed(eventId: string): Promise<boolean> {
-    return this.tracer.startActiveSpan(
+    return this._tracer.startActiveSpan(
       'EventProcessRepositoryImpl.isProcessed',
       async (span) => {
         const key = this.KEY_PREFIX + eventId;
@@ -23,7 +23,7 @@ export class EventProcessRepositoryImpl implements IEventProcessRepository {
         try {
           const result = await this.redisService.get(key);
           const processed = result === '1';
-          this.logger.debug(
+          this._logger.debug(
             `Checked processed status for eventId ${eventId}: ${processed}`,
             {
               ctx: 'EventProcessRepositoryImpl',
@@ -31,7 +31,7 @@ export class EventProcessRepositoryImpl implements IEventProcessRepository {
           );
           return processed;
         } catch (error: any) {
-          this.logger.error(
+          this._logger.error(
             `Failed to check processed status for eventId ${eventId}: ${error.message}`,
             {
               error,
@@ -45,7 +45,7 @@ export class EventProcessRepositoryImpl implements IEventProcessRepository {
   }
 
   async markAsProcessed(eventId: string): Promise<boolean> {
-    return this.tracer.startActiveSpan(
+    return this._tracer.startActiveSpan(
       'EventProcessRepositoryImpl.markAsProcessed',
       async (span) => {
         const key = this.KEY_PREFIX + eventId;
@@ -58,12 +58,15 @@ export class EventProcessRepositoryImpl implements IEventProcessRepository {
           // redisService.set(key, value, ttl?)
           await this.redisService.set(key, '1', expirySeconds);
 
-          this.logger.debug(`Marked eventId ${eventId} as processed in Redis`, {
-            ctx: 'EventProcessRepositoryImpl',
-          });
+          this._logger.debug(
+            `Marked eventId ${eventId} as processed in Redis`,
+            {
+              ctx: 'EventProcessRepositoryImpl',
+            },
+          );
           return true;
         } catch (error: any) {
-          this.logger.error(
+          this._logger.error(
             `Failed to mark eventId ${eventId} as processed: ${error.message}`,
             {
               error,

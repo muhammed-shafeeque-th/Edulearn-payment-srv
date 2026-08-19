@@ -1,18 +1,18 @@
-import { PaymentFailureUseCase } from '@application/use-cases/payments/payment-failure.use-case';
-import { SuccessPaymentUseCase } from '@application/use-cases/payments/success-payment.use-case';
+import { ILoggerService } from '@application/ports/logger.service';
+import { IPaymentFailureUseCase } from '@application/use-cases/payments/interfaces/payment-failure.interface';
+import { ISuccessPaymentUseCase } from '@application/use-cases/payments/interfaces/success-payment.interface';
 import { PaymentProvider } from '@domain/entities/payments';
 import { PaymentProviderEvent } from '@domain/events/payment-provider.event';
 import { IEventProcessRepository } from '@domain/repositories/event-process-repository.interface';
-import { LoggingService } from '@infrastructure/observability/logging/logging.service';
 import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class PaymentEventConsumer {
   constructor(
     private readonly eventProcessRepository: IEventProcessRepository,
-    private readonly successPaymentUseCase: SuccessPaymentUseCase,
-    private readonly failedPaymentUseCase: PaymentFailureUseCase,
-    private readonly logger: LoggingService,
+    private readonly successPaymentUseCase: ISuccessPaymentUseCase,
+    private readonly failedPaymentUseCase: IPaymentFailureUseCase,
+    private readonly _logger: ILoggerService,
   ) {}
 
   async handle(event: PaymentProviderEvent) {
@@ -21,7 +21,7 @@ export class PaymentEventConsumer {
       event.providerEventId,
     );
     if (exists) {
-      this.logger.debug(
+      this._logger.debug(
         `[Event Already Processed] Skipping: ${event.providerEventId} (${event.provider})`,
         { ctx: 'PaymentEventConsumer' },
       );
@@ -43,13 +43,13 @@ export class PaymentEventConsumer {
           break;
         }
         default:
-          this.logger.warn(`Unknown provider in webhook: ${event.provider}`, {
+          this._logger.warn(`Unknown provider in webhook: ${event.provider}`, {
             ctx: 'PaymentEventConsumer',
             provider: event.provider,
           });
       }
     } catch (error) {
-      this.logger.error(
+      this._logger.error(
         `Error handling event: ${event.providerEventId}: ${(error as Error)?.message}`,
         {
           event,
@@ -64,7 +64,7 @@ export class PaymentEventConsumer {
   }
 
   private async handleStripe(event: PaymentProviderEvent) {
-    this.logger.debug(`Handling Stripe webhook: ${event.providerEventType}`, {
+    this._logger.debug(`Handling Stripe webhook: ${event.providerEventType}`, {
       eventId: event.providerEventId,
     });
     const providerOrderId = event.providerPaymentId!;
@@ -90,13 +90,16 @@ export class PaymentEventConsumer {
       return;
     }
 
-    this.logger.warn(`Unhandled Stripe eventType: ${event.providerEventType}`, {
-      eventId: event.providerEventId,
-    });
+    this._logger.warn(
+      `Unhandled Stripe eventType: ${event.providerEventType}`,
+      {
+        eventId: event.providerEventId,
+      },
+    );
   }
 
   private async handlePaypal(event: PaymentProviderEvent) {
-    this.logger.debug(`Handling PayPal webhook: ${event.providerEventType}`, {
+    this._logger.debug(`Handling PayPal webhook: ${event.providerEventType}`, {
       eventId: event.providerEventId,
     });
     const providerOrderId = event.providerPaymentId!;
@@ -120,15 +123,21 @@ export class PaymentEventConsumer {
       return;
     }
 
-    this.logger.warn(`Unhandled PayPal eventType: ${event.providerEventType}`, {
-      eventId: event.providerEventId,
-    });
+    this._logger.warn(
+      `Unhandled PayPal eventType: ${event.providerEventType}`,
+      {
+        eventId: event.providerEventId,
+      },
+    );
   }
 
   private async handleRazorpay(event: PaymentProviderEvent) {
-    this.logger.debug(`Handling Razorpay webhook: ${event.providerEventType}`, {
-      eventId: event.providerEventId,
-    });
+    this._logger.debug(
+      `Handling Razorpay webhook: ${event.providerEventType}`,
+      {
+        eventId: event.providerEventId,
+      },
+    );
     const providerOrderId = event.providerPaymentId!;
 
     if (
@@ -153,7 +162,7 @@ export class PaymentEventConsumer {
       return;
     }
 
-    this.logger.warn(
+    this._logger.warn(
       `Unhandled Razorpay eventType: ${event.providerEventType}`,
       { eventId: event.providerEventId },
     );

@@ -5359,9 +5359,7 @@ export interface UserServiceController {
   listUserCart(
     request: ListCartRequest,
   ):
-    | Promise<ListCartResponse>
-    | Observable<ListCartResponse>
-    | ListCartResponse;
+    Promise<ListCartResponse> | Observable<ListCartResponse> | ListCartResponse;
 
   /** Wishlist */
 

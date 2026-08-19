@@ -2,14 +2,14 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { IRefundRepository } from '@domain/repositories/refund-repository.interface';
-import { ICacheService } from '@application/adaptors/redis.interface';
-import { TracingService } from '@infrastructure/observability/tracing/trace.service';
-import { LoggingService } from '@infrastructure/observability/logging/logging.service';
+import { ICacheService } from '@application/ports/redis.interface';
 import { PaymentProviderRefundEntity } from '../entities/payment_provider_refund.entity';
 import {
   PaymentProviderRefund,
   ProviderRefundStatus,
 } from '@domain/entities/refund-provider.entity';
+import { ILoggerService } from '@application/ports/logger.service';
+import { ITraceService } from '@application/ports/trace.service';
 
 @Injectable()
 export class RefundTypeOrmRepository implements IRefundRepository {
@@ -17,14 +17,14 @@ export class RefundTypeOrmRepository implements IRefundRepository {
 
   constructor(
     @InjectRepository(PaymentProviderRefundEntity)
-    private readonly repo: Repository<PaymentProviderRefundEntity>,
+    private readonly _repo: Repository<PaymentProviderRefundEntity>,
     private readonly redis: ICacheService,
-    private readonly logger: LoggingService,
-    private readonly tracer: TracingService,
+    private readonly _logger: ILoggerService,
+    private readonly _tracer: ITraceService,
   ) {}
 
   async save(refund: PaymentProviderRefund): Promise<void> {
-    return await this.tracer.startActiveSpan(
+    return await this._tracer.startActiveSpan(
       'RefundRepository.save',
       async (span) => {
         span.setAttributes({
@@ -33,8 +33,8 @@ export class RefundTypeOrmRepository implements IRefundRepository {
         });
         try {
           const entity = this.toEntity(refund);
-          await this.repo.save(entity);
-          this.logger.debug(`Saved refund with ID ${refund.id}`, {
+          await this._repo.save(entity);
+          this._logger.debug(`Saved refund with ID ${refund.id}`, {
             ctx: 'RefundRepository',
           });
 
@@ -45,7 +45,7 @@ export class RefundTypeOrmRepository implements IRefundRepository {
             this.CACHE_TTL,
           );
         } catch (error: any) {
-          this.logger.error(`Failed to save refund: ${error.message}`, {
+          this._logger.error(`Failed to save refund: ${error.message}`, {
             error,
             ctx: 'RefundRepository',
           });
@@ -56,7 +56,7 @@ export class RefundTypeOrmRepository implements IRefundRepository {
   }
 
   async findById(id: string): Promise<PaymentProviderRefund | null> {
-    return await this.tracer.startActiveSpan(
+    return await this._tracer.startActiveSpan(
       'RefundRepository.findById',
       async (span) => {
         span.setAttribute('refund.id', id);
@@ -64,14 +64,14 @@ export class RefundTypeOrmRepository implements IRefundRepository {
           const cacheKey = `cache:refund:${id}`;
           const cached = await this.redis.get(cacheKey);
           if (cached) {
-            this.logger.debug(`Cache hit for refund ${id}`, {
+            this._logger.debug(`Cache hit for refund ${id}`, {
               ctx: 'RefundRepository',
             });
             const entity = JSON.parse(cached);
             return this.toDomain(entity);
           }
 
-          const entity = await this.repo.findOne({ where: { id } });
+          const entity = await this._repo.findOne({ where: { id } });
           if (!entity) return null;
 
           await this.redis.set(
@@ -81,7 +81,7 @@ export class RefundTypeOrmRepository implements IRefundRepository {
           );
           return this.toDomain(entity);
         } catch (error: any) {
-          this.logger.error(
+          this._logger.error(
             `Failed to find refund by ID ${id}: ${error.message}`,
             { error, ctx: 'RefundRepository' },
           );
@@ -94,7 +94,7 @@ export class RefundTypeOrmRepository implements IRefundRepository {
   async findByIdempotencyKey(
     idempotencyKey: string,
   ): Promise<PaymentProviderRefund | null> {
-    return await this.tracer.startActiveSpan(
+    return await this._tracer.startActiveSpan(
       'RefundRepository.findByIdempotencyKey',
       async (span) => {
         span.setAttribute('idempotency.key', idempotencyKey);
@@ -102,7 +102,7 @@ export class RefundTypeOrmRepository implements IRefundRepository {
           const cacheKey = `cache:refund:idempotency:${idempotencyKey}`;
           const cached = await this.redis.get(cacheKey);
           if (cached) {
-            this.logger.debug(
+            this._logger.debug(
               `Cache hit for refund idempotency ${idempotencyKey}`,
               { ctx: 'RefundRepository' },
             );
@@ -110,7 +110,9 @@ export class RefundTypeOrmRepository implements IRefundRepository {
             return this.toDomain(entity);
           }
 
-          const entity = await this.repo.findOne({ where: { idempotencyKey } });
+          const entity = await this._repo.findOne({
+            where: { idempotencyKey },
+          });
           if (!entity) return null;
 
           await this.redis.set(
@@ -120,7 +122,7 @@ export class RefundTypeOrmRepository implements IRefundRepository {
           );
           return this.toDomain(entity);
         } catch (error: any) {
-          this.logger.error(
+          this._logger.error(
             `Failed to find refund by idempotency key ${idempotencyKey}: ${error.message}`,
             { error, ctx: 'RefundRepository' },
           );
@@ -131,7 +133,7 @@ export class RefundTypeOrmRepository implements IRefundRepository {
   }
 
   async update(refund: PaymentProviderRefund): Promise<void> {
-    return await this.tracer.startActiveSpan(
+    return await this._tracer.startActiveSpan(
       'RefundRepository.update',
       async (span) => {
         span.setAttributes({
@@ -140,8 +142,8 @@ export class RefundTypeOrmRepository implements IRefundRepository {
         });
         try {
           const entity = this.toEntity(refund);
-          await this.repo.update({ id: refund.id }, entity);
-          this.logger.debug(`Updated refund with ID ${refund.id}`, {
+          await this._repo.update({ id: refund.id }, entity);
+          this._logger.debug(`Updated refund with ID ${refund.id}`, {
             ctx: 'RefundRepository',
           });
 
@@ -159,7 +161,7 @@ export class RefundTypeOrmRepository implements IRefundRepository {
             this.CACHE_TTL,
           );
         } catch (error: any) {
-          this.logger.error(`Failed to update refund: ${error.message}`, {
+          this._logger.error(`Failed to update refund: ${error.message}`, {
             error,
             ctx: 'RefundRepository',
           });
@@ -171,7 +173,7 @@ export class RefundTypeOrmRepository implements IRefundRepository {
 
   async invalidateCache(key: string): Promise<void> {
     await this.redis.del(key);
-    this.logger.debug(`Invalidated cache for key ${key}`, {
+    this._logger.debug(`Invalidated cache for key ${key}`, {
       ctx: 'RefundRepository',
     });
   }

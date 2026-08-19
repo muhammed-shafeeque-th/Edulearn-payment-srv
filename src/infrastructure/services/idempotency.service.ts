@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { ICacheService } from '@application/adaptors/redis.interface';
+import { ICacheService } from '@application/ports/redis.interface';
 import { IdempotencyKey } from '@domain/value-objects/idempotency-key';
 import { IdempotencyException } from '@domain/exceptions/idempotency.exception';
 

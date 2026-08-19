@@ -1,6 +1,6 @@
 import { AuthModule } from '@infrastructure/auth/auth.module';
 import { KafkaModule } from '@infrastructure/kafka/kafka.module';
-import { StrategyModule } from '@infrastructure/strategies/strategy.module';
+import { GatewayModule } from '@infrastructure/strategies/gateway.module';
 import { Module } from '@nestjs/common';
 import { IdempotencyService } from '@infrastructure/services/idempotency.service';
 import { DatabaseRepositoryModule } from '@infrastructure/database/database-repository.module';
@@ -21,7 +21,7 @@ import { IPaymentFailureUseCase } from '../interfaces/payment-failure.interface'
 import { IResolvePaymentUseCase } from '../interfaces/resolve-payment.inteface';
 import { ICancelPaymentUseCase } from '../interfaces/cancel-payment.interface';
 import { IHandlePaymentTimeoutUseCase } from '../interfaces/handle-payment-timeout.inteface';
-import { IIdempotencyService } from '@application/adaptors/idempotency.service';
+import { IIdempotencyService } from '@application/ports/idempotency.service';
 
 @Module({
   imports: [
@@ -29,7 +29,7 @@ import { IIdempotencyService } from '@application/adaptors/idempotency.service';
     GrpcClientsModule,
     KafkaModule,
     RedisModule,
-    StrategyModule,
+    GatewayModule,
     AuthModule,
 
     ExchangeModule,

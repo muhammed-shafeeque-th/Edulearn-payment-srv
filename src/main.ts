@@ -2,16 +2,17 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { AppConfigService } from '@infrastructure/config/config.service';
 import { Transport } from '@nestjs/microservices';
-import { LoggingService } from '@infrastructure/observability/logging/logging.service';
 import path from 'path';
+import { getProtoPath, PROTO_ROOT_DIR } from '@edulearn/core';
 import bodyParser from 'body-parser';
+import { ILoggerService } from '@application/ports/logger.service';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {});
 
   const config = app.get(AppConfigService);
 
-  const logger = app.get(LoggingService);
+  const logger = app.get(ILoggerService);
 
   // Setup Prometheus metrics
   app.useLogger(logger);
@@ -25,7 +26,10 @@ async function bootstrap() {
     options: {
       url: `0.0.0.0:${config.grpcPort}`,
       package: 'payment_service',
-      protoPath: path.join(process.cwd(), 'proto', 'payment_service.proto'),
+      protoPath: [path.join(getProtoPath('payment'))],
+      loader: {
+        includeDirs: [path.join(PROTO_ROOT_DIR, 'payment')],
+      },
       maxSendMessageLength: 10 * 1024 * 1024, // 10MB
       maxReceiveMessageLength: 10 * 1024 * 1024, // 10MB
       keepalive: {
@@ -68,9 +72,9 @@ async function bootstrap() {
   // Start all registered microservices (gRPC, Kafka)
   await app.startAllMicroservices();
   // Start HTTP server for webhooks
-  await app.listen(config.apiPort);
+  await app.listen(config.httpPort);
   console.log(
-    `Payment Service running on port ${config.apiPort} (HTTP) and ${config.grpcPort} (gRPC)`,
+    `Payment Service running on port ${config.httpPort} (HTTP) and ${config.grpcPort} (gRPC)`,
   );
 }
 bootstrap();

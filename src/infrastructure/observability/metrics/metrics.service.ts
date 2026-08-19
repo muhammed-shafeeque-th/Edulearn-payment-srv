@@ -1,49 +1,51 @@
 import { Injectable } from '@nestjs/common';
-import { Counter, Histogram, Gauge } from 'prom-client';
+import { CounterMetric, GaugeMetric, HistogramMetric } from '@edulearn/core';
+import { MetricsService } from '@edulearn/nest';
+import { IMetricService } from '@application/ports/metric.service';
 
 @Injectable()
-export class MetricsService {
-  private readonly paymentCounter: Counter<string>;
-  readonly paymentLatency: Histogram<string>;
-  private readonly webhookEvents: Counter<string>;
-  private readonly kafkaConsumerLag: Gauge<string>;
-  private readonly databaseQueryLatency: Histogram<string>;
-  private readonly redisCacheHitRate: Counter<string>;
+export class MetricService implements IMetricService {
+  private readonly paymentCounter: CounterMetric;
+  readonly paymentLatency: HistogramMetric;
+  private readonly webhookEvents: CounterMetric;
+  private readonly kafkaConsumerLag: GaugeMetric;
+  private readonly databaseQueryLatency: HistogramMetric;
+  private readonly redisCacheHitRate: CounterMetric;
 
-  constructor() {
-    this.paymentCounter = new Counter({
+  public constructor(private readonly _metric: MetricsService) {
+    this.paymentCounter = this._metric.counter({
       name: 'payment_service_requests_total',
       help: 'Total number of payment and refund requests processed',
       labelNames: ['method', 'status', 'gateway'],
     });
 
-    this.paymentLatency = new Histogram({
+    this.paymentLatency = this._metric.histogram({
       name: 'payment_service_request_latency_seconds',
       help: 'Latency of payment and refund requests in seconds',
       labelNames: ['method', 'gateway'],
       buckets: [0.1, 0.5, 1, 2, 5, 10],
     });
 
-    this.webhookEvents = new Counter({
+    this.webhookEvents = this._metric.counter({
       name: 'payment_service_webhook_events_total',
       help: 'Total number of webhook events processed',
       labelNames: ['event_type', 'status'],
     });
 
-    this.kafkaConsumerLag = new Gauge({
+    this.kafkaConsumerLag = this._metric.gauge({
       name: 'payment_service_kafka_consumer_lag',
       help: 'Kafka consumer lag for payment-service topics',
       labelNames: ['topic', 'partition'],
     });
 
-    this.databaseQueryLatency = new Histogram({
+    this.databaseQueryLatency = this._metric.histogram({
       name: 'payment_service_database_query_latency_seconds',
       help: 'Latency of database queries in seconds',
       labelNames: ['operation'],
       buckets: [0.01, 0.05, 0.1, 0.5, 1, 2],
     });
 
-    this.redisCacheHitRate = new Counter({
+    this.redisCacheHitRate = this._metric.counter({
       name: 'payment_service_redis_cache_hit_total',
       help: 'Total number of cache hits and misses in Redis',
       labelNames: ['operation', 'status'],

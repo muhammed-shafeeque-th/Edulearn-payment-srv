@@ -1,140 +1,54 @@
 import { Injectable } from '@nestjs/common';
-import { RedisService as NestRedisService } from '@liaoliaots/nestjs-redis';
-import { ICacheService } from '@application/adaptors/redis.interface';
-import { Redis } from 'ioredis';
-import { TracingService } from '@infrastructure/observability/tracing/trace.service';
-import { LoggingService } from '@infrastructure/observability/logging/logging.service';
+import { ITraceService } from '@application/ports/trace.service';
+import { CacheService } from '@edulearn/nest';
+import { ICacheService } from '@application/ports/redis.interface';
+import { ILoggerService } from '@application/ports/logger.service';
 
 @Injectable()
 export class RedisClientImpl implements ICacheService {
-  private readonly client: Redis;
-
   constructor(
-    private readonly redisService: NestRedisService,
-    private readonly logger: LoggingService,
-    private readonly tracer: TracingService,
-  ) {
-    this.client = this.redisService.getOrThrow();
-    this.client.on('error', (error) => {
-      this.logger.error(`Redis error: ${error.message}`, {
-        error,
-        ctx: 'RedisClient',
-      });
-    });
+    private readonly _cache: CacheService,
+    private readonly _logger: ILoggerService,
+    private readonly _tracer: ITraceService,
+  ) {}
+
+  async set<T>(key: string, value: T, ttl = 3600): Promise<void> {
+    return this._cache.set(key, value, ttl);
   }
 
-  async set(key: string, value: string, ttl?: number): Promise<void> {
-    return await this.tracer.startActiveSpan(
-      'RedisClient.set',
-      async (span) => {
-        span.setAttribute('cache.key', key);
-        try {
-          if (ttl) {
-            await this.client.set(key, value, 'EX', ttl);
-          } else {
-            await this.client.set(key, value);
-          }
-          this.logger.debug(`Set key ${key} in Redis`, { ctx: 'RedisClient' });
-        } catch (error: any) {
-          this.logger.warn(`Failed to set key ${key}: ${error.message}`, {
-            error,
-            ctx: 'RedisClient',
-          });
-          throw error;
-        }
-      },
-    );
+  async get<T>(key: string): Promise<T | null> {
+    return this._cache.get(key);
   }
 
-  async get(key: string): Promise<string | null> {
-    return await this.tracer.startActiveSpan(
-      'RedisClient.get',
-      async (span) => {
-        span.setAttribute('cache.key', key);
-        try {
-          const value = await this.client.get(key);
-          if (value) {
-            this.logger.debug(`Cache hit for key ${key} `, {
-              ctx: 'RedisClient',
-            });
-          } else {
-            this.logger.debug(`Cache miss for  key ${key}`, {
-              ctx: 'RedisClient',
-            });
-          }
-          return value;
-        } catch (error: any) {
-          this.logger.warn(`Failed to get key ${key}: ${error.message}`, {
-            error,
-            ctx: 'RedisClient',
-          });
-          throw error;
-        }
-      },
-    );
+  async ping(): Promise<void> {
+    this._cache.ping();
   }
 
   async del(key: string): Promise<void> {
-    return await this.tracer.startActiveSpan(
-      'RedisClient.del',
-      async (span) => {
-        span.setAttribute('cache.key', key);
-        try {
-          await this.client.del(key);
-          this.logger.debug(`Deleted key ${key} from Redis`, {
-            ctx: 'RedisClient',
-          });
-        } catch (error: any) {
-          this.logger.warn(`Failed to delete key ${key}: ${error.message}`, {
-            error,
-            ctx: 'RedisClient',
-          });
-          throw error;
-        }
-      },
-    );
+    return this._cache.delete(key);
   }
 
   async exists(key: string): Promise<boolean> {
-    return await this.tracer.startActiveSpan(
-      'RedisClient.exists',
-      async (span) => {
-        span.setAttribute('cache.key', key);
-        try {
-          const exists = (await this.client.exists(key)) === 1;
-          this.logger.debug(
-            `Key ${key} ${exists ? 'exists' : 'does not exist'} in Redis`,
-            {
-              ctx: 'RedisClient',
-            },
-          );
-          return exists;
-        } catch (error: any) {
-          this.logger.warn(`Failed to check key ${key}: ${error.message}`, {
-            error,
-            ctx: 'RedisClient',
-          });
-          throw error;
-        }
-      },
-    );
+    return this._cache.exists(key);
   }
 
   async lock(key: string, ttl: number): Promise<boolean> {
-    return await this.tracer.startActiveSpan(
+    return await this._tracer.startActiveSpan(
       'RedisClient.lock',
       async (span) => {
         span.setAttribute('cache.key', key);
         try {
-          const result = await this.client.set(key, 'locked', 'PX', ttl, 'NX');
+          const result = await this._cache
+            .getClient()
+            .set(key, 'locked', 'PX', ttl, 'NX');
           const acquired = result === 'OK';
-          this.logger.debug(
+          this._logger.debug(
             `Lock ${acquired ? 'acquired' : 'failed'} for key ${key}`,
             { ctx: 'RedisClient' },
           );
           return acquired;
         } catch (error: any) {
-          this.logger.warn(
+          this._logger.warn(
             `Failed to acquire lock for key ${key}: ${error.message}`,
             { error, ctx: 'RedisClient' },
           );
@@ -145,15 +59,15 @@ export class RedisClientImpl implements ICacheService {
   }
 
   async unlock(key: string): Promise<void> {
-    return await this.tracer.startActiveSpan(
+    return await this._tracer.startActiveSpan(
       'RedisClient.unlock',
       async (span) => {
         span.setAttribute('cache.key', key);
         try {
-          await this.client.del(key);
-          this.logger.debug(`Unlocked key ${key}`, { ctx: 'RedisClient' });
+          await this._cache.getClient().del(key);
+          this._logger.debug(`Unlocked key ${key}`, { ctx: 'RedisClient' });
         } catch (error: any) {
-          this.logger.warn(`Failed to unlock key ${key}: ${error.message}`, {
+          this._logger.warn(`Failed to unlock key ${key}: ${error.message}`, {
             error,
             ctx: 'RedisClient',
           });
@@ -163,67 +77,43 @@ export class RedisClientImpl implements ICacheService {
     );
   }
 
-  async mget(keys: string[]): Promise<(string | null)[]> {
-    return await this.tracer.startActiveSpan(
-      'RedisClient.mget',
-      async (span) => {
-        span.setAttribute('cache.keys', keys);
-        try {
-          const values = await this.client.mget(...keys);
-          this.logger.debug(
-            `Batch retrieved keys ${keys.join(', ')} from Redis`,
-            {
-              ctx: 'RedisClient',
-            },
-          );
-          return values;
-        } catch (error: any) {
-          this.logger.warn(`Failed to batch get keys: ${error.message}`, {
-            error,
-            ctx: 'RedisClient',
-          });
-          throw error;
-        }
-      },
-    );
+  async mget<T>(keys: string[]): Promise<(T | null)[]> {
+    return this._cache.getMultiple(keys);
   }
 
   async delByPattern(pattern: string): Promise<void> {
-    return await this.tracer.startActiveSpan(
+    return await this._tracer.startActiveSpan(
       'RedisClient.delByPattern',
       async (span) => {
         span.setAttribute('cache.pattern', pattern);
 
         try {
-          const stream = this.client.scanStream({
+          const stream = this._cache.getClient().scanStream({
             match: pattern,
             count: 100, // adjust batch size depending on key volume
           });
 
           let deletedCount = 0;
-          const pipeline = this.client.pipeline();
+          const pipeline = this._cache.getClient().pipeline();
 
           for await (const keys of stream) {
-            if (keys.length) {
-              // Batch delete keys using pipeline
+            if (Array.isArray(keys) && keys.length) {
               keys.forEach((key: string) => pipeline.del(key));
               const results = await pipeline.exec();
               deletedCount += Array.isArray(results) ? results.length : 0;
             }
           }
 
-          this.logger.debug(
+          this._logger.debug(
             `Deleted ${deletedCount} keys matching pattern "${pattern}"`,
             { ctx: 'RedisClient' },
           );
         } catch (error: any) {
-          this.logger.warn(
+          this._logger.warn(
             `Failed to delete keys by pattern "${pattern}": ${error.message}`,
             { error, ctx: 'RedisClient' },
           );
           throw error;
-        } finally {
-          span.end();
         }
       },
     );
@@ -233,20 +123,20 @@ export class RedisClientImpl implements ICacheService {
    * Set an expiration in seconds to a key.
    */
   async expire(key: string, ttl: number): Promise<boolean> {
-    return await this.tracer.startActiveSpan(
+    return await this._tracer.startActiveSpan(
       'RedisClient.expire',
       async (span) => {
         span.setAttribute('cache.key', key);
         span.setAttribute('cache.ttl', ttl);
         try {
-          const result = await this.client.expire(key, ttl);
+          const result = await this._cache.getClient().expire(key, ttl);
           const success = result === 1;
-          this.logger.debug(`Set expire (${ttl}s) on key ${key}: ${success}`, {
+          this._logger.debug(`Set expire (${ttl}s) on key ${key}: ${success}`, {
             ctx: 'RedisClient',
           });
           return success;
         } catch (error: any) {
-          this.logger.warn(
+          this._logger.warn(
             `Failed to set expire on key ${key}: ${error.message}`,
             { error, ctx: 'RedisClient' },
           );
@@ -260,18 +150,18 @@ export class RedisClientImpl implements ICacheService {
    * Get the TTL for a key (in seconds).
    */
   async getTTL(key: string): Promise<number> {
-    return await this.tracer.startActiveSpan(
+    return await this._tracer.startActiveSpan(
       'RedisClient.getTTL',
       async (span) => {
         span.setAttribute('cache.key', key);
         try {
-          const ttl = await this.client.ttl(key);
-          this.logger.debug(`TTL for key ${key} is ${ttl} seconds`, {
+          const ttl = await this._cache.ttl(key);
+          this._logger.debug(`TTL for key ${key} is ${ttl} seconds`, {
             ctx: 'RedisClient',
           });
           return ttl;
         } catch (error: any) {
-          this.logger.warn(
+          this._logger.warn(
             `Failed to get TTL for key ${key}: ${error.message}`,
             { error, ctx: 'RedisClient' },
           );

@@ -1,20 +1,20 @@
 import { Injectable } from '@nestjs/common';
 import { IdempotencyKey } from '@domain/value-objects/idempotency-key';
 import { IPaymentRepository } from '@domain/repositories/payment-repository.interface';
-// import { IKafkaProducer } from '@application/adaptors/kafka-producer.interface';
-import { retry } from 'ts-retry-promise';
+// import { IKafkaProducer } from '@application/ports/kafka-producer.interface';
+import { withRetry } from '@edulearn/core';
 import { PaymentProvider } from '@domain/entities/payments';
-import { StrategyFactory } from '@infrastructure/strategies/strategy.factory';
+import { GatewayFactory } from '@infrastructure/strategies/gateway.factory';
 import { ResolvePaymentDto } from 'src/presentation/grpc/dtos/resolve-payment.dto';
 import { mapProviderToPaymentProvider } from 'src/shared/utils/mapProviderToDomain';
-import { ResolvePaymentRequest } from '@application/adaptors/payment-strategy.interface';
+import { ResolvePaymentRequest } from '@application/ports/payment-gateway-strategy.interface';
 import { ProviderSessionStatus } from '@domain/entities/payment-provider-sesssion.entity';
 import { PaymentNotFoundException } from '@domain/exceptions/domain.exceptions';
-import { ILoggerService } from '@application/adaptors/logger.service';
-import { ITraceService } from '@application/adaptors/trace.service';
-import { IMetricService } from '@application/adaptors/metric.service';
+import { ILoggerService } from '@application/ports/logger.service';
+import { ITraceService } from '@application/ports/trace.service';
+import { IMetricService } from '@application/ports/metric.service';
 import { IResolvePaymentUseCase } from '../interfaces/resolve-payment.inteface';
-import { IIdempotencyService } from '@application/adaptors/idempotency.service';
+import { IIdempotencyService } from '@application/ports/idempotency.service';
 // import { KafkaTopics } from 'src/shared/event-topics';
 // import { OrderPaymentSuccessEvent } from '@domain/events/domain-events';
 // import { v4 as uuidV4 } from 'uuid';
@@ -25,7 +25,7 @@ export class ResolvePaymentUseCase implements IResolvePaymentUseCase {
     private readonly _paymentRepository: IPaymentRepository,
     //
     private readonly _idempotencyService: IIdempotencyService,
-    private readonly _strategyFactory: StrategyFactory,
+    private readonly _strategyFactory: GatewayFactory,
     private readonly _logger: ILoggerService,
     private readonly _tracer: ITraceService,
     private readonly _metrics: IMetricService,
@@ -54,7 +54,7 @@ export class ResolvePaymentUseCase implements IResolvePaymentUseCase {
 
           const idempotency_Key = new IdempotencyKey(idempotencyKey);
           return this._idempotencyService.check(idempotency_Key, async () => {
-            const paypalStrategy = this._strategyFactory.getStrategy(provider);
+            const paypalGateway = this._strategyFactory.getGateway(provider);
 
             const payment = await this._paymentRepository.findByProviderOrderId(
               providerOrderId!,
@@ -85,11 +85,11 @@ export class ResolvePaymentUseCase implements IResolvePaymentUseCase {
               ResolvePayload = { ...dto.stripe! };
             }
 
-            const ResolveResult = await retry(
+            const ResolveResult = await withRetry(
               () => {
-                return paypalStrategy.resolvePayment(ResolvePayload!);
+                return paypalGateway.resolvePayment(ResolvePayload!);
               },
-              { retries: 3, delay: 1000, backoff: 'EXPONENTIAL' },
+              { maxAttempts: 3, initialDelay: 1000 },
             );
 
             const session = payment.getSessionByProviderSessionId(

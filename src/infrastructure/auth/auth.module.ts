@@ -7,6 +7,7 @@ import { GrpcJwtStrategy } from './grpc-jwt.strategy';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { GrpcJwtAuthGuard } from './grpc-jwt-auth.guard';
 import { RoleGuard } from './role.auth';
+import type { StringValue } from 'ms';
 
 @Module({
   imports: [
@@ -15,7 +16,7 @@ import { RoleGuard } from './role.auth';
       inject: [AppConfigService],
       useFactory: (configService: AppConfigService) => ({
         secret: configService.jwtSecret,
-        signOptions: { expiresIn: configService.jwtExpiresIn },
+        signOptions: { expiresIn: configService.jwtExpiresIn as StringValue },
       }),
     }),
   ],

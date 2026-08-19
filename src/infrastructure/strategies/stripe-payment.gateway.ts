@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import Stripe from 'stripe';
 import {
-  PaymentStrategy,
+  PaymentGateway,
   PaymentResult,
   PaymentStatus,
   PaymentRequest,
@@ -12,20 +12,20 @@ import {
   StripeResolveRequest,
   PaymentFailureResult,
   RefundResult,
-} from '@application/adaptors/payment-strategy.interface';
+} from '@application/ports/payment-gateway-strategy.interface';
 import { AppConfigService } from '@infrastructure/config/config.service';
-import { LoggingService } from '@infrastructure/observability/logging/logging.service';
-import { MetricsService } from '@infrastructure/observability/metrics/metrics.service';
-import { TracingService } from '@infrastructure/observability/tracing/trace.service';
 import {
   NotFoundException,
   OrderNotFoundException,
 } from '@domain/exceptions/domain.exceptions';
 import { PaymentProvider } from '@domain/entities/payments';
+import { ILoggerService } from '@application/ports/logger.service';
+import { ITraceService } from '@application/ports/trace.service';
+import { IMetricService } from '@application/ports/metric.service';
 // import { IExchangeRateService } from '@domain/interfaces/exchange-rate.service';
 
 @Injectable()
-export class StripePaymentStrategy implements PaymentStrategy {
+export class StripePaymentGateway implements PaymentGateway {
   readonly gateway = PaymentProvider.STRIPE;
   private readonly stripe: Stripe;
   private readonly supportedCurrencies: string[] = [
@@ -40,10 +40,10 @@ export class StripePaymentStrategy implements PaymentStrategy {
 
   constructor(
     private readonly configService: AppConfigService,
-    // private readonly exchangeRateService: IExchangeRateService,
-    private readonly logger: LoggingService,
-    private readonly metrics: MetricsService,
-    private readonly tracer: TracingService,
+    // private readonly _exchangeRateService: IExchangeRateService,
+    private readonly _logger: ILoggerService,
+    private readonly _tracer: ITraceService,
+    private readonly _metrics: IMetricService,
   ) {
     this.stripe = new Stripe(this.configService.stripeSecretKey, {
       apiVersion: '2025-08-27.basil',
@@ -59,8 +59,8 @@ export class StripePaymentStrategy implements PaymentStrategy {
   }
 
   async createPayment(request: PaymentRequest): Promise<PaymentSessionResult> {
-    return this.tracer.startActiveSpan(
-      'StripePaymentStrategy.createPayment',
+    return this._tracer.startActiveSpan(
+      'StripePaymentGateway.createPayment',
       async (span) => {
         span.setAttributes({
           'user.id': request.userId,
@@ -93,10 +93,10 @@ export class StripePaymentStrategy implements PaymentStrategy {
           }));
 
           if (!request.customerEmail) {
-            this.logger.warn(
+            this._logger.warn(
               'No customer email provided in the payment request',
               {
-                ctx: 'StripePaymentStrategy',
+                ctx: 'StripePaymentGateway',
                 userId: request.userId,
               },
             );
@@ -148,8 +148,8 @@ export class StripePaymentStrategy implements PaymentStrategy {
 
           const status = this.mapStripeStatus(session.status || '');
 
-          this.logger.debug('Stripe payment processed successfully', {
-            ctx: 'StripePaymentStrategy',
+          this._logger.debug('Stripe payment processed successfully', {
+            ctx: 'StripePaymentGateway',
             sessionId: session.id,
             status,
             userId: request.userId,
@@ -174,9 +174,9 @@ export class StripePaymentStrategy implements PaymentStrategy {
             url: session.url ?? '',
           };
         } catch (error: any) {
-          this.logger.error('Stripe payment failed', {
+          this._logger.error('Stripe payment failed', {
             error: error?.message,
-            ctx: 'StripePaymentStrategy',
+            ctx: 'StripePaymentGateway',
             userId: request.userId,
             stripeErrorCode: error?.code,
           });
@@ -195,8 +195,8 @@ export class StripePaymentStrategy implements PaymentStrategy {
     return false;
   }
   // async createPayment<T = any>(request: PaymentRequest): Promise<T> {
-  //   return await this.tracer.startActiveSpan(
-  //     'StripePaymentStrategy.createPayment',
+  //   return await this._tracer.startActiveSpan(
+  //     'StripePaymentGateway.createPayment',
   //     async (span) => {
   //       span.setAttributes({
   //         'user.id': request.userId,
@@ -218,7 +218,7 @@ export class StripePaymentStrategy implements PaymentStrategy {
   //           // throw new Error(
   //           //   `Currency ${request.amount.getCurrency()} not supported by Stripe`,
   //           // );
-  //           this.logger.info(
+  //           this._logger.info(
   //             `Currency ${request.amount.getCurrency()} not supported by Stripe, converting to USD...`,
   //           );
   //           request.amount.setCurrency('USD');
@@ -249,8 +249,8 @@ export class StripePaymentStrategy implements PaymentStrategy {
 
   //         const status = this.mapStripeStatus(paymentIntent.status);
 
-  //         this.logger.debug(`Stripe payment processed successfully`, {
-  //           ctx: 'StripePaymentStrategy',
+  //         this._logger.debug(`Stripe payment processed successfully`, {
+  //           ctx: 'StripePaymentGateway',
   //           transactionId: paymentIntent.id,
   //           status,
   //           userId: request.userId,
@@ -273,9 +273,9 @@ export class StripePaymentStrategy implements PaymentStrategy {
   //           },
   //         } as T;
   //       } catch (error: any) {
-  //         this.logger.error(`Stripe payment failed`, {
+  //         this._logger.error(`Stripe payment failed`, {
   //           error: error.message,
-  //           ctx: 'StripePaymentStrategy',
+  //           ctx: 'StripePaymentGateway',
   //           userId: request.userId,
   //           stripeErrorCode: error.code,
   //         });
@@ -289,8 +289,8 @@ export class StripePaymentStrategy implements PaymentStrategy {
   // }
 
   async refundPayment(request: RefundRequest): Promise<RefundResult> {
-    return this.tracer.startActiveSpan(
-      'StripePaymentStrategy.processRefund',
+    return this._tracer.startActiveSpan(
+      'StripePaymentGateway.processRefund',
       async (span) => {
         span.setAttributes({
           'transaction.id': request.providerPaymentId,
@@ -328,8 +328,8 @@ export class StripePaymentStrategy implements PaymentStrategy {
 
           const status = this.mapStripeRefundStatus(refund.status);
 
-          this.logger.debug('Stripe refund processed successfully', {
-            ctx: 'StripePaymentStrategy',
+          this._logger.debug('Stripe refund processed successfully', {
+            ctx: 'StripePaymentGateway',
             transactionId: refund.id,
             status,
             originalTransactionId: request.providerPaymentId,
@@ -345,16 +345,16 @@ export class StripePaymentStrategy implements PaymentStrategy {
             refundId: refund.id,
             currency: refund.currency,
             amount: refund.amount,
-            status: 'pending',
+            status: 'pending' as const,
             metadata: {
               stripeStatus: refund.status,
               amount: refund.amount,
             },
           };
         } catch (error: any) {
-          this.logger.error('Stripe refund failed', {
+          this._logger.error('Stripe refund failed', {
             error: error?.message,
-            ctx: 'StripePaymentStrategy',
+            ctx: 'StripePaymentGateway',
             transactionId: request.providerPaymentId,
             stripeErrorCode: error?.code,
           });
@@ -368,8 +368,8 @@ export class StripePaymentStrategy implements PaymentStrategy {
   }
 
   async getPaymentStatus(transactionId: string): Promise<PaymentResult> {
-    return this.tracer.startActiveSpan(
-      'StripePaymentStrategy.resolvePayment',
+    return this._tracer.startActiveSpan(
+      'StripePaymentGateway.resolvePayment',
       async (span) => {
         span.setAttributes({
           'transaction.id': transactionId,
@@ -398,9 +398,9 @@ export class StripePaymentStrategy implements PaymentStrategy {
             },
           };
         } catch (error: any) {
-          this.logger.error('Failed to verify Stripe payment', {
+          this._logger.error('Failed to verify Stripe payment', {
             error: error?.message,
-            ctx: 'StripePaymentStrategy',
+            ctx: 'StripePaymentGateway',
             transactionId,
           });
 
@@ -419,8 +419,8 @@ export class StripePaymentStrategy implements PaymentStrategy {
   async resolvePayment(
     request: ResolvePaymentRequest,
   ): Promise<ResolvePaymentResponse> {
-    return this.tracer.startActiveSpan(
-      'StripePaymentStrategy.resolvePayment',
+    return this._tracer.startActiveSpan(
+      'StripePaymentGateway.resolvePayment',
       async (span) => {
         // Type guard for StripeResolveRequest
         function isStripeResolveRequest(req: any): req is StripeResolveRequest {
@@ -476,9 +476,9 @@ export class StripePaymentStrategy implements PaymentStrategy {
             isVerified: session.payment_status === 'paid',
           };
         } catch (error: any) {
-          this.logger.error('Failed to verify Stripe payment', {
+          this._logger.error('Failed to verify Stripe payment', {
             error: error?.message,
-            ctx: 'StripePaymentStrategy',
+            ctx: 'StripePaymentGateway',
           });
 
           throw error;
@@ -488,7 +488,7 @@ export class StripePaymentStrategy implements PaymentStrategy {
   }
 
   /**
-   * Mark a payment as failed/cancelled through Stripe and update internal tracking/log/metrics.
+   * Mark a payment as failed/cancelled through Stripe and update internal tracking/log/_metrics.
    * Handles Stripe PaymentIntents and Checkout Sessions robustly.
    * @param transactionId Stripe PaymentIntent id or Checkout session id
    * @param reason Optional reason for failing the payment
@@ -498,8 +498,8 @@ export class StripePaymentStrategy implements PaymentStrategy {
     transactionId: string,
     reason?: string,
   ): Promise<PaymentFailureResult> {
-    return this.tracer.startActiveSpan(
-      'StripePaymentStrategy.cancelPayment',
+    return this._tracer.startActiveSpan(
+      'StripePaymentGateway.cancelPayment',
       async (span) => {
         span.setAttributes({
           'transaction.id': transactionId,
@@ -564,10 +564,10 @@ export class StripePaymentStrategy implements PaymentStrategy {
 
           // If already canceled, don't attempt again.
           if (paymentIntent.status === 'canceled') {
-            this.logger.warn(
+            this._logger.warn(
               `Stripe PaymentIntent ${paymentIntent.id} already cancelled.`,
               {
-                ctx: 'StripePaymentStrategy',
+                ctx: 'StripePaymentGateway',
                 transactionId: paymentIntent.id,
               },
             );
@@ -594,13 +594,16 @@ export class StripePaymentStrategy implements PaymentStrategy {
 
           const status = this.mapStripeStatus(canceledIntent.status);
 
-          this.logger.debug('Stripe payment intent cancelled (cancelPayment)', {
-            ctx: 'StripePaymentStrategy',
-            transactionId: canceledIntent.id,
-            status,
-            originalStatus: paymentIntent.status,
-            reason,
-          });
+          this._logger.debug(
+            'Stripe payment intent cancelled (cancelPayment)',
+            {
+              ctx: 'StripePaymentGateway',
+              transactionId: canceledIntent.id,
+              status,
+              originalStatus: paymentIntent.status,
+              reason,
+            },
+          );
 
           this.recordMetrics(
             'fail_payment',
@@ -614,9 +617,9 @@ export class StripePaymentStrategy implements PaymentStrategy {
             success: true,
           };
         } catch (error: any) {
-          this.logger.error('Stripe cancelPayment failed', {
+          this._logger.error('Stripe cancelPayment failed', {
             error: error?.message,
-            ctx: 'StripePaymentStrategy',
+            ctx: 'StripePaymentGateway',
             transactionId,
             reason,
             stripeErrorCode: error?.code,
@@ -637,9 +640,9 @@ export class StripePaymentStrategy implements PaymentStrategy {
       await this.stripe.balance.retrieve();
       return true;
     } catch (error: any) {
-      this.logger.warn('Stripe service unavailable', {
+      this._logger.warn('Stripe service unavailable', {
         error: error?.message,
-        ctx: 'StripePaymentStrategy',
+        ctx: 'StripePaymentGateway',
       });
       return false;
     }
@@ -673,11 +676,11 @@ export class StripePaymentStrategy implements PaymentStrategy {
   //   if (this.supportedCurrencies.includes(currency.toLowerCase())) {
   //     return;
   //   }
-  //   this.logger.info(
+  //   this._logger.info(
   //     `Currency ${currency} not supported by Stripe, converting to USD...`,
   //   );
   //   try {
-  //     const rate = await this.exchangeRateService.getRate(currency, 'USD');
+  //     const rate = await this._exchangeRateService.getRate(currency, 'USD');
 
   //     if (typeof rate !== 'number' || isNaN(rate)) {
   //       throw new Error('USD rate not found');
@@ -689,7 +692,7 @@ export class StripePaymentStrategy implements PaymentStrategy {
   //     request.amount.setCurrency('USD');
   //     return;
   //   } catch (error) {
-  //     this.logger.error(
+  //     this._logger.error(
   //       'Could not convert currency to USD: ' + (error as Error)?.message,
   //     );
   //     throw new Error('Currency conversion failed');
@@ -716,12 +719,12 @@ export class StripePaymentStrategy implements PaymentStrategy {
   ): void {
     const duration = (Date.now() - startTime) / 1000;
 
-    this.metrics.paymentLatency.observe(
+    this._metrics.paymentLatency.observe(
       { method: operation, gateway: this.gateway },
       duration,
     );
 
-    this.metrics.incPaymentCounter({
+    this._metrics.incPaymentCounter({
       method: operation,
       gateway: this.gateway,
       status: success.toString(),

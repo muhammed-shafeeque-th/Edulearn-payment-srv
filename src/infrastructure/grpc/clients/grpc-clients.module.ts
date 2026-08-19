@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { join } from 'path';
+import path from 'path';
+import { getProtoPath, PROTO_ROOT_DIR } from '@edulearn/core';
 import { UserClient } from './user/user.client';
 import { GRPC_USER_CLIENT_TOKEN } from './user/constants';
 import { AppConfigService } from '@infrastructure/config/config.service';
@@ -9,9 +10,9 @@ import { OrderClient } from './order/order.client';
 import { GRPC_COURSE_CLIENT_TOKEN } from './course/constants';
 import { CourseClient } from './course/course.client';
 import { RedisModule } from '@infrastructure/redis/redis.module';
-import { IOrderClient } from './order/order-client.interface';
-import { IUserClient } from './user/user-client.interface';
-import { ICourseClient } from './course/course-client.interface';
+import { IOrderClient } from '../../../application/ports/order-client.interface';
+import { IUserClient } from '../../../application/ports/user-client.interface';
+import { ICourseClient } from '../../../application/ports/course-client.interface';
 
 @Module({
   imports: [
@@ -24,7 +25,10 @@ import { ICourseClient } from './course/course-client.interface';
             transport: Transport.GRPC,
             options: {
               package: 'user_service',
-              protoPath: join(process.cwd(), 'proto', 'user_service.proto'),
+              protoPath: [getProtoPath('user')],
+              loader: {
+                includeDirs: [path.join(PROTO_ROOT_DIR, 'user')],
+              },
               // protoPath: join(__dirname, '..', 'proto', 'user_service.proto'),
               url: `${config.userGrpcUrl}`,
             },
@@ -37,8 +41,10 @@ import { ICourseClient } from './course/course-client.interface';
             transport: Transport.GRPC,
             options: {
               package: 'order_service',
-              protoPath: join(process.cwd(), 'proto', 'order_service.proto'),
-              // protoPath: join(__dirname, '..', 'proto', 'order_service.proto'),
+              protoPath: [getProtoPath('order')],
+              loader: {
+                includeDirs: [path.join(PROTO_ROOT_DIR, 'order')],
+              },
               url: `${config.orderGrpcUrl}`,
             },
           }),
@@ -50,11 +56,11 @@ import { ICourseClient } from './course/course-client.interface';
             transport: Transport.GRPC,
             options: {
               package: 'course_service',
-              protoPath: join(process.cwd(), 'proto', 'course_service.proto'),
-              url: `${config.courseGrpcUrl}`,
+              protoPath: [getProtoPath('course')],
               loader: {
-                includeDirs: [join(process.cwd(), 'proto')],
+                includeDirs: [path.join(PROTO_ROOT_DIR, 'course')],
               },
+              url: `${config.courseGrpcUrl}`,
             },
           }),
           inject: [AppConfigService],

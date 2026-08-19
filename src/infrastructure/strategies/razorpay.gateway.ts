@@ -7,7 +7,7 @@ import {
 import Razorpay from 'razorpay';
 import * as crypto from 'crypto';
 import {
-  PaymentStrategy,
+  PaymentGateway,
   PaymentResult,
   PaymentStatus,
   PaymentRequest,
@@ -18,24 +18,24 @@ import {
   RazorpayResolveRequest,
   PaymentFailureResult,
   RefundResult,
-} from '@application/adaptors/payment-strategy.interface';
+} from '@application/ports/payment-gateway-strategy.interface';
 import { AppConfigService } from '@infrastructure/config/config.service';
-import { LoggingService } from '@infrastructure/observability/logging/logging.service';
-import { MetricsService } from '@infrastructure/observability/metrics/metrics.service';
-import { TracingService } from '@infrastructure/observability/tracing/trace.service';
 import { PaymentProvider } from '@domain/entities/payments';
+import { ILoggerService } from '@application/ports/logger.service';
+import { ITraceService } from '@application/ports/trace.service';
+import { IMetricService } from '@application/ports/metric.service';
 
 @Injectable()
-export class RazorpayPaymentStrategy implements PaymentStrategy {
+export class RazorpayPaymentGateway implements PaymentGateway {
   readonly gateway = 'razorpay';
   private readonly razorpay: Razorpay;
   private readonly supportedCurrencies = Object.freeze(['INR', 'USD']);
 
   constructor(
     private readonly configService: AppConfigService,
-    private readonly logger: LoggingService,
-    private readonly metrics: MetricsService,
-    private readonly tracer: TracingService,
+    private readonly _logger: ILoggerService,
+    private readonly _tracer: ITraceService,
+    private readonly _metrics: IMetricService,
   ) {
     this.razorpay = new Razorpay({
       key_id: this.configService.razorpayKeyId,
@@ -50,8 +50,8 @@ export class RazorpayPaymentStrategy implements PaymentStrategy {
   }
 
   async createPayment(request: PaymentRequest): Promise<PaymentSessionResult> {
-    return this.tracer.startActiveSpan(
-      'RazorpayPaymentStrategy.createPayment',
+    return this._tracer.startActiveSpan(
+      'RazorpayPaymentGateway.createPayment',
       async (span) => {
         span.setAttributes({
           'user.id': request.userId,
@@ -65,7 +65,7 @@ export class RazorpayPaymentStrategy implements PaymentStrategy {
         try {
           const currency = request.amount.getCurrency().toUpperCase();
           if (!this.supportedCurrencies.includes(currency)) {
-            this.logger.warn('Unsupported currency for Razorpay', {
+            this._logger.warn('Unsupported currency for Razorpay', {
               currency,
               userId: request.userId,
             });
@@ -101,8 +101,8 @@ export class RazorpayPaymentStrategy implements PaymentStrategy {
             );
           }
 
-          this.logger.debug('Razorpay order created', {
-            ctx: 'RazorpayPaymentStrategy',
+          this._logger.debug('Razorpay order created', {
+            ctx: 'RazorpayPaymentGateway',
             orderId: order.id,
             userId: request.userId,
           });
@@ -122,9 +122,9 @@ export class RazorpayPaymentStrategy implements PaymentStrategy {
             currency: order.currency,
           };
         } catch (error: any) {
-          this.logger.error('Razorpay payment failed', {
+          this._logger.error('Razorpay payment failed', {
             error: error?.message,
-            ctx: 'RazorpayPaymentStrategy',
+            ctx: 'RazorpayPaymentGateway',
             userId: request.userId,
             stack: error?.stack,
           });
@@ -137,8 +137,8 @@ export class RazorpayPaymentStrategy implements PaymentStrategy {
   }
 
   async refundPayment(request: RefundRequest): Promise<RefundResult> {
-    return this.tracer.startActiveSpan(
-      'RazorpayPaymentStrategy.createRefund',
+    return this._tracer.startActiveSpan(
+      'RazorpayPaymentGateway.createRefund',
       async (span) => {
         span.setAttributes({
           'transaction.id': request.providerPaymentId,
@@ -181,8 +181,8 @@ export class RazorpayPaymentStrategy implements PaymentStrategy {
             throw new InternalServerErrorException('Failed to process refund');
           }
 
-          this.logger.debug('Razorpay refund processed', {
-            ctx: 'RazorpayPaymentStrategy',
+          this._logger.debug('Razorpay refund processed', {
+            ctx: 'RazorpayPaymentGateway',
             refundId: refund.id,
             status: refund.status,
           });
@@ -209,13 +209,13 @@ export class RazorpayPaymentStrategy implements PaymentStrategy {
             refundId: refund.id,
             currency: refund.currency,
             amount: refund.amount!,
-            status: 'pending',
+            status: 'pending' as const,
             transactionId: refund.id,
           };
         } catch (error: any) {
-          this.logger.error('Razorpay refund failed', {
+          this._logger.error('Razorpay refund failed', {
             error: error?.message,
-            ctx: 'RazorpayPaymentStrategy',
+            ctx: 'RazorpayPaymentGateway',
             transactionId: request.providerPaymentId,
             stack: error?.stack,
           });
@@ -227,8 +227,8 @@ export class RazorpayPaymentStrategy implements PaymentStrategy {
   }
 
   async getPaymentStatus(transactionId: string): Promise<PaymentResult> {
-    return this.tracer.startActiveSpan(
-      'RazorpayPaymentStrategy.Payment',
+    return this._tracer.startActiveSpan(
+      'RazorpayPaymentGateway.Payment',
       async (span) => {
         span.setAttributes({
           'transaction.id': transactionId,
@@ -271,9 +271,9 @@ export class RazorpayPaymentStrategy implements PaymentStrategy {
             },
           };
         } catch (error: any) {
-          this.logger.error('Failed to verify Razorpay payment', {
+          this._logger.error('Failed to verify Razorpay payment', {
             error: error?.message,
-            ctx: 'RazorpayPaymentStrategy',
+            ctx: 'RazorpayPaymentGateway',
             transactionId,
             stack: error?.stack,
           });
@@ -325,8 +325,8 @@ export class RazorpayPaymentStrategy implements PaymentStrategy {
     transactionId: string,
     reason?: string,
   ): Promise<PaymentFailureResult> {
-    return this.tracer.startActiveSpan(
-      'RazorpayPaymentStrategy.cancelPayment',
+    return this._tracer.startActiveSpan(
+      'RazorpayPaymentGateway.cancelPayment',
       async (span) => {
         span.setAttributes({
           'transaction.id': transactionId,
@@ -346,11 +346,11 @@ export class RazorpayPaymentStrategy implements PaymentStrategy {
           try {
             payment = await this.razorpay.payments.fetch(transactionId);
           } catch (err) {
-            this.logger.error(
+            this._logger.error(
               'Razorpay payment fetch failed in cancelPayment',
               {
                 error: (err as any)?.message,
-                ctx: 'RazorpayPaymentStrategy',
+                ctx: 'RazorpayPaymentGateway',
                 transactionId,
                 stack: (err as any)?.stack,
               },
@@ -370,21 +370,21 @@ export class RazorpayPaymentStrategy implements PaymentStrategy {
                 0,
                 payment.currency,
               );
-              this.logger.debug(
+              this._logger.debug(
                 'Razorpay payment voided (capture with 0 amount)',
                 {
                   transactionId,
                   providerStatus: updatedPayment.status,
-                  ctx: 'RazorpayPaymentStrategy',
+                  ctx: 'RazorpayPaymentGateway',
                   reason,
                 },
               );
             } catch (captureError) {
-              this.logger.error(
+              this._logger.error(
                 'Razorpay payment void (capture with 0) failed in cancelPayment',
                 {
                   error: (captureError as any)?.message,
-                  ctx: 'RazorpayPaymentStrategy',
+                  ctx: 'RazorpayPaymentGateway',
                   transactionId,
                   stack: (captureError as any)?.stack,
                   reason,
@@ -405,21 +405,21 @@ export class RazorpayPaymentStrategy implements PaymentStrategy {
                   speed: 'normal',
                 },
               );
-              this.logger.debug(
+              this._logger.debug(
                 'Razorpay payment refunded during cancelPayment',
                 {
                   transactionId,
                   providerStatus: updatedPayment.status,
-                  ctx: 'RazorpayPaymentStrategy',
+                  ctx: 'RazorpayPaymentGateway',
                   reason,
                 },
               );
             } catch (refundError) {
-              this.logger.error(
+              this._logger.error(
                 'Razorpay payment refund failed in cancelPayment',
                 {
                   error: (refundError as any)?.message,
-                  ctx: 'RazorpayPaymentStrategy',
+                  ctx: 'RazorpayPaymentGateway',
                   transactionId,
                   stack: (refundError as any)?.stack,
                   reason,
@@ -432,12 +432,12 @@ export class RazorpayPaymentStrategy implements PaymentStrategy {
             payment.status === 'failed'
           ) {
             // No further action possible on already terminal payment
-            this.logger.warn(
+            this._logger.warn(
               'Razorpay payment is already finalized, cannot fail',
               {
                 transactionId,
                 providerStatus: payment.status,
-                ctx: 'RazorpayPaymentStrategy',
+                ctx: 'RazorpayPaymentGateway',
                 reason,
               },
             );
@@ -453,9 +453,9 @@ export class RazorpayPaymentStrategy implements PaymentStrategy {
             success: true,
           };
         } catch (error: any) {
-          this.logger.error('Failed to fail Razorpay payment', {
+          this._logger.error('Failed to fail Razorpay payment', {
             error: error?.message,
-            ctx: 'RazorpayPaymentStrategy',
+            ctx: 'RazorpayPaymentGateway',
             transactionId,
             reason,
             stack: error?.stack,
@@ -477,9 +477,9 @@ export class RazorpayPaymentStrategy implements PaymentStrategy {
       await this.razorpay.orders.all({ count: 1 });
       return true;
     } catch (error: any) {
-      this.logger.warn('Razorpay service unavailable', {
+      this._logger.warn('Razorpay service unavailable', {
         error: error?.message,
-        ctx: 'RazorpayPaymentStrategy',
+        ctx: 'RazorpayPaymentGateway',
         stack: error?.stack,
       });
       return false;
@@ -487,7 +487,7 @@ export class RazorpayPaymentStrategy implements PaymentStrategy {
   }
 
   /**
-   * Internal metrics helper for payment observability.
+   * Internal _metrics helper for payment observability.
    */
   private recordMetrics(
     operation: string,
@@ -497,18 +497,18 @@ export class RazorpayPaymentStrategy implements PaymentStrategy {
     const duration = (Date.now() - startTime) / 1000;
 
     try {
-      this.metrics.paymentLatency.observe(
+      this._metrics.paymentLatency.observe(
         { method: operation, gateway: this.gateway },
         duration,
       );
 
-      this.metrics.incPaymentCounter({
+      this._metrics.incPaymentCounter({
         method: operation,
         gateway: this.gateway,
         status: success ? 'success' : 'failure',
       });
     } catch (err) {
-      this.logger.warn('Failed to record metrics', {
+      this._logger.warn('Failed to record _metrics', {
         err: (err as any)?.message,
         operation,
       });

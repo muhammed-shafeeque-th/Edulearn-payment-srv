@@ -1,21 +1,25 @@
 {
   "compilerOptions": {
-    "module": "commonjs",
-    "declaration": true,
-    "removeComments": true,
-    "emitDecoratorMetadata": true,
-    "experimentalDecorators": true,
-    "allowSyntheticDefaultImports": true,
-    "target": "ES2021",
-    "sourceMap": true,
-    "outDir": "./dist",
-    "baseUrl": "./",
-    "esModuleInterop": true,
-    // "noEmit": true,
-    "incremental": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": false,
+    "target": "ES2022",
+
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+
+    "lib": ["ES2022"],
+
+    "rootDir": ".",
+
+    "paths": {
+      "@domain/*": ["./src/domain/*"],
+      "@application/*": ["./src/application/*"],
+      "@infrastructure/*": ["./src/infrastructure/*"],
+      "@presentation/*": ["./src/presentation/*"],
+      "@shared/*": ["./src/shared/*"],
+      "src/*": ["./src/*"]
+    },
+
     "strict": true,
+
     "noImplicitAny": true,
     "strictNullChecks": true,
     "strictFunctionTypes": true,
@@ -26,22 +30,28 @@
     "noUnusedParameters": true,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
-    "moduleResolution": "node",
-    "paths": {
-      "@domain/*": ["src/domain/*"],
-      "@application/*": ["src/application/*"],
-      "@infrastructure/*": ["src/infrastructure/*"],
-      "@interface/*": ["src/interface/*"]
-    }
+
+    "esModuleInterop": true,
+
+    "allowSyntheticDefaultImports": true,
+
+    "resolveJsonModule": true,
+
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+
+    "skipLibCheck": true,
+    "strictPropertyInitialization": false,
+
+    "forceConsistentCasingInFileNames": true,
+
+    "isolatedModules": false,
+    "types": ["node", "jest"],
+
+    "sourceMap": true
   },
-  "exclude": [
-    "node_modules",
-    "test",
-    "dist",
-    "**/*spec.ts",
-    "**/*.old.*",
-    "**/old/**",
-    "**/__*/**",
-    "**/_*"
-  ]
+
+  "include": ["src/**/*", "test/**/*"],
+
+  "exclude": ["node_modules", "dist", "**/*.old.*", "**/old/**"]
 }

@@ -13,13 +13,13 @@ export class AppConfigService {
     return this.configService.get<string>('SERVICE_NAME', 'PaymentService');
   }
 
-  get apiPort(): number {
-    return this.configService.get<number>('API_PORT', 4005);
+  get httpPort(): number {
+    return this.configService.get<number>('HTTP_PORT', 4005);
   }
   get appUrl(): string {
     return this.configService.get<string>(
       'APP_URL',
-      `localhost:${this.apiPort}`,
+      `localhost:${this.httpPort}`,
     );
   }
   get paypalPaymentSuccessUrl(): string {
@@ -158,6 +158,16 @@ export class AppConfigService {
     );
   }
 
+  get redisDb(): number {
+    return this.configService.get<number>('REDIS_DB', 2);
+  }
+  get redisHost(): string {
+    return this.configService.get<string>('REDIS_HOST', 'localhost');
+  }
+  get redisPort(): number {
+    return this.configService.get<number>('REDIS_PORT', 6379);
+  }
+
   get redisMaxConnections(): number {
     return this.configService.get<number>('REDIS_MAX_CONNECTIONS', 100);
   }
@@ -171,12 +181,7 @@ export class AppConfigService {
   }
 
   // Observability config
-  get jaegerEndpoint(): string {
-    return this.configService.get<string>(
-      'JAEGER_ENDPOINT',
-      'http://localhost:4318/v1/traces',
-    );
-  }
+
   get tracingSamplingRatio(): number {
     return this.configService.get<number>('TRACING_SAMPLING_RATIO', 0.1);
   }
@@ -184,23 +189,11 @@ export class AppConfigService {
     return this.configService.get<string>('LOG_LEVEL', 'info');
   }
 
-  get jaegerHost(): string {
-    return this.configService.get<string>('JAEGER_HOST', 'localhost');
+  get collectorUrl(): string {
+    return this.configService.get<string>('OTLP_ENDPOINT', '');
   }
 
-  get jaegerPort(): number {
-    return this.configService.get<number>('JAEGER_PORT', 6831);
-  }
-
-  get lokiUrl(): string {
-    return this.configService.get<string>('LOKI_URL', 'http://loki:3100');
-  }
-
-  get prometheusPort(): number {
-    return this.configService.get<number>('PROMETHEUS_PORT', 9091);
-  }
-
-  // JWT config
+  // // JWT config
   get jwtSecret(): string {
     return this.configService.get<string>('JWT_SECRET', 'your-secret-key');
   }
