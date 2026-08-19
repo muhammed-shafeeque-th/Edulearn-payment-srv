@@ -4,7 +4,7 @@ import { TAttributes, TContext, TSpan } from '@edulearn/core';
 import {
   ITraceService,
   TSpanStatusCode,
-} from 'src/application/adaptors/trace.service';
+} from '@application/ports/trace.service';
 
 @Injectable()
 export class TraceService implements ITraceService {

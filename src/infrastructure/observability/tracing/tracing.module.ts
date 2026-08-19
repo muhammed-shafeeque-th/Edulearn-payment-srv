@@ -1,6 +1,6 @@
 import { Global, Module } from '@nestjs/common';
 import { AppConfigService } from 'src/infrastructure/config/config.service';
-import { ITraceService } from 'src/application/adaptors/trace.service';
+import { ITraceService } from '@application/ports/trace.service';
 import { TraceService } from './trace.service';
 import { TracerModule } from '@edulearn/nest';
 
