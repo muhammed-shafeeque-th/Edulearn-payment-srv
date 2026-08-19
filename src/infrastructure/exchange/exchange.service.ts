@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { LoggingService } from '@infrastructure/observability/logging/logging.service';
-import { ICacheService } from '@application/adaptors/redis.interface';
+import { ICacheService } from '@application/ports/redis.interface';
 import {
   ExchangeRateResponse,
   IExchangeRateService,
-} from '@application/adaptors/exchange-rate.service';
+} from '@application/ports/exchange-rate.service';
+import { ILoggerService } from '@application/ports/logger.service';
 
 type Currency = string;
 type FrankfurterExchangeResponse = {
@@ -23,7 +23,7 @@ export class FrankfurterExchangeRateService implements IExchangeRateService {
 
   constructor(
     private readonly redis: ICacheService,
-    private readonly logger: LoggingService,
+    private readonly _logger: ILoggerService,
   ) {}
 
   async getRate(base: string, target: string): Promise<ExchangeRateResponse> {
@@ -57,7 +57,7 @@ export class FrankfurterExchangeRateService implements IExchangeRateService {
         this.ttlSeconds,
       );
     } catch (err) {
-      this.logger.warn('Failed writing FX rate to Redis', {
+      this._logger.warn('Failed writing FX rate to Redis', {
         base,
         target,
         error: (err as Error).message,
@@ -96,10 +96,7 @@ export class FrankfurterExchangeRateService implements IExchangeRateService {
       );
     }
 
-    const data: FrankfurterExchangeResponse = await response.json();
-    console.log(
-      'Response from Exchange provider : ' + JSON.stringify(data, null, 2),
-    );
+    const data = (await response.json()) as FrankfurterExchangeResponse;
     const rate = data?.rates?.[target];
 
     if (!rate || isNaN(rate)) {
@@ -119,7 +116,7 @@ export class FrankfurterExchangeRateService implements IExchangeRateService {
     target: string,
     error: any,
   ): Promise<ExchangeRateResponse> {
-    this.logger.error('FX provider fetch failed', {
+    this._logger.error('FX provider fetch failed', {
       base,
       target,
       error: error?.message,
@@ -131,7 +128,7 @@ export class FrankfurterExchangeRateService implements IExchangeRateService {
       try {
         const parsed = JSON.parse(cached);
         if (parsed?.rate) {
-          this.logger.warn('Using stale FX rate due to provider failure');
+          this._logger.warn('Using stale FX rate due to provider failure');
           return parsed.rate;
         }
       } catch {}
