@@ -17,7 +17,7 @@ import {
 } from '../../infrastructure/grpc/generated/payment_service';
 import { LoggingInterceptor } from '../../infrastructure/grpc/interceptors/logging.interceptor';
 import { MetricsInterceptor } from '../../infrastructure/grpc/interceptors/metrics.interceptor';
-import { TracingInterceptor } from '../../infrastructure/grpc/interceptors/tracing.interceptor';
+// import { TracingInterceptor } from '../../infrastructure/grpc/interceptors/tracing.interceptor';
 import { GrpcExceptionFilter } from '@infrastructure/filters/grpc-exception.filter';
 import { Metadata } from '@grpc/grpc-js';
 // import { Error as ErrorResponse } from '@infrastructure/grpc/generated/payment_service';
