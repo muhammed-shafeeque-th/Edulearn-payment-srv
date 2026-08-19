@@ -4,7 +4,8 @@ import { DatabaseRepositoryModule } from '@infrastructure/database/database-repo
 import { RedisModule } from '@infrastructure/redis/redis.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { PaymentTimeoutSweeper } from './payment-timeout-sweeper';
-import { HandlePaymentTimeoutUseCase } from '@application/use-cases/payments/handle-payment-timeout.use-case';
+import { HandlePaymentTimeoutUseCase } from '@application/use-cases/payments/impls/handle-payment-timeout.use-case';
+import { IHandlePaymentTimeoutUseCase } from '@application/use-cases/payments/interfaces/handle-payment-timeout.inteface';
 
 @Module({
   imports: [
@@ -13,7 +14,13 @@ import { HandlePaymentTimeoutUseCase } from '@application/use-cases/payments/han
     RedisModule,
     ScheduleModule.forRoot(),
   ],
-  providers: [HandlePaymentTimeoutUseCase, PaymentTimeoutSweeper],
-  exports: [HandlePaymentTimeoutUseCase, PaymentTimeoutSweeper],
+  providers: [
+    {
+      provide: IHandlePaymentTimeoutUseCase,
+      useClass: HandlePaymentTimeoutUseCase,
+    },
+    PaymentTimeoutSweeper,
+  ],
+  exports: [IHandlePaymentTimeoutUseCase, PaymentTimeoutSweeper],
 })
 export class PaymentSchedulerModule {}

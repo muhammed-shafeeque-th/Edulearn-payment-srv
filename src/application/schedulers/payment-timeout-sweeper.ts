@@ -1,19 +1,19 @@
 import { Injectable } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { LoggingService } from '@infrastructure/observability/logging/logging.service';
-import { TracingService } from '@infrastructure/observability/tracing/trace.service';
 import { IPaymentRepository } from '@domain/repositories/payment-repository.interface';
-import { HandlePaymentTimeoutUseCase } from '@application/use-cases/payments/handle-payment-timeout.use-case';
+import { ILoggerService } from '@application/ports/logger.service';
+import { ITraceService } from '@application/ports/trace.service';
+import { IHandlePaymentTimeoutUseCase } from '@application/use-cases/payments/interfaces/handle-payment-timeout.inteface';
 
 @Injectable()
 export class PaymentTimeoutSweeper {
   private readonly BATCH_SIZE = 50;
 
   constructor(
-    private readonly paymentRepository: IPaymentRepository,
-    private readonly handleTimeoutUseCase: HandlePaymentTimeoutUseCase,
-    private readonly logger: LoggingService,
-    private readonly tracer: TracingService,
+    private readonly _paymentRepository: IPaymentRepository,
+    private readonly handleTimeoutUseCase: IHandlePaymentTimeoutUseCase,
+    private readonly _logger: ILoggerService,
+    private readonly _tracer: ITraceService,
   ) {}
 
   /**
@@ -22,13 +22,13 @@ export class PaymentTimeoutSweeper {
    */
   @Cron(CronExpression.EVERY_MINUTE)
   async sweepExpiredPayments(): Promise<void> {
-    await this.tracer.startActiveSpan(
+    await this._tracer.startActiveSpan(
       'PaymentTimeoutSweeper.sweepExpiredPayments',
       async (span) => {
         const now = new Date();
 
         const expiredPayments =
-          await this.paymentRepository.findExpiredPendingPayments(
+          await this._paymentRepository.findExpiredPendingPayments(
             now,
             this.BATCH_SIZE,
           );
@@ -37,7 +37,7 @@ export class PaymentTimeoutSweeper {
           return;
         }
 
-        this.logger.warn(
+        this._logger.warn(
           `Sweeper found ${expiredPayments.length} expired pending payments`,
           { ctx: 'PaymentTimeoutSweeper' },
         );
@@ -48,7 +48,7 @@ export class PaymentTimeoutSweeper {
               paymentId: payment.id,
             });
           } catch (error: any) {
-            this.logger.error(
+            this._logger.error(
               `Sweeper failed for payment ${payment.id}: ${error.message}`,
               { error, ctx: 'PaymentTimeoutSweeper' },
             );
