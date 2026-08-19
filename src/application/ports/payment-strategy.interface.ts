@@ -117,14 +117,10 @@ export interface PaypalSession {
 }
 
 export type ResolvePaymentRequest =
-  | StripeResolveRequest
-  | RazorpayResolveRequest
-  | PaypalResolveRequest;
+  StripeResolveRequest | RazorpayResolveRequest | PaypalResolveRequest;
 
 export type PaymentSessionResult =
-  | StripeSession
-  | RazorpaySession
-  | PaypalSession;
+  StripeSession | RazorpaySession | PaypalSession;
 
 export interface PaymentStrategy {
   readonly gateway: string;

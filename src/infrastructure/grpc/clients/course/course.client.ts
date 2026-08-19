@@ -8,14 +8,14 @@ import { ClientGrpc } from '@nestjs/microservices';
 import { GRPC_COURSE_CLIENT_TOKEN } from './constants';
 import { CourseServiceClient } from '@infrastructure/grpc/generated/course_service';
 
-import { ICacheService } from '@application/adaptors/redis.interface';
+import { ICacheService } from '@application/ports/redis.interface';
 import { ClientServiceException } from '@domain/exceptions/domain.exceptions';
 import {
   CoursesListData,
   GetCoursesByIdsResponse,
 } from '@infrastructure/grpc/generated/course/types/course';
-import { ILoggerService } from '@application/adaptors/logger.service';
-import { ICourseClient } from '@application/adaptors/course-client.interface';
+import { ILoggerService } from '@application/ports/logger.service';
+import { ICourseClient } from '@application/ports/course-client.interface';
 
 @Injectable()
 export class CourseClient
