@@ -41,6 +41,7 @@ import { ICreatePaymentUseCase } from '@application/use-cases/payments/interface
 import { ICreateProviderSessionUseCase } from '@application/use-cases/payments/interfaces/create-provider-session.interface';
 import { ICancelPaymentUseCase } from '@application/use-cases/payments/interfaces/cancel-payment.interface';
 import { IResolvePaymentUseCase } from '@application/use-cases/payments/interfaces/resolve-payment.inteface';
+import { ILoggerService } from '@application/ports/logger.service';
 
 @Controller()
 @UseFilters(GrpcExceptionFilter)
@@ -52,20 +53,21 @@ export class PaymentController {
     private readonly _createProviderSessionUseCase: ICreateProviderSessionUseCase,
     private readonly _cancelPaymentUseCase: ICancelPaymentUseCase,
     private readonly _resolvePaymentUseCase: IResolvePaymentUseCase,
+    private readonly _logger: ILoggerService,
     // private readonly processRefundUseCase: ProcessRefundUseCase,
   ) {}
 
   @GrpcMethod('PaymentService', 'CreatePayment')
-  @UsePipes(GrpcValidationPipe)
-  @Roles('student', 'instructor')
+  // @UsePipes(GrpcValidationPipe)
+  // @Roles('student', 'instructor')
   async createPayment(
     request: PaymentCreateDto,
   ): Promise<CreatePaymentResponse> {
-    console.log(
+    this._logger.debug(
       'Create Payment Request Recieved : ' + JSON.stringify(request, null, 2),
     );
     const response = await this._createPaymentUseCase.execute(request);
-    console.log(
+    this._logger.debug(
       'Create Payment response : ' + JSON.stringify(response, null, 2),
     );
     return {
