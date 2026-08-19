@@ -1,4 +1,4 @@
-import { ILoggerService } from '@application/adaptors/logger.service';
+import { ILoggerService } from '@application/ports/logger.service';
 import { LoggerModule } from '@edulearn/nest';
 import { AppConfigService } from '@infrastructure/config/config.service';
 import { Module, Global } from '@nestjs/common';

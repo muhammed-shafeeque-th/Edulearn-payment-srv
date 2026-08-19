@@ -1,9 +1,6 @@
 import { LoggerService as Logger } from '@edulearn/nest';
 import { Injectable } from '@nestjs/common';
-import {
-  ILoggerService,
-  LogContext,
-} from 'src/application/adaptors/logger.service';
+import { ILoggerService, LogContext } from '@application/ports/logger.service';
 
 @Injectable()
 export class LoggerService implements ILoggerService {
