@@ -1,83 +1,72 @@
-# ============================
-# Stage 1: Dependencies
-# ============================
-FROM node:20-alpine AS deps
+ARG BASE_IMAGE=ghcr.io/muhammed-shafeeque-th/edulearn-node:22
+
+# Stage 1: Dependency
+FROM ${BASE_IMAGE} AS dependencies
 
 WORKDIR /app
 
-# Install build tools only once (for native dependencies)
-RUN apk add --no-cache python3 make g++
+ENV NODE_ENV=development
 
-# Copy only dependency manifests (cache-friendly)
+
+# Copy package files first for caching
 COPY package.json yarn.lock ./
 
-# Install all dependencies (include devDeps for build)
-RUN yarn install --frozen-lockfile
+# Use cache mount for faster repeated builds (BuildKit)
+RUN --mount=type=cache,target=/usr/local/share/.cache/yarn \
+    yarn install --frozen-lockfile --ignore-optional
 
-# ============================
-# Stage 2: Builder
-# ============================
-FROM node:20-alpine AS builder
+# Stage 2: Dependency
+FROM dependencies AS builder
 
-WORKDIR /app
-
-# Copy node_modules from deps (avoids reinstall)
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/package.json ./package.json
-COPY --from=deps /app/yarn.lock ./yarn.lock
-
-
-# Copy source and TypeScript configs
+# Copy source and configs
 COPY tsconfig*.json ./
 COPY src ./src
 
-# Copy proto files
-COPY proto ./proto
+# Build (keep your existing build for stability)
+RUN yarn run build
 
-# Build the project
-RUN yarn build
+# Prune to production dependencies in builder
+RUN yarn install \
+    --production=true \
+    --frozen-lockfile \
+    --ignore-optional \
+    --non-interactive
 
-# ============================
-# Stage 3: Pruner (optional but powerful)
-# ============================
-FROM node:20-alpine AS pruner
+#  Cleanup unnecessary files from node_modules with node-prune
+ARG NODE_PRUNE_VERSION=v1.0.2
+
+RUN  apk add --no-cache curl \
+  && curl -sfL https://gobinaries.com/tj/node-prune | sh -s -- -b /usr/local/bin \
+  && node-prune \
+  && yarn cache clean \
+  && rm -rf \
+       /tmp/* \
+       /root/.cache \
+       /usr/local/share/.cache
+
+# Stage 2: Runtime (Lightweight)
+FROM node:22.17.1-alpine3.22 AS runner
 
 WORKDIR /app
 
-# Copy package files
-COPY package.json yarn.lock ./
+ENV NODE_ENV=production
 
-# Install only production dependencies
-RUN yarn install --production --frozen-lockfile
+LABEL org.opencontainers.image.title="edulearn-payment"
+LABEL org.opencontainers.image.description="EduLearn Payment Service"
+LABEL org.opencontainers.image.source="https://github.com/muhammed-shafeeque-th/Edulearn-payment"
 
-# ============================
-# Stage 4: Runner
-# ============================
-FROM node:20-alpine AS runner
+# Non-root user
+RUN addgroup -S edulearn_admin && adduser -S edulearn_user -G edulearn_admin
 
-WORKDIR /app
+# Copy only essentials from builder
+COPY --from=builder --chown=edulearn_user:edulearn_admin /app/dist ./dist
+COPY --from=builder --chown=edulearn_user:edulearn_admin /app/node_modules ./node_modules
+COPY --from=builder --chown=edulearn_user:edulearn_admin /app/package.json ./
 
-# Runtime utilities
-RUN apk add --no-cache tini curl
 
-# Copy production node_modules
-COPY --from=pruner /app/node_modules ./node_modules
+USER edulearn_user
 
-# Copy built app
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/package.json ./package.json
-COPY --from=builder /app/yarn.lock ./yarn.lock
-
-# Copy proto files
-COPY --from=builder /app/proto ./proto
-
-# Create non-root user
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup \
-  && mkdir -p /app/logs && chown -R appuser:appgroup /app
-
-USER appuser
-
-# Document exposed port
 EXPOSE 50052
 
-CMD ["yarn", "run", "start:prod"]
+# Direct start (no yarn overhead, better signal handling)
+CMD ["node", "dist/main.js"]
