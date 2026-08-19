@@ -1,4 +1,4 @@
-import { MetricsService } from '@infrastructure/observability/metrics/metrics.service';
+import { IMetricService } from '@application/ports/metric.service';
 import {
   Injectable,
   NestInterceptor,
@@ -10,7 +10,7 @@ import { tap } from 'rxjs/operators';
 
 @Injectable()
 export class MetricsInterceptor implements NestInterceptor {
-  constructor(private readonly metrics: MetricsService) {}
+  constructor(private readonly _metrics: IMetricService) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const startTime = Date.now();
@@ -20,12 +20,12 @@ export class MetricsInterceptor implements NestInterceptor {
     return next.handle().pipe(
       tap({
         next: () => {
-          this.metrics.incPaymentCounter({
+          this._metrics.incPaymentCounter({
             method: methodName,
             status: 'SUCCESS',
             gateway: request.paymentGateway || 'unknown',
           });
-          this.metrics.paymentLatency.observe(
+          this._metrics.paymentLatency.observe(
             {
               method: methodName,
               gateway: request.paymentGateway || 'unknown',
@@ -34,12 +34,12 @@ export class MetricsInterceptor implements NestInterceptor {
           );
         },
         error: () => {
-          this.metrics.incPaymentCounter({
+          this._metrics.incPaymentCounter({
             method: methodName,
             status: 'FAILED',
             gateway: request.paymentGateway || 'unknown',
           });
-          this.metrics.paymentLatency.observe(
+          this._metrics.paymentLatency.observe(
             { method: methodName, gateway: 'unknown' },
             (Date.now() - startTime) / 1000,
           );
