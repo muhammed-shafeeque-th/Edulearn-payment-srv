@@ -1,14 +1,14 @@
-import { status, Metadata, ServiceError } from "@grpc/grpc-js";
-import { BaseException } from "src/shared/exceptions/base-exception";
-import { ErrorCode } from "src/shared/exceptions/error-codes";
+import { status, Metadata, ServiceError } from '@grpc/grpc-js';
+import { BaseException } from 'src/shared/exceptions/base-exception';
+import { ErrorCode } from 'src/shared/exceptions/error-codes';
 
 export class GrpcExceptionMapper {
   static toGrpc(error: unknown): ServiceError {
     const metadata = new Metadata();
     if (error instanceof BaseException) {
-      metadata.set("error_code", error.code);
-      metadata.set("reason", error.reason!);
-      metadata.set("detail", error.message);
+      metadata.set('error_code', error.code);
+      metadata.set('reason', error.reason!);
+      metadata.set('detail', error.message);
 
       return {
         name: error.name,
@@ -20,10 +20,10 @@ export class GrpcExceptionMapper {
     }
 
     return {
-      name: "InternalError",
-      message: "Internal server error",
+      name: 'InternalError',
+      message: 'Internal server error',
       code: status.INTERNAL,
-      details: "Unknown error",
+      details: 'Unknown error',
       metadata,
     };
   }

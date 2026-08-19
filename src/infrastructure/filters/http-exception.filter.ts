@@ -1,4 +1,4 @@
-import { LoggingService } from '@infrastructure/observability/logging/logging.service';
+import { ILoggerService } from '@application/ports/logger.service';
 import {
   ExceptionFilter,
   Catch,
@@ -9,7 +9,7 @@ import { Request, Response } from 'express';
 
 @Catch(HttpException)
 export class HttpExceptionFilter implements ExceptionFilter {
-  constructor(private readonly logger: LoggingService) {}
+  constructor(private readonly _logger: ILoggerService) {}
 
   catch(exception: HttpException, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
@@ -17,7 +17,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const request = ctx.getRequest<Request>();
     const status = exception.getStatus();
 
-    this.logger.error(
+    this._logger.error(
       `Unexpected error on ${request.path}: ${exception.message}`,
       {
         ...exception,
