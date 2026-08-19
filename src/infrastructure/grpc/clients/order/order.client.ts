@@ -5,7 +5,6 @@ import {
   OnModuleInit,
 } from '@nestjs/common';
 import { ClientGrpc } from '@nestjs/microservices';
-import { LoggingService } from 'src/infrastructure/observability/logging/logging.service';
 import { GRPC_ORDER_CLIENT_TOKEN } from './constants';
 import {
   OrderData,
@@ -13,40 +12,37 @@ import {
   OrderServiceClient,
 } from '@infrastructure/grpc/generated/order_service';
 
-import { ICacheService } from '@application/adaptors/redis.interface';
+import { ICacheService } from '@application/ports/redis.interface';
 import {
   ClientServiceException,
   OrderNotFoundException,
 } from '@domain/exceptions/domain.exceptions';
-
-export type OrderStatus =
-  | 'created'
-  | 'pending_payment'
-  | 'processing'
-  | 'succeeded'
-  | 'failed'
-  | 'cancelled'
-  | 'refunded'
-  | 'expired';
+import { ILoggerService } from '@application/ports/logger.service';
+import {
+  IOrderClient,
+  OrderStatus,
+} from '@application/ports/order-client.interface';
 
 @Injectable()
-export class OrderClient implements OnModuleDestroy, OnModuleInit {
+export class OrderClient
+  implements IOrderClient, OnModuleDestroy, OnModuleInit
+{
   private orderService!: OrderServiceClient;
 
   constructor(
     @Inject(GRPC_ORDER_CLIENT_TOKEN) private client: ClientGrpc,
-    private readonly logger: LoggingService,
-    private readonly redisClient: ICacheService,
+    private readonly _logger: ILoggerService,
+    private readonly _redisClient: ICacheService,
   ) {}
 
   onModuleInit() {
     this.orderService =
       this.client.getService<OrderServiceClient>('OrderService');
-    this.logger.info('Order gRPC client initialized');
+    this._logger.info('Order gRPC client initialized');
   }
 
   onModuleDestroy() {
-    this.logger.info('Order gRPC client destroyed');
+    this._logger.info('Order gRPC client destroyed');
   }
 
   async getOrder(
@@ -64,7 +60,7 @@ export class OrderClient implements OnModuleDestroy, OnModuleInit {
     const CACHE_TTL = 10 * 60;
     const cacheKey = `order_details:${orderId}`;
 
-    const cacheResult = await this.redisClient.get(cacheKey);
+    const cacheResult = await this._redisClient.get(cacheKey);
     if (cacheResult) {
       return JSON.parse(cacheResult);
     }
@@ -83,11 +79,11 @@ export class OrderClient implements OnModuleDestroy, OnModuleInit {
               );
             }
 
-            this.logger.debug(`Fetched order ${orderId} via gRPC`);
+            this._logger.debug(`Fetched order ${orderId} via gRPC`);
             resolve(response.success.order);
           },
           error: (error: any) => {
-            this.logger.error(
+            this._logger.error(
               `Failed to fetch order by id ${orderId}: ${error.message}`,
               { error },
             );
@@ -110,7 +106,7 @@ export class OrderClient implements OnModuleDestroy, OnModuleInit {
         })),
       };
 
-      await this.redisClient.set(
+      await this._redisClient.set(
         cacheKey,
         JSON.stringify(orderData),
         CACHE_TTL,
@@ -118,7 +114,7 @@ export class OrderClient implements OnModuleDestroy, OnModuleInit {
 
       return orderData;
     } catch (err) {
-      this.logger.error('Error fetching order GRPC', { err });
+      this._logger.error('Error fetching order GRPC', { err });
       throw err;
     }
   }

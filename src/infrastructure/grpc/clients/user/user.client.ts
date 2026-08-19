@@ -5,7 +5,6 @@ import {
   OnModuleInit,
 } from '@nestjs/common';
 import { ClientGrpc } from '@nestjs/microservices';
-import { LoggingService } from 'src/infrastructure/observability/logging/logging.service';
 import { GRPC_USER_CLIENT_TOKEN } from './constants';
 // import { Metadata } from '@grpc/grpc-js';
 import {
@@ -14,27 +13,29 @@ import {
   UserServiceClient,
 } from '@infrastructure/grpc/generated/user_service';
 import { ClientServiceException } from '@domain/exceptions/domain.exceptions';
+import { ILoggerService } from '@application/ports/logger.service';
+import { IUserClient } from '@application/ports/user-client.interface';
 
 @Injectable()
-export class UserClient implements OnModuleDestroy, OnModuleInit {
+export class UserClient implements IUserClient, OnModuleDestroy, OnModuleInit {
   private userService!: UserServiceClient;
 
   constructor(
     @Inject(GRPC_USER_CLIENT_TOKEN) private client: ClientGrpc,
-    private readonly logger: LoggingService,
+    private readonly _logger: ILoggerService,
   ) {}
 
   onModuleInit() {
     this.userService = this.client.getService<UserServiceClient>('UserService');
-    this.logger.info('User gRPC client initialized');
+    this._logger.info('User gRPC client initialized');
   }
 
   onModuleDestroy() {
     // this.userService.close();
-    this.logger.info('User gRPC client destroyed');
+    this._logger.info('User gRPC client destroyed');
   }
 
-  async getOrder(
+  async getUser(
     userId: string,
     // metadata: Metadata = new Metadata(),
   ): Promise<{ id: string; firstName: string }> {
@@ -51,11 +52,11 @@ export class UserClient implements OnModuleDestroy, OnModuleInit {
               ),
             );
           }
-          this.logger.debug(`Fetched user for Id${userId} via gRPC`);
+          this._logger.debug(`Fetched user for Id${userId} via gRPC`);
           resolve(response.user);
         },
         error: (error: any) => {
-          this.logger.error(
+          this._logger.error(
             `Failed to fetch courses by ids: ${error.message}`,
             { error },
           );
