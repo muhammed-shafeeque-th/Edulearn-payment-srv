@@ -122,7 +122,7 @@ export type ResolvePaymentRequest =
 export type PaymentSessionResult =
   StripeSession | RazorpaySession | PaypalSession;
 
-export interface PaymentStrategy {
+export interface PaymentGateway {
   readonly gateway: string;
 
   /**
