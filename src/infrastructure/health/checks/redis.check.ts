@@ -4,7 +4,7 @@ import {
   BaseHealthCheck,
   HealthRegistry,
 } from '@edulearn/nest';
-import { ICacheService } from '@application/adaptors/redis.interface';
+import { ICacheService } from '@application/ports/redis.interface';
 
 @Injectable()
 export class RedisHealthCheck extends BaseHealthCheck {
