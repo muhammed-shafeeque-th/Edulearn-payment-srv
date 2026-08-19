@@ -52,6 +52,9 @@ export class CreateProviderSessionUseCase implements CreateProviderSessionUseCas
           'payment.id': dto.paymentId,
           provider: provider,
         });
+        this._logger.debug(`Request reach paymentId: ${dto.paymentId} `, {
+          ctx: CreateProviderSessionUseCase.name,
+        });
 
         const payment = await this._paymentRepository.findById(dto.paymentId);
         if (!payment) {
@@ -210,6 +213,19 @@ export class CreateProviderSessionUseCase implements CreateProviderSessionUseCas
           status: payment.status,
           gateway: provider as PaymentProvider,
         });
+
+        this._logger.debug(
+          `Request success with : ${JSON.stringify(
+            {
+              paymentId: payment.id,
+              provider: provider,
+              session: paymentResponse,
+            },
+            null,
+            2,
+          )} `,
+          { ctx: CreateProviderSessionUseCase.name },
+        );
 
         return {
           paymentId: payment.id,

@@ -39,6 +39,10 @@ export class CreatePaymentUseCase implements ICreatePaymentUseCase {
           'idempotency.key': dto.idempotencyKey,
         });
 
+        this._logger.debug(
+          `Request reach ${dto.userId} [orderId=${dto.orderId}], idempotencyKey: ${dto.idempotencyKey}`,
+          { ctx: CreatePaymentUseCase.name },
+        );
         const paymentExist = await this._paymentRepository.findByOrderId(
           dto.orderId,
         );
@@ -55,6 +59,7 @@ export class CreatePaymentUseCase implements ICreatePaymentUseCase {
         try {
           this._logger.debug(
             `Executing CreatePaymentUseCase for user ${dto.userId} [orderId=${dto.orderId}]`,
+            { ctx: CreatePaymentUseCase.name },
           );
 
           return await this._idempotencyService.check(
@@ -130,6 +135,19 @@ export class CreatePaymentUseCase implements ICreatePaymentUseCase {
                 status: payment.status,
                 gateway: 'none',
               });
+
+              this._logger.debug(
+                `Request success with : ${JSON.stringify(
+                  {
+                    paymentId: payment.id,
+                    status: payment.status,
+                    orderId: payment.orderId,
+                  },
+                  null,
+                  2,
+                )} `,
+                { ctx: CreatePaymentUseCase.name },
+              );
 
               return {
                 paymentId: payment.id,
