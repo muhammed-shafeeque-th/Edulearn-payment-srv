@@ -1,9 +1,8 @@
 import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
-// import { RedisService as NestRedisService } from '@liaoliaots/nestjs-redis';
 import { Redis } from 'ioredis';
-import { LoggingService } from '@infrastructure/observability/logging/logging.service';
-import { HandlePaymentTimeoutUseCase } from '@application/use-cases/payments/handle-payment-timeout.use-case';
 import { AppConfigService } from '@infrastructure/config/config.service';
+import { ILoggerService } from '@application/ports/logger.service';
+import { IHandlePaymentTimeoutUseCase } from '@application/use-cases/payments/interfaces/handle-payment-timeout.inteface';
 
 @Injectable()
 export class PaymentTimeoutRedisWorker
@@ -15,8 +14,8 @@ export class PaymentTimeoutRedisWorker
 
   constructor(
     // private readonly redisService: NestRedisService,
-    private readonly logger: LoggingService,
-    private readonly handlePaymentTimeoutUseCase: HandlePaymentTimeoutUseCase,
+    private readonly _logger: ILoggerService,
+    private readonly handlePaymentTimeoutUseCase: IHandlePaymentTimeoutUseCase,
     private readonly configService: AppConfigService,
   ) {}
 
@@ -31,11 +30,11 @@ export class PaymentTimeoutRedisWorker
     });
 
     this.subscriber.on('ready', () => {
-      this.logger.debug('PaymentTimeoutRedisWorker subscriber ready');
+      this._logger.debug('PaymentTimeoutRedisWorker subscriber ready');
     });
 
     this.subscriber.on('error', (error) => {
-      this.logger.error(`Redis subscriber error: ${error.message}`, { error });
+      this._logger.error(`Redis subscriber error: ${error.message}`, { error });
     });
 
     this.subscriber.on('pmessage', async (_, __, key) => {
@@ -43,7 +42,7 @@ export class PaymentTimeoutRedisWorker
     });
 
     await this.subscriber.psubscribe(this.redisExpiredPattern);
-    this.logger.debug(
+    this._logger.debug(
       `Payment timeout worker subscribed to Redis pattern ${this.redisExpiredPattern}`,
       { ctx: 'PaymentTimeoutRedisWorker' },
     );
@@ -78,7 +77,7 @@ export class PaymentTimeoutRedisWorker
     const paymentId = segments[segments.length - 1];
 
     if (!paymentId) {
-      this.logger.warn(
+      this._logger.warn(
         `Unable to extract paymentId from expired key ${fullKey}`,
         { ctx: 'PaymentTimeoutRedisWorker' },
       );
@@ -88,7 +87,7 @@ export class PaymentTimeoutRedisWorker
     try {
       await this.handlePaymentTimeoutUseCase.execute({ paymentId });
     } catch (error: any) {
-      this.logger.error(
+      this._logger.error(
         `Failed to process payment timeout for ${paymentId}: ${error?.message}`,
         { error, ctx: 'PaymentTimeoutRedisWorker' },
       );
