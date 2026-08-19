@@ -2,18 +2,18 @@ import { Injectable } from '@nestjs/common';
 import { Money } from '@domain/value-objects/money';
 import { IdempotencyKey } from '@domain/value-objects/idempotency-key';
 import { IPaymentRepository } from '@domain/repositories/payment-repository.interface';
-import { retry } from 'ts-retry-promise';
+import { withRetry } from '@edulearn/core';
 import { Payment } from '@domain/entities/payments';
 import { PaymentCreateDto } from 'src/presentation/grpc/dtos/create-payment.dto';
 import { timeoutPromise } from 'src/shared/utils/_promise-timeout';
 import { BadRequestException } from 'src/shared/exceptions/infra.exceptions';
-import { ILoggerService } from '@application/adaptors/logger.service';
-import { ITraceService } from '@application/adaptors/trace.service';
-import { IMetricService } from '@application/adaptors/metric.service';
+import { ILoggerService } from '@application/ports/logger.service';
+import { ITraceService } from '@application/ports/trace.service';
+import { IMetricService } from '@application/ports/metric.service';
 import { ICreatePaymentUseCase } from '../interfaces/create-payment.interface';
-import { IIdempotencyService } from '@application/adaptors/idempotency.service';
-import { IOrderClient } from '@application/adaptors/order-client.interface';
-// import { ICacheService } from '@application/adaptors/redis.interface';
+import { IIdempotencyService } from '@application/ports/idempotency.service';
+import { IOrderClient } from '@application/ports/order-client.interface';
+// import { ICacheService } from '@application/ports/redis.interface';
 
 @Injectable()
 export class CreatePaymentUseCase implements ICreatePaymentUseCase {
@@ -62,13 +62,13 @@ export class CreatePaymentUseCase implements ICreatePaymentUseCase {
             async () => {
               const order = await timeoutPromise(
                 () =>
-                  retry(
+                  withRetry(
                     () =>
                       this._orderServiceClient.getOrder(
                         dto.orderId,
                         dto.userId,
                       ),
-                    { retries: 2, delay: 1000, backoff: 'EXPONENTIAL' },
+                    { maxAttempts: 2, initialDelay: 1000 },
                   ),
                 `Timeout while fetching order details for id ${dto.orderId}`,
               );
