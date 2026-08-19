@@ -57,11 +57,17 @@ export class PaymentController {
 
   @GrpcMethod('PaymentService', 'CreatePayment')
   @UsePipes(GrpcValidationPipe)
-  @Roles('user', 'admin')
+  @Roles('student', 'instructor')
   async createPayment(
     request: PaymentCreateDto,
   ): Promise<CreatePaymentResponse> {
+    console.log(
+      'Create Payment Request Recieved : ' + JSON.stringify(request, null, 2),
+    );
     const response = await this._createPaymentUseCase.execute(request);
+    console.log(
+      'Create Payment response : ' + JSON.stringify(response, null, 2),
+    );
     return {
       success: {
         paymentId: response.paymentId,
@@ -72,7 +78,7 @@ export class PaymentController {
   }
   @GrpcMethod('PaymentService', 'CreateProviderSession')
   @UsePipes(GrpcValidationPipe)
-  @Roles('user', 'admin')
+  @Roles('student', 'instructor')
   async createProviderSession(
     request: CreateProviderSessionDto,
   ): Promise<CreateProviderSessionResponse> {
