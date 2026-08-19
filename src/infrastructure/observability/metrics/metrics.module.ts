@@ -1,6 +1,6 @@
 import { Global, Module } from '@nestjs/common';
 import { MetricService } from './metrics.service';
-import { IMetricService } from 'src/application/adaptors/metric.service';
+import { IMetricService } from '@application/ports/metric.service';
 import { MetricsModule } from '@edulearn/nest';
 import { AppConfigService } from '@infrastructure/config/config.service';
 
