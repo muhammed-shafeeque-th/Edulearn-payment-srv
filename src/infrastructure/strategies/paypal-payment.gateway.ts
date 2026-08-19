@@ -13,7 +13,7 @@ import {
   RefundStatus,
 } from '@paypal/paypal-server-sdk';
 import {
-  PaymentStrategy,
+  PaymentGateway,
   PaymentResult,
   PaymentStatus,
   PaymentRequest,
@@ -24,18 +24,18 @@ import {
   PaypalResolveRequest,
   PaymentFailureResult,
   RefundResult,
-} from '@application/adaptors/payment-strategy.interface';
+} from '@application/ports/payment-gateway-strategy.interface';
 import { AppConfigService } from '@infrastructure/config/config.service';
-import { TracingService } from '@infrastructure/observability/tracing/trace.service';
-import { MetricsService } from '@infrastructure/observability/metrics/metrics.service';
-import { LoggingService } from '@infrastructure/observability/logging/logging.service';
 import { NotFoundException } from '@domain/exceptions/domain.exceptions';
 // import { IExchangeRateService } from '@domain/interfaces/exchange-rate.service';
 import { PaymentProvider } from '@domain/entities/payments';
+import { IMetricService } from '@application/ports/metric.service';
+import { ITraceService } from '@application/ports/trace.service';
+import { ILoggerService } from '@application/ports/logger.service';
 // import { ICacheService } from '@domain/interfaces/redis.interface';
 
 @Injectable()
-export class PayPalPaymentStrategy implements PaymentStrategy {
+export class PayPalPaymentGateway implements PaymentGateway {
   // private readonly EXCHANGE_RATE_TTL_SECONDS = 60; // short TTL (configurable)
   // private readonly OXR_REDIS_KEY = 'oxr:rate:INR:USD';
   readonly gateway = 'paypal';
@@ -53,11 +53,11 @@ export class PayPalPaymentStrategy implements PaymentStrategy {
 
   constructor(
     private readonly configService: AppConfigService,
-    // private readonly exchangeRateService: IExchangeRateService,
+    // private readonly _exchangeRateService: IExchangeRateService,
     // private readonly redisService: ICacheService,
-    private readonly logger: LoggingService,
-    private readonly tracer: TracingService,
-    private readonly metrics: MetricsService,
+    private readonly _logger: ILoggerService,
+    private readonly _tracer: ITraceService,
+    private readonly _metrics: IMetricService,
   ) {
     const environment =
       this.configService.nodeEnv === 'production'
@@ -94,8 +94,8 @@ export class PayPalPaymentStrategy implements PaymentStrategy {
   }
 
   async createPayment(request: PaymentRequest): Promise<PaymentSessionResult> {
-    return this.tracer.startActiveSpan(
-      'PayPalPaymentStrategy.createPayment',
+    return this._tracer.startActiveSpan(
+      'PayPalPaymentGateway.createPayment',
       async (span) => {
         span.setAttributes({
           'user.id': request.userId,
@@ -167,11 +167,11 @@ export class PayPalPaymentStrategy implements PaymentStrategy {
             approvalLink: approvalUrl!,
           };
         } catch (error: any) {
-          this.logger.error(`PayPal payment failed`, {
+          this._logger.error(`PayPal payment failed`, {
             error: error?.response?.message,
             details: error?.response?.details,
             paypal: error?.response,
-            ctx: 'PayPalPaymentStrategy',
+            ctx: 'PayPalPaymentGateway',
           });
           this.recordMetrics('process_payment', startTime, false);
 
@@ -184,8 +184,8 @@ export class PayPalPaymentStrategy implements PaymentStrategy {
   async resolvePayment(
     request: ResolvePaymentRequest,
   ): Promise<ResolvePaymentResponse> {
-    return this.tracer.startActiveSpan(
-      'PayPalPaymentStrategy.capturePayment',
+    return this._tracer.startActiveSpan(
+      'PayPalPaymentGateway.capturePayment',
       async () => {
         // Type guard for RazorpayResolveRequest
         function isPaypalResolveRequest(req: any): req is PaypalResolveRequest {
@@ -224,8 +224,8 @@ export class PayPalPaymentStrategy implements PaymentStrategy {
 
           const status = this.mapPayPalStatus(orderResult.status);
 
-          this.logger.debug(`PayPal payment processed successfully`, {
-            ctx: 'PayPalPaymentStrategy',
+          this._logger.debug(`PayPal payment processed successfully`, {
+            ctx: 'PayPalPaymentGateway',
             transactionId: orderResult.id,
             status,
           });
@@ -240,8 +240,8 @@ export class PayPalPaymentStrategy implements PaymentStrategy {
             isVerified: status === PaymentStatus.SUCCESS,
           };
         } catch (error: any) {
-          this.logger.error(`PayPal capture failed`, {
-            ctx: 'PayPalPaymentStrategy',
+          this._logger.error(`PayPal capture failed`, {
+            ctx: 'PayPalPaymentGateway',
             orderId: request?.providerOrderId,
             error: error?.message,
           });
@@ -258,8 +258,8 @@ export class PayPalPaymentStrategy implements PaymentStrategy {
   //   providerOrderId: string;
   //   provider: PaymentGateway;
   // }> {
-  //   return await this.tracer.startActiveSpan(
-  //     'PayPalPaymentStrategy.capturePayment',
+  //   return await this._tracer.startActiveSpan(
+  //     'PayPalPaymentGateway.capturePayment',
   //     async () => {
   //       const startTime = Date.now();
   //       try {
@@ -271,8 +271,8 @@ export class PayPalPaymentStrategy implements PaymentStrategy {
 
   //         const status = this.mapPayPalStatus(orderResult.status);
 
-  //         this.logger.debug(`PayPal payment processed successfully`, {
-  //           ctx: 'PayPalPaymentStrategy',
+  //         this._logger.debug(`PayPal payment processed successfully`, {
+  //           ctx: 'PayPalPaymentGateway',
   //           transactionId: orderResult.id,
   //           status,
   //         });
@@ -289,8 +289,8 @@ export class PayPalPaymentStrategy implements PaymentStrategy {
   //           provider: PaymentGateway.PAYPAL,
   //         };
   //       } catch (error: any) {
-  //         this.logger.error(`PayPal capture failed`, {
-  //           ctx: 'PayPalPaymentStrategy',
+  //         this._logger.error(`PayPal capture failed`, {
+  //           ctx: 'PayPalPaymentGateway',
   //           orderId: providerOrderId,
   //           error: error?.message,
   //         });
@@ -301,8 +301,8 @@ export class PayPalPaymentStrategy implements PaymentStrategy {
   // }
 
   async refundPayment(request: RefundRequest): Promise<RefundResult> {
-    return this.tracer.startActiveSpan(
-      'PayPalPaymentStrategy.createRefund',
+    return this._tracer.startActiveSpan(
+      'PayPalPaymentGateway.createRefund',
       async (span) => {
         const { amount, providerPaymentId, reason } = request;
         span.setAttributes({
@@ -337,8 +337,8 @@ export class PayPalPaymentStrategy implements PaymentStrategy {
 
           const status = this.mapPayPalRefundStatus(refund.status);
 
-          this.logger.debug(`PayPal refund processed successfully`, {
-            ctx: 'PayPalPaymentStrategy',
+          this._logger.debug(`PayPal refund processed successfully`, {
+            ctx: 'PayPalPaymentGateway',
             transactionId: refund.id,
             status,
             originalTransactionId: request.providerPaymentId,
@@ -354,13 +354,13 @@ export class PayPalPaymentStrategy implements PaymentStrategy {
             refundId: refund.id,
             currency: refund.amount!.currencyCode,
             amount: parseInt(refund.amount!.value!),
-            status: 'pending',
+            status: 'pending' as const,
             gateway: this.gateway,
           };
         } catch (error: any) {
-          this.logger.error(`PayPal refund failed`, {
+          this._logger.error(`PayPal refund failed`, {
             error: error?.message,
-            ctx: 'PayPalPaymentStrategy',
+            ctx: 'PayPalPaymentGateway',
             transactionId: request.providerPaymentId,
             paypalErrorCode: error?.code,
           });
@@ -374,8 +374,8 @@ export class PayPalPaymentStrategy implements PaymentStrategy {
   }
 
   async getPaymentStatus(transactionId: string): Promise<PaymentResult> {
-    return await this.tracer.startActiveSpan(
-      'PayPalPaymentStrategy.getPaymentStatus',
+    return await this._tracer.startActiveSpan(
+      'PayPalPaymentGateway.getPaymentStatus',
       async (span) => {
         span.setAttributes({
           'transaction.id': transactionId,
@@ -407,9 +407,9 @@ export class PayPalPaymentStrategy implements PaymentStrategy {
             },
           };
         } catch (error: any) {
-          this.logger.error(`Failed to verify PayPal payment`, {
+          this._logger.error(`Failed to verify PayPal payment`, {
             error: error?.message,
-            ctx: 'PayPalPaymentStrategy',
+            ctx: 'PayPalPaymentGateway',
             transactionId,
           });
 
@@ -437,9 +437,9 @@ export class PayPalPaymentStrategy implements PaymentStrategy {
       if (error?.statusCode === 404) {
         return true;
       }
-      this.logger.warn('PayPal service unavailable', {
+      this._logger.warn('PayPal service unavailable', {
         error: error?.message,
-        ctx: 'PayPalPaymentStrategy',
+        ctx: 'PayPalPaymentGateway',
       });
       return false;
     }
@@ -451,15 +451,15 @@ export class PayPalPaymentStrategy implements PaymentStrategy {
   ): Promise<PaymentFailureResult> {
     const startTime = Date.now();
 
-    await this.tracer.startActiveSpan(
-      'PayPalPaymentStrategy.cancelPayment',
+    await this._tracer.startActiveSpan(
+      'PayPalPaymentGateway.cancelPayment',
       async (span) => {
         span.setAttributes({
           'transaction.id': transactionId,
           gateway: this.gateway,
         });
-        this.logger.warn('Failing PayPal payment', {
-          ctx: 'PayPalPaymentStrategy',
+        this._logger.warn('Failing PayPal payment', {
+          ctx: 'PayPalPaymentGateway',
           transactionId,
           reason,
         });
@@ -477,7 +477,7 @@ export class PayPalPaymentStrategy implements PaymentStrategy {
   // private async getInrToUsdRate(): Promise<number> {
   //   const appId = this.configService.openExchangeAppId; // make sure exists
   //   if (!appId) {
-  //     this.logger.error('OpenExchange App ID not configured');
+  //     this._logger.error('OpenExchange App ID not configured');
   //     throw new Error('Currency conversion unavailable');
   //   }
 
@@ -518,7 +518,7 @@ export class PayPalPaymentStrategy implements PaymentStrategy {
   //           rate = body.rates.USD; // INR -> USD directly when base=INR
   //         }
   //       } else {
-  //         this.logger.info(
+  //         this._logger.info(
   //           'OpenExchangeRates base=INR fetch failed, will fallback to USD-base method',
   //           { status: res.status },
   //         );
@@ -555,14 +555,14 @@ export class PayPalPaymentStrategy implements PaymentStrategy {
   //         this.EXCHANGE_RATE_TTL_SECONDS,
   //       );
   //     } catch (err) {
-  //       this.logger.warn('Failed to write exchange rate to redis', {
+  //       this._logger.warn('Failed to write exchange rate to redis', {
   //         error: (err as Error)?.message,
   //       });
   //     }
 
   //     return rate;
   //   } catch (err) {
-  //     this.logger.error('Failed to fetch INR->USD rate', {
+  //     this._logger.error('Failed to fetch INR->USD rate', {
   //       error: (err as Error)?.message,
   //     });
 
@@ -572,7 +572,7 @@ export class PayPalPaymentStrategy implements PaymentStrategy {
   //       if (stale) {
   //         const parsed = JSON.parse(stale) as ExchangeRateCache;
   //         if (parsed?.rate) {
-  //           this.logger.warn(
+  //           this._logger.warn(
   //             'Using stale cached exchange rate due to fetch failure',
   //           );
   //           return parsed.rate;
@@ -594,12 +594,12 @@ export class PayPalPaymentStrategy implements PaymentStrategy {
   //     return;
   //   }
   //   if (currency === 'INR') {
-  //     this.logger.info(
+  //     this._logger.info(
   //       `Currency INR not supported by PayPal, converting to USD...`,
   //     );
   //     const inrToUsd = await this.getInrToUsdRate();
   //     if (typeof inrToUsd !== 'number' || isNaN(inrToUsd) || inrToUsd <= 0) {
-  //       this.logger.error('Exchange rate invalid');
+  //       this._logger.error('Exchange rate invalid');
   //       throw new Error('Currency conversion failed');
   //     }
   //     const inrAmount = request.amount.getAmount(); // integer paisa (or cents) based on your domain object
@@ -609,7 +609,7 @@ export class PayPalPaymentStrategy implements PaymentStrategy {
   //     request.amount.setCurrency('USD');
   //     return;
   //   }
-  //   this.logger.info(
+  //   this._logger.info(
   //     `Currency ${currency} not supported by PayPal and auto-conversion not implemented.`,
   //   );
   //   throw new Error(`Currency ${currency} not supported by PayPal`);
@@ -629,11 +629,11 @@ export class PayPalPaymentStrategy implements PaymentStrategy {
   //   if (this.supportedCurrencies.includes(currency)) {
   //     return { rate: 1 };
   //   }
-  //   this.logger.info(
+  //   this._logger.info(
   //     `Currency ${currency} not supported by PayPal, converting to USD...`,
   //   );
   //   try {
-  //     const rate = await this.exchangeRateService.getRate(currency, 'USD');
+  //     const rate = await this._exchangeRateService.getRate(currency, 'USD');
 
   //     if (typeof rate !== 'number' || isNaN(rate)) {
   //       throw new Error('USD rate not found');
@@ -645,11 +645,11 @@ export class PayPalPaymentStrategy implements PaymentStrategy {
   //     request.amount.setCurrency('USD');
   //     return { rate };
   //   } catch (error) {
-  //     this.logger.error(
+  //     this._logger.error(
   //       'Could not convert INR to USD: ' + (error as Error)?.message,
   //     );
   //     throw new Error('Currency conversion failed');
-  //     // this.logger.info(
+  //     // this._logger.info(
   //     //   `Currency ${currency} not supported by PayPal and auto-conversion not implemented.`,
   //     // );
   //     // throw new Error(`Currency ${currency} not supported by PayPal`);
@@ -664,7 +664,7 @@ export class PayPalPaymentStrategy implements PaymentStrategy {
   //   }
   //   if (currency === 'INR') {
   //     // IN PRODUCTION: Use robust infra/caching for rates. Here: simple in-memory, best-effort catch.
-  //     this.logger.info(
+  //     this._logger.info(
   //       `Currency INR not supported by PayPal, converting to USD...`,
   //     );
   //     const now = Date.now();
@@ -681,7 +681,7 @@ export class PayPalPaymentStrategy implements PaymentStrategy {
   //           throw new Error('Failed to fetch exchange rate');
   //         }
   //         const data = await response.json();
-  //         this.logger.info('Exchange data : ' + JSON.stringify(data, null, 2));
+  //         this._logger.info('Exchange data : ' + JSON.stringify(data, null, 2));
   //         const inrToUsd = data?.rates?.['USD'];
   //         if (typeof inrToUsd !== 'number' || isNaN(inrToUsd)) {
   //           throw new Error('USD rate not found');
@@ -691,7 +691,7 @@ export class PayPalPaymentStrategy implements PaymentStrategy {
   //           timestamp: now,
   //         };
   //       } catch (err) {
-  //         this.logger.error(
+  //         this._logger.error(
   //           'Could not convert INR to USD: ' + (err as Error)?.message,
   //         );
   //         throw new Error('Currency conversion failed');
@@ -700,7 +700,7 @@ export class PayPalPaymentStrategy implements PaymentStrategy {
   //     const inrToUsd = this.usdInrRateCache?.rate;
   //     if (typeof inrToUsd !== 'number' || isNaN(inrToUsd) || inrToUsd <= 0) {
   //       // Defensive: Another check to catch cache miss or API failure
-  //       this.logger.error('Exchange rate cache invalid or missing after fetch');
+  //       this._logger.error('Exchange rate cache invalid or missing after fetch');
   //       throw new Error('Currency conversion failed');
   //     }
   //     const inrAmount = request.amount.getAmount();
@@ -710,7 +710,7 @@ export class PayPalPaymentStrategy implements PaymentStrategy {
   //     request.amount.setCurrency('USD');
   //     return;
   //   }
-  //   this.logger.info(
+  //   this._logger.info(
   //     `Currency ${currency} not supported by PayPal and auto-conversion not implemented.`,
   //   );
   //   throw new Error(`Currency ${currency} not supported by PayPal`);
@@ -751,11 +751,11 @@ export class PayPalPaymentStrategy implements PaymentStrategy {
     success: boolean,
   ): void {
     const duration = (Date.now() - startTime) / 1000;
-    this.metrics.paymentLatency.observe(
+    this._metrics.paymentLatency.observe(
       { method: operation, gateway: this.gateway },
       duration,
     );
-    this.metrics.incPaymentCounter({
+    this._metrics.incPaymentCounter({
       method: operation,
       gateway: this.gateway,
       status: success.toString(),
