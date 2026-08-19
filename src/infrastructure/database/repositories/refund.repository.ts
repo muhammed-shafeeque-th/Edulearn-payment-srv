@@ -67,8 +67,7 @@ export class RefundTypeOrmRepository implements IRefundRepository {
             this._logger.debug(`Cache hit for refund ${id}`, {
               ctx: 'RefundRepository',
             });
-            const entity = JSON.parse(cached);
-            return this.toDomain(entity);
+            return this.toDomain(cached);
           }
 
           const entity = await this._repo.findOne({ where: { id } });
@@ -106,8 +105,7 @@ export class RefundTypeOrmRepository implements IRefundRepository {
               `Cache hit for refund idempotency ${idempotencyKey}`,
               { ctx: 'RefundRepository' },
             );
-            const entity = JSON.parse(cached);
-            return this.toDomain(entity);
+            return this.toDomain(cached);
           }
 
           const entity = await this._repo.findOne({

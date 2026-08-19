@@ -1,6 +1,6 @@
 export abstract class ICacheService {
-  abstract set(key: string, value: string, ttl?: number): Promise<void>;
-  abstract get(key: string): Promise<string | null>;
+  abstract set<T = any>(key: string, value: T, ttl?: number): Promise<void>;
+  abstract get<T = any>(key: string): Promise<T | null>;
   abstract del(key: string): Promise<void>;
   abstract exists(key: string): Promise<boolean>;
   abstract lock(key: string, ttl: number): Promise<boolean>;
