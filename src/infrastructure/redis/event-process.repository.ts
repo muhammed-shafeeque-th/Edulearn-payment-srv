@@ -22,7 +22,7 @@ export class EventProcessRepositoryImpl implements IEventProcessRepository {
         span.setAttribute('event.id', eventId);
         try {
           const result = await this.redisService.get(key);
-          const processed = result === '1';
+          const processed = result === 1;
           this._logger.debug(
             `Checked processed status for eventId ${eventId}: ${processed}`,
             {

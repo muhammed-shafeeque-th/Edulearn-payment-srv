@@ -41,9 +41,8 @@ export class FrankfurterExchangeRateService implements IExchangeRateService {
     const cached = await this.redis.get(redisKey);
     if (cached) {
       try {
-        const parsed = JSON.parse(cached);
-        if (parsed?.rate) {
-          return parsed.rate;
+        if (cached?.rate) {
+          return cached.rate;
         }
       } catch {}
     }
@@ -126,10 +125,9 @@ export class FrankfurterExchangeRateService implements IExchangeRateService {
     const cached = await this.redis.get(staleKey);
     if (cached) {
       try {
-        const parsed = JSON.parse(cached);
-        if (parsed?.rate) {
+        if (cached?.rate) {
           this._logger.warn('Using stale FX rate due to provider failure');
-          return parsed.rate;
+          return cached.rate;
         }
       } catch {}
     }

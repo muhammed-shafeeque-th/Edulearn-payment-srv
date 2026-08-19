@@ -23,6 +23,16 @@ import {
   OrderStatus,
 } from '@application/ports/order-client.interface';
 
+export type OrderDetails = {
+    id: string;
+    amount: number;
+    currency: string;
+    status: OrderStatus;
+    discount: number;
+    salesTax?: number;
+    items: { courseId: string; price: number; currency: string }[];
+  }
+
 @Injectable()
 export class OrderClient
   implements IOrderClient, OnModuleDestroy, OnModuleInit
@@ -60,9 +70,9 @@ export class OrderClient
     const CACHE_TTL = 10 * 60;
     const cacheKey = `order_details:${orderId}`;
 
-    const cacheResult = await this._redisClient.get(cacheKey);
+    const cacheResult = await this._redisClient.get<OrderDetails>(cacheKey);
     if (cacheResult) {
-      return JSON.parse(cacheResult);
+      cacheResult;
     }
 
     try {
@@ -108,7 +118,7 @@ export class OrderClient
 
       await this._redisClient.set(
         cacheKey,
-        JSON.stringify(orderData),
+        orderData,
         CACHE_TTL,
       );
 

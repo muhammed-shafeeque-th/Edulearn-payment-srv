@@ -19,7 +19,7 @@ export class IdempotencyService {
     // Check if result already exists
     const cachedResult = await this.redis.get(resultKey);
     if (cachedResult) {
-      return JSON.parse(cachedResult) as T;
+      return cachedResult as T;
     }
 
     // Acquire lock
