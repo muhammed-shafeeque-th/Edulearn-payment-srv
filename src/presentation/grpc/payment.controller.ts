@@ -46,7 +46,7 @@ import { ILoggerService } from '@application/ports/logger.service';
 @Controller()
 @UseFilters(GrpcExceptionFilter)
 // @UseGuards(GrpcJwtAuthGuard, RoleGuard)
-@UseInterceptors(LoggingInterceptor, MetricsInterceptor, TracingInterceptor)
+@UseInterceptors(LoggingInterceptor, MetricsInterceptor)
 export class PaymentController {
   constructor(
     private readonly _createPaymentUseCase: ICreatePaymentUseCase,
