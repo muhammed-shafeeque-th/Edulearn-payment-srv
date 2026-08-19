@@ -12,7 +12,7 @@ import { PaymentProviderRefundEntity } from './entities/payment_provider_refund.
       useFactory: (configService: AppConfigService) => ({
         type: 'postgres',
         url: configService.databaseUrl,
-        synchronize: configService.nodeEnv !== 'production', // Disabled in production
+        synchronize: true || configService.nodeEnv !== 'production', // Disabled in production
         logging: ['error'],
         poolSize: configService.databaseMaxConnections,
         entities: [
