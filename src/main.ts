@@ -26,7 +26,7 @@ async function bootstrap() {
     options: {
       url: `0.0.0.0:${config.grpcPort}`,
       package: 'payment_service',
-      protoPath: [path.join(getProtoPath('payment'))],
+      protoPath: [getProtoPath('payment')],
       loader: {
         includeDirs: [path.join(PROTO_ROOT_DIR, 'payment')],
       },

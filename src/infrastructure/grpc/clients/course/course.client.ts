@@ -55,9 +55,7 @@ export class CourseClient
 
     const cacheResult = await this._redisClient.get(cacheKey);
     if (cacheResult) {
-      const parsed = JSON.parse(cacheResult);
-
-      return new Map(parsed);
+      return new Map(cacheResult);
     }
 
     try {
@@ -108,7 +106,7 @@ export class CourseClient
 
       await this._redisClient.set(
         cacheKey,
-        JSON.stringify(Array.from(courseMap.entries())),
+        Array.from(courseMap.entries()),
         CACHE_TTL,
       );
 
