@@ -15,7 +15,7 @@ import { WebhookService } from 'src/presentation/http/webhook.service';
 import { AppConfigService } from '@infrastructure/config/config.service';
 import { LoggingInterceptor } from '@infrastructure/grpc/interceptors/logging.interceptor';
 import { MetricsInterceptor } from '@infrastructure/grpc/interceptors/metrics.interceptor';
-import { TracingInterceptor } from '@infrastructure/grpc/interceptors/tracing.interceptor';
+// import { TracingInterceptor } from '@infrastructure/grpc/interceptors/tracing.interceptor';
 import Stripe from 'stripe';
 import * as crypto from 'crypto';
 import axios from 'axios';
@@ -30,7 +30,7 @@ import { IMetricService } from '@application/ports/metric.service';
 
 @Controller('api/webhooks')
 @UseFilters(BaseExceptionFilter)
-@UseInterceptors(LoggingInterceptor, MetricsInterceptor, TracingInterceptor)
+@UseInterceptors(LoggingInterceptor, MetricsInterceptor)
 export class WebhookController implements OnModuleDestroy {
   private readonly stripe: Stripe;
   private readonly STRIPE_ALLOWED_EVENTS: Set<string> = new Set([
